@@ -1,4 +1,4 @@
-import type { RunUpsert, StepKind, StepUpsert, Usage } from "@overturn/shared";
+import type { RunUpsert, StepKind, StepUpsert, Usage } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { runStorage } from "./context.js";
 

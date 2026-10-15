@@ -8,9 +8,9 @@ FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc turbo.json tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
-RUN pnpm install --frozen-lockfile --filter @overturn/web... \
- && pnpm --filter @overturn/shared build \
- && pnpm --filter @overturn/web build
+RUN pnpm install --frozen-lockfile --filter @overturn-ai/web... \
+ && pnpm --filter @overturn-ai/shared build \
+ && pnpm --filter @overturn-ai/web build
 
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000

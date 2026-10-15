@@ -1,5 +1,5 @@
-import type { IngestPayload, StepUpsert } from "@overturn/shared";
-import { toolFingerprint } from "@overturn/shared";
+import type { IngestPayload, StepUpsert } from "@overturn-ai/shared";
+import { toolFingerprint } from "@overturn-ai/shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { Overturn } from "./client.js";
 import { assembleChatStream, type OpenAILike } from "./openai.js";

@@ -1,4 +1,4 @@
-import type { IngestPayload, Page, Run, RunWithSteps } from "@overturn/shared";
+import type { IngestPayload, Page, Run, RunWithSteps } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { api, startTestApp, type TestContext } from "../test/harness";
@@ -197,7 +197,7 @@ describe("GET /v1/runs", () => {
 });
 
 describe("GET /openapi.json", () => {
-  it("documents every route with schemas from @overturn/shared", async () => {
+  it("documents every route with schemas from @overturn-ai/shared", async () => {
     const res = await fetch(`${ctx.baseUrl}/openapi.json`);
     expect(res.status).toBe(200);
     const doc = (await res.json()) as {

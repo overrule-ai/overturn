@@ -21,7 +21,7 @@ import {
   type ScorerContext,
   score,
   type Verdict,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { embed, generateText } from "ai";
 import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";

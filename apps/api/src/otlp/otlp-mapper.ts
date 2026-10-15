@@ -18,7 +18,7 @@
  *   Side effects: overturn.side_effect (bool) on tool spans.
  */
 import { createHash } from "node:crypto";
-import { type RunUpsert, type StepUpsert, toolFingerprint } from "@overturn/shared";
+import { type RunUpsert, type StepUpsert, toolFingerprint } from "@overturn-ai/shared";
 
 // ---------- OTLP JSON shapes (subset) ----------
 

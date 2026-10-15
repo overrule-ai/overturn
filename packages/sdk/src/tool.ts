@@ -1,4 +1,4 @@
-import { type FingerprintOptions, toolFingerprint } from "@overturn/shared";
+import { type FingerprintOptions, toolFingerprint } from "@overturn-ai/shared";
 import { currentRun } from "./context.js";
 import type { ReplayState } from "./replay.js";
 

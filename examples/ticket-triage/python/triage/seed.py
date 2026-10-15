@@ -3,7 +3,7 @@
     OVERTURN_API_KEY=ov_live_... uv run python -m triage.seed
 
 Without OPENAI_API_KEY it expects the fake model server at FAKE_OPENAI_URL
-(default http://127.0.0.1:4010/v1): `pnpm --filter @overturn/example-ticket-triage fake-openai`.
+(default http://127.0.0.1:4010/v1): `pnpm --filter @overturn-ai/example-ticket-triage fake-openai`.
 """
 
 from __future__ import annotations

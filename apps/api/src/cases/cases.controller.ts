@@ -21,7 +21,7 @@ import {
   casePatchSchema,
   caseSetCreateSchema,
   type Page,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { z } from "zod";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
 import type { AuthContext } from "../auth/api-keys.service";

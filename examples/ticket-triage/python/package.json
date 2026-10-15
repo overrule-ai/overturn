@@ -1,5 +1,5 @@
 {
-  "name": "@overturn/example-ticket-triage-python",
+  "name": "@overturn-ai/example-ticket-triage-python",
   "version": "0.1.0",
   "private": true,
   "scripts": {

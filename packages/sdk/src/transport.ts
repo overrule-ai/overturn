@@ -1,4 +1,4 @@
-import { INGEST_VERSION, type IngestPayload, type RunUpsert, type StepUpsert } from "@overturn/shared";
+import { INGEST_VERSION, type IngestPayload, type RunUpsert, type StepUpsert } from "@overturn-ai/shared";
 
 export interface TransportOptions {
   apiKey: string;

@@ -2,8 +2,8 @@
  * End to end: fake model -> SDK -> real API -> Postgres. Needs TEST_DATABASE_URL
  * (defaults to the local overturn_test database) and the API package built.
  */
-import { Overturn } from "@overturn/sdk";
-import type { Page, Run, RunWithSteps } from "@overturn/shared";
+import { Overturn } from "@overturn-ai/sdk";
+import type { Page, Run, RunWithSteps } from "@overturn-ai/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { tickets } from "./data.js";
 import { seed } from "./seed.js";
@@ -144,7 +144,7 @@ describe("the README demo", () => {
     expect(job.summary!.completed).toBe(20);
     expect(job.summary!.baseline).toEqual({ kind: "recorded", jobId: null, model: "fake-triage-v1" });
 
-    const { renderMarkdownReport } = await import("@overturn/shared");
+    const { renderMarkdownReport } = await import("@overturn-ai/shared");
     const md = renderMarkdownReport(report);
     expect(md).toMatch(/### Regressions \([1-9]\d*\)/);
     expect(md).toMatch(/### Fixed \([1-9]\d*\)/);

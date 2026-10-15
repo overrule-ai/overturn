@@ -3,7 +3,7 @@
  * or OTLP gen_ai messages) into one Vercel AI SDK generateText call against a target
  * model, and extracts the answer in the shape humans correct.
  */
-import { extractAnswer, type FrozenInput, parseJsonText } from "@overturn/shared";
+import { extractAnswer, type FrozenInput, parseJsonText } from "@overturn-ai/shared";
 import {
   generateText,
   jsonSchema,

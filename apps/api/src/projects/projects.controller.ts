@@ -5,7 +5,7 @@ import {
   type ProjectSettings,
   projectPatchSchema,
   projectSettingsSchema,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { eq } from "drizzle-orm";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
 import type { AuthContext } from "../auth/api-keys.service";

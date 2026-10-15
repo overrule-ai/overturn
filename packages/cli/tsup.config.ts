@@ -8,5 +8,5 @@ export default defineConfig({
   clean: true,
   target: "node22",
   // bundle workspace packages so `npx overturn` works standalone
-  noExternal: ["@overturn/sdk", "@overturn/shared"],
+  noExternal: ["@overturn-ai/sdk", "@overturn-ai/shared"],
 });

@@ -24,7 +24,7 @@ import type {
   Run,
   RunListQuery,
   RunWithSteps,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 
 export class OverturnApiError extends Error {
   constructor(

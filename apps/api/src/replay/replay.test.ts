@@ -6,8 +6,8 @@ import type {
   ReplayReport,
   ReplayResult,
   RunWithSteps,
-} from "@overturn/shared";
-import { renderMarkdownReport, toolFingerprint } from "@overturn/shared";
+} from "@overturn-ai/shared";
+import { renderMarkdownReport, toolFingerprint } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { echoModel, startFakeOpenAI } from "../test/fake-openai";

@@ -8,7 +8,7 @@
  * and the customer's own `new Overturn()` instances, even from separate copies of this
  * package, see the same mode.
  */
-import type { StepUpsert } from "@overturn/shared";
+import type { StepUpsert } from "@overturn-ai/shared";
 
 export interface ToolRecording {
   name: string;

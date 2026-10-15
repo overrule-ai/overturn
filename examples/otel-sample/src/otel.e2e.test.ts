@@ -1,4 +1,4 @@
-import type { Page, Run, RunWithSteps } from "@overturn/shared";
+import type { Page, Run, RunWithSteps } from "@overturn-ai/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { makeOtelAgent } from "./agent.js";
 import { startTracing } from "./tracing.js";

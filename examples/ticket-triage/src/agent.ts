@@ -1,4 +1,4 @@
-import type { Overturn } from "@overturn/sdk";
+import type { Overturn } from "@overturn-ai/sdk";
 import OpenAI from "openai";
 import { z } from "zod";
 import { type Decision, PRIORITIES, TEAMS, type Ticket } from "./data.js";

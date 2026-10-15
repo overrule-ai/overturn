@@ -8,7 +8,7 @@ import {
   extractAnswer,
   type FrozenInput,
   type ToolRecordingEntry,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { CasesService } from "../cases/cases.service";

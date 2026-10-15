@@ -37,8 +37,8 @@ See [railway/README.md](../railway/README.md): a Postgres plugin plus two servic
 ```bash
 pnpm install && pnpm build
 pnpm db:migrate
-pnpm --filter @overturn/api start          # node apps/api/dist/main.js
-OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn/web start
+pnpm --filter @overturn-ai/api start          # node apps/api/dist/main.js
+OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn-ai/web start
 ```
 
 ## Operations

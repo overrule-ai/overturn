@@ -1,5 +1,5 @@
 {
-  "name": "@overturn/sdk",
+  "name": "@overturn-ai/sdk",
   "version": "0.1.0",
   "description": "Overturn SDK: record agent runs, turn human corrections into regression cases, replay safely",
   "license": "Apache-2.0",
@@ -42,7 +42,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@overturn/shared": "workspace:*",
+    "@overturn-ai/shared": "workspace:*",
     "uuid": "^13.0.0"
   },
   "peerDependencies": {

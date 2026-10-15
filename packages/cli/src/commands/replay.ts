@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { type ReplayJob, type ReplayReport, renderMarkdownReport } from "@overturn/shared";
+import { type ReplayJob, type ReplayReport, renderMarkdownReport } from "@overturn-ai/shared";
 import type { Command } from "commander";
 import pc from "picocolors";
 import { ago, apiFor, type CliOptions, fail, parseSince, printJson, shortId, table } from "../context.js";

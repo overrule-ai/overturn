@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
-import { projectSettingsSchema } from "@overturn/shared";
+import { projectSettingsSchema } from "@overturn-ai/shared";
 import PgBoss from "pg-boss";
 import { APP_CONFIG, type AppConfig } from "../config";
 import { CorrectionsService } from "../corrections/corrections.service";

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { OverturnApi } from "@overturn/sdk";
+import { OverturnApi } from "@overturn-ai/sdk";
 import pc from "picocolors";
 
 export interface CliOptions {

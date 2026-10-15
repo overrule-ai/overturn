@@ -3,7 +3,7 @@
  * Serves POST /v1/chat/completions (and /chat/completions). Any model id works;
  * "fake-triage-weak" behaves worse on purpose. Used when OPENAI_API_KEY is unset.
  *
- *   pnpm --filter @overturn/example-ticket-triage fake-openai   # listens on :4010
+ *   pnpm --filter @overturn-ai/example-ticket-triage fake-openai   # listens on :4010
  */
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import { fakeTriage } from "./fake-triage.js";

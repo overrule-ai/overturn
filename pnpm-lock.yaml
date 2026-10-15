@@ -56,7 +56,7 @@ importers:
       '@opentelemetry/otlp-transformer':
         specifier: 0.57.0
         version: 0.57.0(@opentelemetry/api@1.9.1)
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       ai:
@@ -120,7 +120,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@radix-ui/react-dialog':
@@ -163,13 +163,13 @@ importers:
         specifier: ^3.3.0
         version: 3.7.0
     devDependencies:
-      '@overturn/api':
+      '@overturn-ai/api':
         specifier: workspace:*
         version: link:../api
-      '@overturn/example-ticket-triage':
+      '@overturn-ai/example-ticket-triage':
         specifier: workspace:*
         version: link:../../examples/ticket-triage
-      '@overturn/sdk':
+      '@overturn-ai/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@tailwindcss/postcss':
@@ -218,10 +218,10 @@ importers:
         specifier: ^2.12.0
         version: 2.12.0(@opentelemetry/api@1.9.1)
     devDependencies:
-      '@overturn/api':
+      '@overturn-ai/api':
         specifier: workspace:*
         version: link:../../apps/api
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@types/node':
@@ -239,10 +239,10 @@ importers:
 
   examples/ticket-triage:
     dependencies:
-      '@overturn/sdk':
+      '@overturn-ai/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       openai:
@@ -252,7 +252,7 @@ importers:
         specifier: ^4.1.0
         version: 4.6.7
     devDependencies:
-      '@overturn/api':
+      '@overturn-ai/api':
         specifier: workspace:*
         version: link:../../apps/api
       '@types/node':
@@ -275,10 +275,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@overturn/sdk':
+      '@overturn-ai/sdk':
         specifier: workspace:*
         version: link:../sdk
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../shared
       commander:
@@ -291,7 +291,7 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
     devDependencies:
-      '@overturn/api':
+      '@overturn-ai/api':
         specifier: workspace:*
         version: link:../../apps/api
       '@types/node':
@@ -311,7 +311,7 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@overturn/shared':
+      '@overturn-ai/shared':
         specifier: workspace:*
         version: link:../shared
       uuid:

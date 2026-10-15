@@ -1,7 +1,7 @@
 "use client";
 
-import type { CorrectionKind, Step } from "@overturn/shared";
-import { extractAnswer } from "@overturn/shared";
+import type { CorrectionKind, Step } from "@overturn-ai/shared";
+import { extractAnswer } from "@overturn-ai/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
