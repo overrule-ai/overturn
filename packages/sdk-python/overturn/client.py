@@ -9,6 +9,7 @@ import httpx
 from . import context
 from . import tools as _tools
 from .anthropic_wrap import wrap_anthropic
+from .api import CorrectionKind, OverturnApi
 from .openai_wrap import wrap_openai
 from .replay import ReplayState, ToolRecordings
 from .run import Run
@@ -44,6 +45,7 @@ class Overturn:
         self.redact = redact
         self.replay: ReplayState | None = None
         self.transport: Transport | None = None
+        self.api = OverturnApi(self.api_key, self.base_url, http_client=http_client)
         if enabled and self.api_key:
             self.transport = Transport(
                 self.api_key,
@@ -123,6 +125,29 @@ class Overturn:
 
     def wrap_anthropic(self, client: T) -> T:
         return wrap_anthropic(client)
+
+    def correct(
+        self,
+        *,
+        run_id: str,
+        kind: CorrectionKind,
+        step_id: str | None = None,
+        corrected_output: Any = None,
+        note: str | None = None,
+        actor: str | None = None,
+    ) -> dict[str, Any]:
+        """Record a human correction and freeze a regression case. Sent immediately; returns
+        {"correction": ..., "case": ...}."""
+        body: dict[str, Any] = {"runId": run_id, "kind": kind, "source": "sdk"}
+        if step_id is not None:
+            body["stepId"] = step_id
+        if corrected_output is not None:
+            body["correctedOutput"] = corrected_output
+        if note is not None:
+            body["note"] = note
+        if actor is not None:
+            body["actor"] = actor
+        return self.api.create_correction(body)
 
     def replay_mode(self, recordings: ToolRecordings, *, allow_side_effects: bool = False) -> ReplayState:
         """Every @tool is answered from recordings and never executed, until exit_replay_mode()."""

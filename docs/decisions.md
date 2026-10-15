@@ -34,3 +34,15 @@ One line of reasoning each. Newest at the bottom.
 - **Ingest locks the touched run rows (`select … for update`) before inserting steps.** Concurrent batches for one run otherwise raced the `step_count` recount.
 - **Supported GenAI attribute dialects: OTel GenAI semconv (`gen_ai.input.messages`, `gen_ai.tool.call.arguments`), OpenLLMetry (`gen_ai.prompt.N.*`, `traceloop.entity.*`), OpenInference (`llm.*`, `input.value`).** Covers the three instrumentations teams actually run.
 - **Vercel AI SDK middleware records `generateText`/`streamText` as `ai.generate`/`ai.stream` steps with the AI SDK's own prompt shape as input.** Replay of these cases goes through the AI SDK too (M4), so no translation layer.
+
+## 2026-10-17 (M3)
+
+- **A run-level correction attaches to the run's last `llm_call` step and freezes that step; its original answer is the run output when present.** The last model call is the decision a human sees; the run output is what they corrected.
+- **`originalOutput` and replay outputs are normalized through `extractAnswer()` (tool calls → `{tool_calls}`, JSON text → object, else string).** Humans correct answers, not provider envelopes; scorers compare answers.
+- **Case size cap: frozen input ≤ 1 MB, keeping the system prompt plus the most recent messages and inserting a marker; tool recording outputs ≤ 256 KB each (string-truncated); `truncated = true` on the case.** Cases stay replayable in step mode and the UI shows the flag.
+- **A correction on a run with no `llm_call` step is recorded but makes no case.** Nothing to replay; the correction still counts in the corrected-rate stat.
+- **Case sets are saved filters merged under explicit query filters; `status` from the set wins only when the query left it at the default.** Keeps `--set regressions-q4 --agent x` intuitive.
+- **Implicit approval runs hourly on pg-boss (`17 * * * *`), per project, `source = "implicit"`, `actor = "system"`, capped at 500 runs per sweep.** Cheap, idempotent (correction_count > 0 excludes a run), and the hourly jitter avoids the top-of-hour pile-up.
+- **pg-boss lives in the `pgboss` schema of the same database; `JOBS_DISABLED=1` keeps it off in tests.** One Postgres, no Redis, as the brief asks.
+- **The CLI bundles `@overturn/sdk` and `@overturn/shared` so `npx overturn` has no peer deps; it exports `defineConfig` for `overturn.config.ts`.** One install, one import.
+- **`overturn init` writes `.env` (and warns when `.env` is not gitignored) rather than a JSON config with the key.** Keys live in `.env`, per the brief.

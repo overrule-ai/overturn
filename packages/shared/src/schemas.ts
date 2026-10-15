@@ -213,3 +213,164 @@ export const projectSettingsSchema = z.object({
   retentionDays: z.number().int().min(1).max(3650).default(90),
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
+
+// ---------- corrections ----------
+
+export const correctionCreateSchema = z.object({
+  runId: uuidSchema,
+  stepId: uuidSchema.nullish(),
+  kind: correctionKindSchema,
+  correctedOutput: jsonValueSchema.optional(),
+  note: z.string().max(10_000).nullish(),
+  actor: z.string().max(200).nullish(),
+  source: correctionSourceSchema.default("api"),
+});
+export type CorrectionCreate = z.infer<typeof correctionCreateSchema>;
+
+export const correctionSchema = z.object({
+  id: uuidSchema,
+  projectId: uuidSchema,
+  runId: uuidSchema,
+  stepId: uuidSchema.nullable(),
+  kind: correctionKindSchema,
+  correctedOutput: jsonValueSchema.nullable(),
+  note: z.string().nullable(),
+  actor: z.string().nullable(),
+  source: correctionSourceSchema,
+  createdAt: isoDateSchema,
+});
+export type Correction = z.infer<typeof correctionSchema>;
+
+export const correctionListQuerySchema = z.object({
+  runId: uuidSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+// ---------- cases ----------
+
+export const caseStatusSchema = z.enum(["active", "archived"]);
+export type CaseStatus = z.infer<typeof caseStatusSchema>;
+
+/** What a case freezes from the corrected llm_call step. */
+export const frozenInputSchema = z
+  .object({
+    name: z.string(),
+    provider: z.string().nullable(),
+    model: z.string().nullable(),
+    messages: jsonValueSchema.optional(),
+    tools: jsonValueSchema.optional(),
+    tool_choice: jsonValueSchema.optional(),
+    response_format: jsonValueSchema.optional(),
+    system: jsonValueSchema.optional(),
+    params: z.record(z.string(), jsonValueSchema).nullable(),
+  })
+  .loose();
+export type FrozenInput = z.infer<typeof frozenInputSchema>;
+
+export const toolRecordingSchema = z.object({
+  name: z.string(),
+  args: jsonValueSchema,
+  output: jsonValueSchema,
+  sideEffect: z.boolean().default(false),
+  truncated: z.boolean().optional(),
+});
+export type ToolRecordingEntry = z.infer<typeof toolRecordingSchema>;
+export const toolRecordingsSchema = z.record(z.string(), toolRecordingSchema);
+
+export const caseSchema = z.object({
+  id: uuidSchema,
+  projectId: uuidSchema,
+  correctionId: uuidSchema,
+  runId: uuidSchema,
+  stepId: uuidSchema.nullable(),
+  agent: z.string(),
+  agentVersion: z.string().nullable(),
+  kind: correctionKindSchema,
+  title: z.string(),
+  frozenInput: frozenInputSchema,
+  toolRecordings: toolRecordingsSchema,
+  originalOutput: jsonValueSchema.nullable(),
+  expected: jsonValueSchema.nullable(),
+  scorer: scorerNameSchema,
+  scorerConfig: z.record(z.string(), jsonValueSchema),
+  tags: z.array(z.string()),
+  status: caseStatusSchema,
+  truncated: z.boolean(),
+  recordedModel: z.string().nullable(),
+  lastVerdict: verdictSchema.nullable(),
+  note: z.string().nullable(),
+  actor: z.string().nullable(),
+  createdAt: isoDateSchema,
+});
+export type Case = z.infer<typeof caseSchema>;
+
+/** Lightweight list row: no frozen input or recordings. */
+export const caseSummarySchema = caseSchema.omit({ frozenInput: true, toolRecordings: true });
+export type CaseSummary = z.infer<typeof caseSummarySchema>;
+
+export const caseFilterSchema = z.object({
+  agent: z.string().optional(),
+  tag: z.string().optional(),
+  kind: correctionKindSchema.optional(),
+  status: caseStatusSchema.default("active"),
+  since: isoDateSchema.optional(),
+  until: isoDateSchema.optional(),
+  ids: z.array(uuidSchema).optional(),
+  /** Name or id of a saved case set; its filter is merged in. */
+  set: z.string().optional(),
+});
+export type CaseFilter = z.infer<typeof caseFilterSchema>;
+
+export const caseListQuerySchema = caseFilterSchema.extend({
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  cursor: z.string().optional(),
+});
+export type CaseListQuery = z.infer<typeof caseListQuerySchema>;
+
+export const casePatchSchema = z.object({
+  status: caseStatusSchema.optional(),
+  tags: z.array(z.string().max(100)).max(50).optional(),
+  title: z.string().max(500).optional(),
+  scorer: scorerNameSchema.optional(),
+  scorerConfig: z.record(z.string(), jsonValueSchema).optional(),
+  expected: jsonValueSchema.optional(),
+});
+export type CasePatch = z.infer<typeof casePatchSchema>;
+
+export const caseSetCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  filter: caseFilterSchema.omit({ set: true }).partial(),
+});
+export type CaseSetCreate = z.infer<typeof caseSetCreateSchema>;
+
+export const caseSetSchema = z.object({
+  id: uuidSchema,
+  projectId: uuidSchema,
+  name: z.string(),
+  filter: jsonValueSchema,
+  createdAt: isoDateSchema,
+});
+export type CaseSet = z.infer<typeof caseSetSchema>;
+
+export const correctionResultSchema = z.object({
+  correction: correctionSchema,
+  case: caseSchema.nullable(),
+});
+export type CorrectionResult = z.infer<typeof correctionResultSchema>;
+
+// ---------- project ----------
+
+export const projectSchema = z.object({
+  id: uuidSchema,
+  name: z.string(),
+  slug: z.string(),
+  settings: projectSettingsSchema,
+  createdAt: isoDateSchema,
+});
+export type Project = z.infer<typeof projectSchema>;
+
+export const projectPatchSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  settings: projectSettingsSchema.partial().optional(),
+});
+export type ProjectPatch = z.infer<typeof projectPatchSchema>;
