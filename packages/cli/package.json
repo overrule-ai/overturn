@@ -5,10 +5,11 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "overturn": "./dist/index.js"
+    "overturn": "./bin/overturn.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "scripts": {
     "build": "tsup",

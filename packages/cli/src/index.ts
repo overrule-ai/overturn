@@ -28,7 +28,8 @@ function isMain(): boolean {
   const entry = process.argv[1];
   if (!entry) return false;
   try {
-    return pathToFileURL(realpathSync(entry)).href === import.meta.url;
+    const href = pathToFileURL(realpathSync(entry)).href;
+    return href === import.meta.url || /\/bin\/overturn\.js$/.test(href);
   } catch {
     return false;
   }
