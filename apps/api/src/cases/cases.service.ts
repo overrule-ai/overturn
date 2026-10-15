@@ -14,7 +14,7 @@ import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle
 import { v7 as uuidv7 } from "uuid";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { type CaseRow, caseSets, cases, corrections } from "../db/schema";
+import { type CaseRow, caseSets, cases, corrections, replayJobs, replayResults } from "../db/schema";
 
 type CaseJoined = CaseRow & { note: string | null; actor: string | null };
 
@@ -182,6 +182,34 @@ export class CasesService {
       .from(cases)
       .where(and(...this.whereFor(projectId, filter)));
     return row?.n ?? 0;
+  }
+
+  async results(projectId: string, caseId: string) {
+    await this.get(projectId, caseId);
+    const rows = await this.db
+      .select({ r: replayResults, job: replayJobs })
+      .from(replayResults)
+      .innerJoin(replayJobs, eq(replayJobs.id, replayResults.jobId))
+      .where(eq(replayResults.caseId, caseId))
+      .orderBy(desc(replayResults.createdAt));
+    return rows.map(({ r, job }) => ({
+      id: r.id,
+      jobId: r.jobId,
+      caseId: r.caseId,
+      output: r.output,
+      score: r.score,
+      passed: r.passed,
+      verdict: r.verdict,
+      reason: r.reason,
+      latencyMs: r.latencyMs,
+      costUsd: r.costUsd,
+      diff: r.diff,
+      error: r.error,
+      createdAt: r.createdAt.toISOString(),
+      targetModel: job.targetModel,
+      targetPromptVersion: job.targetPromptVersion,
+      mode: job.mode,
+    }));
   }
 
   // ---- case sets ----

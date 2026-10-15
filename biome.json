@@ -8,7 +8,8 @@
       "!**/node_modules",
       "!**/drizzle/meta",
       "!**/.turbo",
-      "!**/.venv"
+      "!**/.venv",
+      "!**/*.css"
     ]
   },
   "formatter": {
@@ -52,6 +53,17 @@
           },
           "complexity": {
             "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off",
+            "useSemanticElements": "off"
           }
         }
       }

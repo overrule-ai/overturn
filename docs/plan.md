@@ -62,11 +62,12 @@ Day 1 is 2026-10-15.
 
 ## M6 Web UI and self-host (days 12–13)
 
-- [ ] Next.js 15 app router, Tailwind, shadcn/ui, TanStack Query, public REST API only
-- [ ] Pages: Runs, Run detail (timeline + Correct), Cases, Replays (new + progress + report), Settings
-- [ ] Magic-link login through Resend, sessions, members
-- [ ] `docker-compose.yml` (api, web, postgres), Railway template, hosted deploy
-- [ ] Push, status report
+- [x] Next.js 15 app router, Tailwind v4, shadcn-style primitives, TanStack Query; talks to the API only through the public REST API (session cookie or API key)
+- [x] Pages: Runs (corrected rate 7d, last replay pass rate, filters), Run detail (timeline with expandable I/O, Correct on every llm_call step and on the run: approve / edit / reject / escalate + note), Cases (list, detail with frozen input, expected, tool recordings, result history; archive, retag, scorer), Replays (new with estimate, progress, report with regressions / still wrong / fixed side by side with the human correction), Settings (API keys shown once, project settings, members)
+- [x] Magic-link login through Resend (dev mode returns the link), sessions, members; `x-overturn-project` project switcher
+- [x] Playwright acceptance test: a new user signs in, sees runs, corrects a step, launches a replay, reads the report, mints a key
+- [x] `docker-compose.yml` (api, web, postgres), Dockerfiles, Railway config + README, optional Railway deploy workflow
+- [x] Push, status report
 
 ## M7 Ship (day 14)
 

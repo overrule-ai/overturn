@@ -86,7 +86,14 @@ A trace becomes a run; `chat`/`execute_tool` spans become steps. See `examples/o
 
 ## Self-hosting
 
-One API (NestJS + Postgres 16 with pgvector), one web app. `docker-compose.yml` and a Railway template ship with milestone 6. Until then: `pnpm db:migrate` and `pnpm --filter @overturn/api start`.
+One API (NestJS + Postgres 16 with pgvector), one web app, no Redis.
+
+```bash
+cp .env.example .env     # add model keys; RESEND_API_KEY optional (links are printed in the API log without it)
+docker compose up        # web on :3000, API on :4000
+```
+
+Sign in at http://localhost:3000, create an API key in Settings, point the SDK at `http://localhost:4000`. Railway: see [railway/README.md](railway/README.md).
 
 ## Docs
 

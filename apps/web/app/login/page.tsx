@@ -1,0 +1,77 @@
+"use client";
+
+import { useMutation } from "@tanstack/react-query";
+import { Rewind } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input, Label } from "@/components/ui/input";
+import { client } from "@/lib/api";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const send = useMutation({ mutationFn: () => client.magicLink(email) });
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Rewind className="h-5 w-5" /> Sign in to Overturn
+          </CardTitle>
+          <CardDescription>We email you a link. No password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {send.data ? (
+            <div className="space-y-3 text-sm">
+              <p>
+                {send.data.sent ? (
+                  <>
+                    Check <strong>{email}</strong> for a sign-in link. It is valid for 15 minutes.
+                  </>
+                ) : (
+                  <>
+                    Email sending is not configured on this server (no <code>RESEND_API_KEY</code>), so here
+                    is your link:
+                  </>
+                )}
+              </p>
+              {send.data.devUrl && (
+                <a
+                  className="block break-all rounded-md bg-muted p-2 text-xs underline"
+                  href={send.data.devUrl}
+                >
+                  {send.data.devUrl}
+                </a>
+              )}
+            </div>
+          ) : (
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                send.mutate();
+              }}
+            >
+              <div className="space-y-1">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  autoFocus
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              {send.error && <p className="text-sm text-destructive">{send.error.message}</p>}
+              <Button type="submit" className="w-full" disabled={send.isPending}>
+                {send.isPending ? "Sending…" : "Send sign-in link"}
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
