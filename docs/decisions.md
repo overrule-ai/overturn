@@ -81,3 +81,11 @@ One line of reasoning each. Newest at the bottom.
 - **The M6 acceptance test is a real browser (Playwright/Chromium) against the production Next build and the API harness.** The brief's "done when" is a user journey, so the test is one.
 - **Docker images build from the monorepo root with pnpm filters; the API image runs migrations at boot; Railway uses the same Dockerfiles.** One build path for self-host and hosted.
 - **Hosted deploy is a workflow gated on `vars.RAILWAY_DEPLOY == 'true'` + `RAILWAY_TOKEN`; nothing deploys until the founder sets them.** The build sandbox cannot reach Railway, and tokens never enter it.
+
+## 2026-10-21 (M7)
+
+- **The README quickstart is a CI job: `scripts/quickstart-check.sh` clones the repo fresh, runs every README command against a throwaway database and asserts the report has a regression and a fix.** "Works from the README alone" is a test, not a hope.
+- **The README GIF is recorded by `apps/web/scripts/record-loop.mjs` in a real browser against the seeded example and assembled with Pillow.** Reproducible after UI changes; no hand-made screenshots to go stale.
+- **Publishing runs from a `v*` tag in GitHub Actions with `NPM_TOKEN` / `PYPI_TOKEN` secrets; the tag check refuses a tag that does not match `package.json`.** Tokens never enter the build workspace, and a release is one `git tag`.
+- **Hosted domain: `overturn.run` (`api.overturn.run`, `app.overturn.run`) is the default base URL in both SDKs, the CLI and the Action.** Cheapest developer-coded TLD on offer and "run" is the product's noun; one constant to change if the founder picks another.
+- **The example's `register-pr-prompt` script and the repo's replay gate stay in; the test PR that proves the gate is closed, not merged.** The gate must have failed once for real before v0.1 ships.

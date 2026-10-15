@@ -2,102 +2,54 @@
 
 **Every time a human corrects your agent, it becomes a test.**
 
-Overturn records your agent's runs, turns human corrections into regression cases automatically, and replays them against any model with tools mocked, so nothing fires twice.
+Overturn records your agent's runs, turns every human correction into a regression case, and replays those cases against any model or prompt with tools answered from the recording, so nothing fires twice. Open source, Apache-2.0, self-hosted on one Postgres.
 
-> Status: v0.1 in progress. Record, correct, auto-case and step replay work end to end; trajectory replay, the GitHub Action and the web UI land next. See [docs/plan.md](docs/plan.md).
+![Record a run, correct a step, get a case, replay it against another model, read the report](docs/assets/loop.gif)
 
 ## 60-second quickstart
+
+Needs Node 22, pnpm 10 and Postgres 16 with pgvector (`docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres pgvector/pgvector:pg16`).
 
 ```bash
 git clone https://github.com/overrule-ai/overturn && cd overturn
 pnpm install && pnpm build
-cp .env.example .env                              # set DATABASE_URL to a Postgres 16 with pgvector
+cp .env.example .env                                  # DATABASE_URL -> your Postgres
 pnpm db:migrate
-pnpm bootstrap --email you@example.com            # prints OVERTURN_API_KEY=ov_live_...
-pnpm --filter @overturn/api start &               # API on :4000
-OVERTURN_API_KEY=ov_live_... OVERTURN_BASE_URL=http://localhost:4000 \
-  pnpm --filter @overturn/example-ticket-triage seed   # records 30 runs
+pnpm bootstrap --email you@example.com                # prints OVERTURN_API_KEY=ov_live_... ; paste it into .env
+pnpm --filter @overturn/api start &                   # API on :4000 (magic links print here)
+OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn/web start &   # UI on :3000
+pnpm --filter @overturn/example-ticket-triage seed    # the example agent triages 30 tickets -> 30 runs
 pnpm --filter @overturn/example-ticket-triage corrections   # 20 human corrections -> 20 cases
-npx overturn cases list
 npx overturn replay --model fake/fake-triage-weak --prompt ticket-triage@v2 --format md
 ```
 
-The last command replays the 20 cases against a deliberately weaker model with a new prompt and prints regressions, still-wrong and fixed cases side by side with the human correction. With `OPENAI_API_KEY` set, try `--model openai/gpt-4.1-mini` or `--model anthropic/claude-haiku-4-5` (server needs the key). Add `--mode trajectory` to re-run whole trajectories through `overturn.config.ts` with every tool answered from the recording and side-effect tools refused.
-
-Without `OPENAI_API_KEY` the example runs against a deterministic fake model so everything above works offline.
+Open http://localhost:3000 to see the runs, click **Correct** on any model step, and watch the case appear. The last command replays all cases against a deliberately weaker model with a new prompt and prints regressions, still-wrong and fixed cases side by side with the human's correction. Without `OPENAI_API_KEY` the example runs on a deterministic fake model, so the whole loop works offline; with keys on the server try `--model openai/gpt-4.1-mini` or `--model anthropic/claude-haiku-4-5`, and `--mode trajectory` to re-run whole trajectories through your agent.
 
 ## How it works
 
-1. **Record.** `ov.wrapOpenAI(client)` turns every model call into an `llm_call` step; `ov.tool(name, fn, { sideEffect })` turns every tool invocation into a `tool_call` step with a fingerprint. Steps are batched and sent asynchronously; failures retry and never break your agent. OpenTelemetry GenAI traces are accepted too.
-2. **Correct.** A human approves, edits, rejects or escalates from your app (`ov.correct()`), the Overturn UI, or `POST /v1/corrections`.
+1. **Record.** `ov.wrapOpenAI(client)` turns every model call into a step; `ov.tool(name, fn, { sideEffect })` turns every tool call into a fingerprinted step. Batched, retried, never throws into your agent. OpenTelemetry GenAI traces work too.
+2. **Correct.** A human approves, edits, rejects or escalates: in the UI, from your app with `ov.correct()`, or via `POST /v1/corrections`.
 3. **Auto-case.** Each correction freezes the step's exact input, the run's tool recordings and the expected answer as a regression case.
-4. **Replay.** `overturn replay --model anthropic/claude-sonnet-4-5 --since 30d` re-runs the cases with tools answered from the recording. Side-effect tools never execute.
-5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction side by side.
-6. **CI gate.** The [GitHub Action](packages/replay-action) comments the report on PRs that touch prompts or agent code and fails on regressions.
+4. **Replay.** `overturn replay --model anthropic/claude-sonnet-4-5 --since 30d` re-runs the cases with every tool answered from the recording. Side-effect tools never execute.
+5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction.
+6. **CI gate.** The [GitHub Action](packages/replay-action) comments the report on pull requests that touch prompts or agent code and fails on regressions.
 
-## Record a run
-
-```ts
-import { Overturn } from "@overturn/sdk";
-import OpenAI from "openai";
-
-const ov = new Overturn({ apiKey: process.env.OVERTURN_API_KEY! });
-const openai = ov.wrapOpenAI(new OpenAI());
-
-const lookupCustomer = ov.tool("lookup_customer", lookupImpl, { sideEffect: false, matchOn: ["email"] });
-const setPriority = ov.tool("set_priority", setPriorityImpl, { sideEffect: true });
-
-const run = ov.startRun({ agent: "ticket-triage", version: "1.4.0", input: ticket, tags: ["prod"] });
-await run.context(async () => {
-  const customer = await lookupCustomer({ email: ticket.email });
-  const decision = await openai.chat.completions.create({ model, messages, tools });
-  await setPriority({ ticketId: ticket.id, priority: decision.priority });
-  run.end({ output: decision });
-});
-await ov.flush();
-```
-
-## Python
-
-```python
-from overturn import Overturn, tool
-
-ov = Overturn(api_key=os.environ["OVERTURN_API_KEY"])
-client = ov.wrap_openai(OpenAI())
-
-@tool(side_effect=False, match_on=["email"])
-def lookup_customer(email: str) -> dict: ...
-
-with ov.run(agent="ticket-triage", version="1.4.0", input=ticket) as run:
-    ...
-    run.end(output=decision)
-```
-
-## OpenTelemetry
-
-Already tracing with the GenAI semantic conventions? Point your exporter at Overturn and keep your stack:
-
-```
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://<api>/v1/traces
-OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ov_live_..."
-```
-
-A trace becomes a run; `chat`/`execute_tool` spans become steps. See `examples/otel-sample`.
+Record in TypeScript (`@overturn/sdk`), Python (`overturn`) or plain OpenTelemetry; the [quickstart](docs/quickstart.md) has the snippets.
 
 ## Self-hosting
 
 One API (NestJS + Postgres 16 with pgvector), one web app, no Redis.
 
 ```bash
-cp .env.example .env     # add model keys; RESEND_API_KEY optional (links are printed in the API log without it)
+cp .env.example .env     # model keys for real replays; RESEND_API_KEY optional (links print in the API log without it)
 docker compose up        # web on :3000, API on :4000
 ```
 
-Sign in at http://localhost:3000, create an API key in Settings, point the SDK at `http://localhost:4000`. Railway: see [railway/README.md](railway/README.md).
+Sign in, create an API key in Settings, point the SDK at `http://localhost:4000`. Railway and the full variable list: [docs/self-hosting.md](docs/self-hosting.md).
 
 ## Docs
 
-- [Plan](docs/plan.md) · [Decisions](docs/decisions.md) · [Fingerprint contract](docs/fingerprint.md)
+[SDK reference](docs/sdk.md) · [Quickstart](docs/quickstart.md) · [Fingerprint contract](docs/fingerprint.md) · [Self-hosting](docs/self-hosting.md) · [Decisions](docs/decisions.md)
 
 ## License
 

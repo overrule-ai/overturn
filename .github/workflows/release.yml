@@ -1,0 +1,58 @@
+name: Release
+
+# Tag v<version> on main to publish @overturn/shared, @overturn/sdk and overturn to npm and
+# overturn to PyPI. Needs NPM_TOKEN and PYPI_TOKEN as repository secrets.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @overturn/shared --filter @overturn/sdk --filter overturn build
+      - name: Check tag matches package version
+        run: |
+          v=$(node -p "require('./packages/sdk/package.json').version")
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != package version $v"; exit 1; }
+      - run: pnpm publish -r --filter @overturn/shared --filter @overturn/sdk --filter overturn --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build
+        working-directory: packages/sdk-python
+      - run: uv publish --token "$PYPI_TOKEN"
+        working-directory: packages/sdk-python
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+  github-release:
+    name: GitHub release
+    runs-on: ubuntu-latest
+    needs: [npm, pypi]
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}

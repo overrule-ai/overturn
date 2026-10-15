@@ -48,7 +48,7 @@ export function registerInit(program: Command): void {
       const baseUrl =
         opts.baseUrl ??
         process.env.OVERTURN_BASE_URL ??
-        (await ask("Overturn API URL", "https://api.overturn.dev"));
+        (await ask("Overturn API URL", "https://api.overturn.run"));
       if (!apiKey)
         fail(
           "An API key is required (create one in Settings → API keys, or run `pnpm bootstrap` on a self-hosted install).",

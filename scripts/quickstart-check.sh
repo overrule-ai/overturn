@@ -7,13 +7,15 @@ set -euo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d)
 BASE_DB=${DATABASE_URL:-postgres://postgres:postgres@localhost:5432/postgres}
+unset DATABASE_URL   # everything below must read the throwaway database from .env
 DB_NAME="overturn_quickstart_$RANDOM"
 DB_URL="${BASE_DB%/*}/$DB_NAME"
 API_PORT=${API_PORT:-4321}
+WEB_PORT=${WEB_PORT:-4323}
 FAKE_PORT=${FAKE_PORT:-4322}
+kill_port() { fuser -k -n tcp "$1" >/dev/null 2>&1 || true; }
 cleanup() {
-  pkill -f "$WORK/overturn/apps/api/dist/main.js" 2>/dev/null || true
-  pkill -f "$WORK/overturn/examples/ticket-triage" 2>/dev/null || true
+  kill_port "$API_PORT"; kill_port "$FAKE_PORT"; kill_port "$WEB_PORT"
   psql "$BASE_DB" -qc "drop database if exists $DB_NAME" >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
@@ -44,6 +46,12 @@ step "start the API and the fake model"
 (FAKE_OPENAI_PORT=$FAKE_PORT pnpm --filter @overturn/example-ticket-triage fake-openai >"$WORK/fake.log" 2>&1 &)
 for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$API_PORT/health" >/dev/null && break; sleep 1; done
 curl -sf "http://127.0.0.1:$API_PORT/health" >/dev/null || { cat "$WORK/api.log"; exit 1; }
+
+step "start the web UI"
+(OVERTURN_API_URL=http://127.0.0.1:$API_PORT pnpm --filter @overturn/web exec next start -p "$WEB_PORT" >"$WORK/web.log" 2>&1 &)
+for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$WEB_PORT/login" >/dev/null && break; sleep 1; done
+curl -sf "http://127.0.0.1:$WEB_PORT/login" | grep -q "Overturn" || { cat "$WORK/web.log"; exit 1; }
+curl -sf "http://127.0.0.1:$WEB_PORT/config" | grep -q "127.0.0.1:$API_PORT" || { echo "web /config does not point at the API"; exit 1; }
 
 step "seed 30 runs, apply 20 corrections"
 pnpm --filter @overturn/example-ticket-triage seed

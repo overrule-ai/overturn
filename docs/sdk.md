@@ -7,7 +7,7 @@ TypeScript (`@overturn/sdk`) and Python (`overturn`) mirror each other name for 
 ```ts
 const ov = new Overturn({
   apiKey?: string,        // default OVERTURN_API_KEY
-  baseUrl?: string,       // default OVERTURN_BASE_URL or https://api.overturn.dev
+  baseUrl?: string,       // default OVERTURN_BASE_URL or https://api.overturn.run
   redact?: (step) => step | null,   // edit or drop a step before it is sent
   enabled?: boolean,      // false: record nothing (unit tests)
   debug?: boolean,        // or OVERTURN_DEBUG=1
