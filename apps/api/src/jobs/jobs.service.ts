@@ -41,6 +41,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     if (this.started) return;
     await this.boss.start();
     this.started = true;
+    // pg-boss 10 requires queues to exist before work()/schedule(); createQueue is idempotent
+    for (const name of [IMPLICIT_APPROVE_JOB, CACHE_PURGE_JOB, REPLAY_JOB]) await this.boss.createQueue(name);
     await this.boss.work(IMPLICIT_APPROVE_JOB, async () => {
       await this.runImplicitApprovals();
     });
