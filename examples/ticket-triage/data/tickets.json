@@ -1,0 +1,182 @@
+[
+  {
+    "id": "T-1001",
+    "customerEmail": "rayfan@acme.com",
+    "subject": "Entire workspace is down",
+    "body": "Since 09:12 UTC none of our 850 users can load the app. We get a 502 on every page. This is a complete outage for us."
+  },
+  {
+    "id": "T-1002",
+    "customerEmail": "ops@northwind.io",
+    "subject": "SSO login loop after SAML update",
+    "body": "After we rotated our IdP certificate, every login bounces back to the SSO page. Nobody in the company can get in."
+  },
+  {
+    "id": "T-1003",
+    "customerEmail": "cto@globex.com",
+    "subject": "API returning 429 constantly",
+    "body": "Our integration started getting rate limited an hour ago even though we are well under our contracted limits. Production jobs are failing."
+  },
+  {
+    "id": "T-1004",
+    "customerEmail": "it@initech.net",
+    "subject": "Duplicate charge on this month's invoice",
+    "body": "We were charged twice for October. Invoice INV-5531 appears two times on the card statement."
+  },
+  {
+    "id": "T-1005",
+    "customerEmail": "dana@vandelay.co",
+    "subject": "Cannot export dashboard to PDF",
+    "body": "PDF export spins forever and then shows an error. CSV works fine. The dashboard has about 25 widgets."
+  },
+  {
+    "id": "T-1006",
+    "customerEmail": "sam@pied-piper.dev",
+    "subject": "Webhooks delivered twice",
+    "body": "We are seeing every webhook event delivered two times since yesterday. Our handler is idempotent but it doubles our load."
+  },
+  {
+    "id": "T-1007",
+    "customerEmail": "lin@hooli.xyz",
+    "subject": "Feature request: dark mode for reports",
+    "body": "Would love to have a dark theme for the reports page. Not urgent, just nice to have."
+  },
+  {
+    "id": "T-1008",
+    "customerEmail": "jo@stark.industries",
+    "subject": "Mobile app not syncing",
+    "body": "iOS app shows data from three days ago. Reinstalled twice, same thing."
+  },
+  {
+    "id": "T-1009",
+    "customerEmail": "maya@freelance.me",
+    "subject": "Refund request",
+    "body": "I subscribed by accident yesterday and would like a refund please."
+  },
+  {
+    "id": "T-1010",
+    "customerEmail": "tom@gmail.com",
+    "subject": "How do I change my email address?",
+    "body": "I want to switch my account to a different email. Where is the setting?"
+  },
+  {
+    "id": "T-1011",
+    "customerEmail": "student@uni.edu",
+    "subject": "Please delete my account and data",
+    "body": "I am no longer using the product. Please delete all my data under GDPR."
+  },
+  {
+    "id": "T-1012",
+    "customerEmail": "dev@sideproject.app",
+    "subject": "Export CSV has wrong encoding",
+    "body": "Non-ASCII characters come out garbled in the CSV export. Looks like it is not UTF-8."
+  },
+  {
+    "id": "T-1013",
+    "customerEmail": "rayfan@acme.com",
+    "subject": "Slack integration stopped posting",
+    "body": "Our alerts channel has not received anything since the weekend. Reconnecting the integration did not help."
+  },
+  {
+    "id": "T-1014",
+    "customerEmail": "ops@northwind.io",
+    "subject": "Data residency question for EU users",
+    "body": "Our DPA requires EU data residency. Can you confirm where our data is stored and processed?"
+  },
+  {
+    "id": "T-1015",
+    "customerEmail": "cto@globex.com",
+    "subject": "Intermittent 502 errors in production",
+    "body": "Roughly 5% of requests fail with 502 since this morning. Retries succeed. Our customers are noticing."
+  },
+  {
+    "id": "T-1016",
+    "customerEmail": "it@initech.net",
+    "subject": "Need an invoice with our PO number",
+    "body": "Finance will not pay the invoice unless it carries PO-88213. Can you reissue it?"
+  },
+  {
+    "id": "T-1017",
+    "customerEmail": "dana@vandelay.co",
+    "subject": "Can't add a new user, seat limit reached",
+    "body": "We are at 40/40 seats. How do we add more?"
+  },
+  {
+    "id": "T-1018",
+    "customerEmail": "sam@pied-piper.dev",
+    "subject": "Jira integration creating duplicate issues",
+    "body": "Every ticket we sync creates two Jira issues. Started after the latest integration update."
+  },
+  {
+    "id": "T-1019",
+    "customerEmail": "lin@hooli.xyz",
+    "subject": "Rate limit docs are wrong",
+    "body": "The docs say 1000 requests/minute for Pro but we get throttled at 600."
+  },
+  {
+    "id": "T-1020",
+    "customerEmail": "jo@stark.industries",
+    "subject": "Android app crashes on launch",
+    "body": "Since the last update the Android app crashes immediately on launch. Pixel 8, Android 15."
+  },
+  {
+    "id": "T-1021",
+    "customerEmail": "maya@freelance.me",
+    "subject": "Idea: keyboard shortcut for new task",
+    "body": "It would be great to press N to create a task."
+  },
+  {
+    "id": "T-1022",
+    "customerEmail": "tom@gmail.com",
+    "subject": "Locked out of my account",
+    "body": "I forgot my password and the reset email never arrives. Checked spam."
+  },
+  {
+    "id": "T-1023",
+    "customerEmail": "student@uni.edu",
+    "subject": "Is there a student discount?",
+    "body": "I am a student and wondering if there is an education plan."
+  },
+  {
+    "id": "T-1024",
+    "customerEmail": "dev@sideproject.app",
+    "subject": "Webhook signature verification fails",
+    "body": "The X-Signature header does not match the HMAC I compute from the body. Which secret should I use?"
+  },
+  {
+    "id": "T-1025",
+    "customerEmail": "rayfan@acme.com",
+    "subject": "GDPR deletion request for former employee",
+    "body": "A former employee has requested deletion of their personal data. Our DPA requires a 7-day turnaround."
+  },
+  {
+    "id": "T-1026",
+    "customerEmail": "ops@northwind.io",
+    "subject": "Exports time out for large tables",
+    "body": "Any export over 50k rows times out instead of being emailed."
+  },
+  {
+    "id": "T-1027",
+    "customerEmail": "cto@globex.com",
+    "subject": "Security question: SOC 2 report",
+    "body": "Our auditors need your latest SOC 2 Type II report under NDA."
+  },
+  {
+    "id": "T-1028",
+    "customerEmail": "it@initech.net",
+    "subject": "Mobile sync shows stale data",
+    "body": "Field technicians see yesterday's schedule on their phones. Desktop is fine."
+  },
+  {
+    "id": "T-1029",
+    "customerEmail": "dana@vandelay.co",
+    "subject": "Charged after cancelling",
+    "body": "We cancelled on the 2nd but were charged on the 5th. Please refund."
+  },
+  {
+    "id": "T-1030",
+    "customerEmail": "sam@pied-piper.dev",
+    "subject": "Status page did not update during yesterday's incident",
+    "body": "Your status page stayed green while the API was down for 40 minutes. We need better comms."
+  }
+]

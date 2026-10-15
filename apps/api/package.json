@@ -1,0 +1,42 @@
+{
+  "name": "@overturn/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Overturn API: ingest, corrections, cases, replay",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "bootstrap": "tsx src/scripts/bootstrap.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-fastify": "^11.1.0",
+    "@overturn/shared": "workspace:*",
+    "drizzle-orm": "^0.44.7",
+    "fastify": "^5.11.3",
+    "pg-boss": "^10.4.2",
+    "postgres": "^3.4.9",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "uuid": "^13.0.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.0",
+    "@swc/core": "^1.13.0",
+    "@types/node": "^22.20.5",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "unplugin-swc": "^1.5.0",
+    "vitest": "^3.2.7"
+  }
+}

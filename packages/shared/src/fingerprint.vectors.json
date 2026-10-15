@@ -1,0 +1,110 @@
+[
+  {
+    "name": "simple",
+    "tool": "lookup_customer",
+    "args": {
+      "email": "  rayfan@acme.com ",
+      "plan": "pro"
+    },
+    "canonical": "{\"email\":\"rayfan@acme.com\",\"plan\":\"pro\"}",
+    "fingerprint": "20985022f14eb275690b77edb0c8e70940ebe859c7f901a5f3d53dfb40c9323b"
+  },
+  {
+    "name": "nested-and-nulls",
+    "tool": "search_kb",
+    "args": {
+      "query": "outage",
+      "filters": {
+        "z": null,
+        "a": [
+          1,
+          null,
+          {
+            "y": 2,
+            "x": 1
+          }
+        ]
+      }
+    },
+    "canonical": "{\"filters\":{\"a\":[1,{\"x\":1,\"y\":2}]},\"query\":\"outage\"}",
+    "fingerprint": "68bb18caf88621ae67363b9d74194e2adedacf24bebe2d479287eca4f502012b"
+  },
+  {
+    "name": "numbers",
+    "tool": "n",
+    "args": {
+      "a": 1.0,
+      "b": -0.0,
+      "c": 1e21,
+      "d": 0.30000000000000004,
+      "e": 1e-7,
+      "f": 1e-5,
+      "g": 1.2345678901234568e20,
+      "h": 1.5e300,
+      "i": -2.5
+    },
+    "canonical": "{\"a\":1,\"b\":0,\"c\":1e+21,\"d\":0.30000000000000004,\"e\":1e-7,\"f\":0.00001,\"g\":123456789012345683968,\"h\":1.5e+300,\"i\":-2.5}",
+    "fingerprint": "5b3898101f4a1bdb6734d3ba739b59d7bf56823215cec1d3fc7e06bde88e0122"
+  },
+  {
+    "name": "matchOn",
+    "tool": "set_priority",
+    "args": {
+      "ticketId": "T-1",
+      "priority": "P0",
+      "requestId": "abc"
+    },
+    "options": {
+      "matchOn": ["ticketId"]
+    },
+    "canonical": "{\"priority\":\"P0\",\"requestId\":\"abc\",\"ticketId\":\"T-1\"}",
+    "fingerprint": "a5b6be9de516af0c59a063078b93b7b01e4b20458b9be9b61ef00d35b8c0c189"
+  },
+  {
+    "name": "ignoreArgs",
+    "tool": "assign_team",
+    "args": {
+      "ticketId": "T-1",
+      "team": "billing",
+      "ts": 1700000000
+    },
+    "options": {
+      "ignoreArgs": ["ts"]
+    },
+    "canonical": "{\"team\":\"billing\",\"ticketId\":\"T-1\",\"ts\":1700000000}",
+    "fingerprint": "023ae749c1d3ed14d88248726d1f04c4e78e7e52fa123c257259f30a2a235819"
+  },
+  {
+    "name": "unicode",
+    "tool": "t",
+    "args": {
+      "s": "héllo ✓ é",
+      "emoji": "🚀"
+    },
+    "canonical": "{\"emoji\":\"🚀\",\"s\":\"héllo ✓ é\"}",
+    "fingerprint": "404c4ca7956313d8e2236af6c44e959df9017e273b4efc3fdfee76d763868789"
+  },
+  {
+    "name": "empty",
+    "tool": "t",
+    "args": {},
+    "canonical": "{}",
+    "fingerprint": "729c5dadeb3445e35f7d7fbda861afc426ad33731ec3ac8555616b9dc624d2fb"
+  },
+  {
+    "name": "array-order",
+    "tool": "t",
+    "args": {
+      "ids": [3, 1, 2]
+    },
+    "canonical": "{\"ids\":[3,1,2]}",
+    "fingerprint": "4defc5a7a43860bab025e34d8af5d26801200a051c016fd3a08811a8eb52af12"
+  },
+  {
+    "name": "string-arg",
+    "tool": "t",
+    "args": "  plain  ",
+    "canonical": "\"plain\"",
+    "fingerprint": "44c5a30c555d267cce32334edf02b08dc24772e026bfb2ac0c936758ee59052b"
+  }
+]

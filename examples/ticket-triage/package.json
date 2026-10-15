@@ -1,0 +1,27 @@
+{
+  "name": "@overturn/example-ticket-triage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reference support-triage agent recorded with Overturn",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "seed": "tsx src/seed.ts",
+    "fake-openai": "tsx src/fake-openai.ts"
+  },
+  "dependencies": {
+    "@overturn/sdk": "workspace:*",
+    "@overturn/shared": "workspace:*",
+    "openai": "^5.23.2",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@overturn/api": "workspace:*",
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
