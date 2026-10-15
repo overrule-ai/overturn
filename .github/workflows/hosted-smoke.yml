@@ -20,7 +20,13 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: '[ -n "$OVERTURN_API_KEY" ] || { echo "OVERTURN_API_KEY secret is not set"; exit 1; }'
+      - name: Check the key
+        run: |
+          [ -n "$OVERTURN_API_KEY" ] || { echo "OVERTURN_API_KEY secret is not set"; exit 1; }
+          # tolerate a paste of the whole "OVERTURN_API_KEY=ov_live_..." line
+          key="${OVERTURN_API_KEY#OVERTURN_API_KEY=}"; key="${key//[[:space:]]/}"
+          echo "::add-mask::$key"; echo "OVERTURN_API_KEY=$key" >> "$GITHUB_ENV"
+          case "$key" in ov_live_*) ;; *) echo "secret does not look like an Overturn key (expected ov_live_...)"; exit 1;; esac
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @overturn/shared --filter @overturn/sdk --filter overturn build
       - name: Health
