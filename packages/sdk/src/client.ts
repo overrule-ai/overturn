@@ -1,4 +1,4 @@
-import type { CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn/shared";
+import type { CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn-ai/shared";
 import { aiMiddleware } from "./ai-sdk.js";
 import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { OverturnApi } from "./api.js";

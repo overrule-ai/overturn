@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReportRow } from "@overturn/shared";
+import type { ReportRow } from "@overturn-ai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";

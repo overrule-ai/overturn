@@ -1,6 +1,6 @@
 # SDK reference
 
-TypeScript (`@overturn/sdk`) and Python (`overturn`) mirror each other name for name. Full API: `http://<api>/openapi.json`.
+TypeScript (`@overturn-ai/sdk`) and Python (`overturn`) mirror each other name for name. Full API: `http://<api>/openapi.json`.
 
 ## Client
 

@@ -1,4 +1,4 @@
-import { Overturn } from "@overturn/sdk";
+import { Overturn } from "@overturn-ai/sdk";
 import OpenAI from "openai";
 import { defineConfig } from "overturn";
 import { makeAgent } from "./src/agent.js";

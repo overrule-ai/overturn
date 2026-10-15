@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import type { MeResponse } from "@overturn/shared";
+import type { MeResponse } from "@overturn-ai/shared";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
 import type { AuthContext } from "../auth/api-keys.service";
 

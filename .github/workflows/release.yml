@@ -1,6 +1,6 @@
 name: Release
 
-# Actions → Release → "Run workflow" on main. Publishes @overturn/shared, @overturn/sdk and
+# Actions → Release → "Run workflow" on main. Publishes @overturn-ai/shared, @overturn-ai/sdk and
 # overturn to npm and overturn to PyPI at the version in package.json / pyproject.toml, then
 # tags v<version> and creates the GitHub release. Needs NPM_TOKEN and PYPI_TOKEN secrets.
 on:
@@ -44,8 +44,8 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @overturn/shared --filter @overturn/sdk --filter overturn build
-      - run: pnpm publish -r --filter @overturn/shared --filter @overturn/sdk --filter overturn --access public --no-git-checks
+      - run: pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn build
+      - run: pnpm publish -r --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

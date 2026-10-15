@@ -1,4 +1,4 @@
-import type { IngestPayload } from "@overturn/shared";
+import type { IngestPayload } from "@overturn-ai/shared";
 import { describe, expect, it } from "vitest";
 import { buildPayload, Transport } from "./transport.js";
 

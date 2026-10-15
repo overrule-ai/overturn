@@ -16,10 +16,10 @@ pnpm install && pnpm build
 cp .env.example .env                                  # DATABASE_URL -> your Postgres
 pnpm db:migrate
 pnpm bootstrap --email you@example.com                # prints OVERTURN_API_KEY=ov_live_... ; paste it into .env
-pnpm --filter @overturn/api start &                   # API on :4000 (magic links print here)
-OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn/web start &   # UI on :3000
-pnpm --filter @overturn/example-ticket-triage seed    # the example agent triages 30 tickets -> 30 runs
-pnpm --filter @overturn/example-ticket-triage corrections   # 20 human corrections -> 20 cases
+pnpm --filter @overturn-ai/api start &                   # API on :4000 (magic links print here)
+OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn-ai/web start &   # UI on :3000
+pnpm --filter @overturn-ai/example-ticket-triage seed    # the example agent triages 30 tickets -> 30 runs
+pnpm --filter @overturn-ai/example-ticket-triage corrections   # 20 human corrections -> 20 cases
 npx overturn replay --model fake/fake-triage-weak --prompt ticket-triage@v2 --format md
 ```
 
@@ -34,7 +34,7 @@ Open http://localhost:3000 to see the runs, click **Correct** on any model step,
 5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction.
 6. **CI gate.** The [GitHub Action](packages/replay-action) comments the report on pull requests that touch prompts or agent code and fails on regressions.
 
-Record in TypeScript (`@overturn/sdk`), Python (`overturn`) or plain OpenTelemetry; the [quickstart](docs/quickstart.md) has the snippets.
+Record in TypeScript (`@overturn-ai/sdk`), Python (`overturn`) or plain OpenTelemetry; the [quickstart](docs/quickstart.md) has the snippets.
 
 ## Self-hosting
 

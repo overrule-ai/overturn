@@ -9,7 +9,7 @@ export type {
   ReplayResult,
   Run as RunRecord,
   RunWithSteps,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 export {
   canonicalJSON,
   estimateCostUsd,
@@ -20,7 +20,7 @@ export {
   type StepUpsert,
   toolFingerprint,
   type Usage,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 export { aiMiddleware } from "./ai-sdk.js";
 export { type AnthropicLike, assembleMessageStream, splitMessageParams, wrapAnthropic } from "./anthropic.js";
 export { OverturnApi, OverturnApiError } from "./api.js";

@@ -4,7 +4,7 @@
  */
 
 import type { LanguageModelV2Middleware, LanguageModelV2StreamPart } from "@ai-sdk/provider";
-import { estimateCostUsd, type Usage } from "@overturn/shared";
+import { estimateCostUsd, type Usage } from "@overturn-ai/shared";
 import { currentRun } from "./context.js";
 import { getGlobalReplay } from "./replay.js";
 

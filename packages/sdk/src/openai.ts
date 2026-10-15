@@ -1,4 +1,4 @@
-import { estimateCostUsd, type Usage } from "@overturn/shared";
+import { estimateCostUsd, type Usage } from "@overturn-ai/shared";
 import { currentRun } from "./context.js";
 import { getGlobalReplay, type ReplayModelOutput } from "./replay.js";
 import type { Run } from "./run.js";

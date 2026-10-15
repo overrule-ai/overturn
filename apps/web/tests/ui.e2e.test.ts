@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const harness = await import("../../api/dist/test/harness.js");
 const fakeOpenAI = await import("../../../examples/ticket-triage/src/fake-openai.js");
 const seedMod = await import("../../../examples/ticket-triage/src/seed.js");
-const sdk = await import("@overturn/sdk");
+const sdk = await import("@overturn-ai/sdk");
 
 let ctx: Awaited<ReturnType<typeof harness.startTestApp>>;
 let fake: Awaited<ReturnType<typeof fakeOpenAI.startFakeOpenAI>>;

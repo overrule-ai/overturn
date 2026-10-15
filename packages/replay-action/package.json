@@ -1,5 +1,5 @@
 {
-  "name": "@overturn/replay-action",
+  "name": "@overturn-ai/replay-action",
   "version": "0.1.0",
   "private": true,
   "description": "GitHub Action: replay human-corrected cases on pull requests (composite, see action.yml)",

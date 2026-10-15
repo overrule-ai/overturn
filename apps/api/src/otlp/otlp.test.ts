@@ -1,4 +1,4 @@
-import type { RunWithSteps } from "@overturn/shared";
+import type { RunWithSteps } from "@overturn-ai/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { api, startTestApp, type TestContext } from "../test/harness";
 import {

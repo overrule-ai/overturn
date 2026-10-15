@@ -9,7 +9,7 @@ import type {
   CaseSummary,
   Page,
   ToolRecordingEntry,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import type { Db } from "../db/client";

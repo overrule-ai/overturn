@@ -1,4 +1,4 @@
-import type { Overturn } from "@overturn/sdk";
+import type { Overturn } from "@overturn-ai/sdk";
 import { type Customer, customers, type KbArticle, kb, type Priority, type Team } from "./data.js";
 
 /** In-memory "ticket system" so the side-effect tools do something observable. */

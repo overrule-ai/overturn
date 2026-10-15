@@ -1,5 +1,5 @@
 /**
- *   OVERTURN_API_KEY=ov_live_... OVERTURN_BASE_URL=http://localhost:4000 pnpm --filter @overturn/example-otel-sample start
+ *   OVERTURN_API_KEY=ov_live_... OVERTURN_BASE_URL=http://localhost:4000 pnpm --filter @overturn-ai/example-otel-sample start
  */
 import { makeOtelAgent } from "./agent.js";
 import { startTracing } from "./tracing.js";

@@ -42,20 +42,20 @@ sed -i "s#^OVERTURN_API_KEY=.*#OVERTURN_API_KEY=$KEY#" .env
 echo "FAKE_OPENAI_URL=http://127.0.0.1:$FAKE_PORT/v1" >> .env
 
 step "start the API and the fake model"
-(JOBS_DISABLED=1 LOG_LEVEL=warn pnpm --filter @overturn/api start >"$WORK/api.log" 2>&1 &)
-(FAKE_OPENAI_PORT=$FAKE_PORT pnpm --filter @overturn/example-ticket-triage fake-openai >"$WORK/fake.log" 2>&1 &)
+(JOBS_DISABLED=1 LOG_LEVEL=warn pnpm --filter @overturn-ai/api start >"$WORK/api.log" 2>&1 &)
+(FAKE_OPENAI_PORT=$FAKE_PORT pnpm --filter @overturn-ai/example-ticket-triage fake-openai >"$WORK/fake.log" 2>&1 &)
 for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$API_PORT/health" >/dev/null && break; sleep 1; done
 curl -sf "http://127.0.0.1:$API_PORT/health" >/dev/null || { cat "$WORK/api.log"; exit 1; }
 
 step "start the web UI"
-(OVERTURN_API_URL=http://127.0.0.1:$API_PORT pnpm --filter @overturn/web exec next start -p "$WEB_PORT" >"$WORK/web.log" 2>&1 &)
+(OVERTURN_API_URL=http://127.0.0.1:$API_PORT pnpm --filter @overturn-ai/web exec next start -p "$WEB_PORT" >"$WORK/web.log" 2>&1 &)
 for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$WEB_PORT/login" >/dev/null && break; sleep 1; done
 curl -sf "http://127.0.0.1:$WEB_PORT/login" | grep -q "Overturn" || { cat "$WORK/web.log"; exit 1; }
 curl -sf "http://127.0.0.1:$WEB_PORT/config" | grep -q "127.0.0.1:$API_PORT" || { echo "web /config does not point at the API"; exit 1; }
 
 step "seed 30 runs, apply 20 corrections"
-pnpm --filter @overturn/example-ticket-triage seed
-pnpm --filter @overturn/example-ticket-triage corrections
+pnpm --filter @overturn-ai/example-ticket-triage seed
+pnpm --filter @overturn-ai/example-ticket-triage corrections
 npx overturn runs list --limit 3
 npx overturn cases list --limit 3
 

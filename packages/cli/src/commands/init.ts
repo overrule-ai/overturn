@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
-import { OverturnApi } from "@overturn/sdk";
+import { OverturnApi } from "@overturn-ai/sdk";
 import type { Command } from "commander";
 import pc from "picocolors";
 import { fail, loadDotEnv } from "../context.js";

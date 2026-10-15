@@ -1,5 +1,5 @@
 {
-  "name": "@overturn/sdk-python",
+  "name": "@overturn-ai/sdk-python",
   "version": "0.1.0",
   "private": true,
   "description": "Turbo wrapper for the Python SDK (published to PyPI as `overturn`)",

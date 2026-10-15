@@ -5,7 +5,7 @@ import {
   type CorrectionResult,
   correctionCreateSchema,
   correctionListQuerySchema,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import type { z } from "zod";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
 import type { AuthContext } from "../auth/api-keys.service";

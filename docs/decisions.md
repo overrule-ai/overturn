@@ -14,13 +14,13 @@ One line of reasoning each. Newest at the bottom.
 - **Drizzle migrations are committed SQL and run by `pnpm db:migrate` at boot in docker-compose; the API never auto-migrates in production.** Explicit beats surprising.
 - **API keys: `ov_live_` + 32 random bytes base62; stored as sha256; `prefix` keeps the first 12 chars for display.** Standard shape, no reversible storage.
 - **The bootstrap script creates the first org/user/project/key from the terminal so M1–M5 work without the web app.** The UI is M6; nothing earlier should wait for it.
-- **Validation with zod schemas from `@overturn/shared` through one Nest pipe; OpenAPI assembled from the same schemas via `z.toJSONSchema`.** One source of truth for payload shapes across API, SDKs and docs.
+- **Validation with zod schemas from `@overturn-ai/shared` through one Nest pipe; OpenAPI assembled from the same schemas via `z.toJSONSchema`.** One source of truth for payload shapes across API, SDKs and docs.
 - **The example agent runs against a deterministic fake OpenAI-compatible server when `OPENAI_API_KEY` is unset.** Tests and keyless quickstarts stay reproducible; the README demo uses real models in CI.
 - **pnpm + Turborepo, Biome instead of ESLint+Prettier.** One tool, fast, no config sprawl.
 - **Versions pinned to the majors known to work together: NestJS 11, Next 15, TypeScript 5.9, Vercel AI SDK 5, zod 4, Vitest 3.** Newer majors exist (NestJS 12, Next 16, TS 7) but are not worth the migration risk in a 14-day build.
 - **(superseded by the rename below) Package-name fallbacks for the `overrule` collision.**
 - **Model keys never enter the build workspace; tests use the fake provider and real-model runs happen in GitHub Actions and Railway from secrets.** No secret store here, and the brief forbids keys in chat.
-- **Renamed Overrule → Overturn (founder: "rename").** `overrule` was taken on npm and PyPI; `overturn` is free on both, so `npx overturn` and `pip install overturn` work and the metaphor survives. Packages: `overturn` (CLI), `@overturn/sdk`, `@overturn/shared` on npm; `overturn` on PyPI.
+- **Renamed Overrule → Overturn (founder: "rename").** `overrule` was taken on npm and PyPI; `overturn` is free on both, so `npx overturn` and `pip install overturn` work and the metaphor survives. Packages: `overturn` (CLI), `@overturn-ai/sdk`, `@overturn-ai/shared` on npm; `overturn` on PyPI.
 
 ## 2026-10-16 (M2)
 
@@ -44,7 +44,7 @@ One line of reasoning each. Newest at the bottom.
 - **Case sets are saved filters merged under explicit query filters; `status` from the set wins only when the query left it at the default.** Keeps `--set regressions-q4 --agent x` intuitive.
 - **Implicit approval runs hourly on pg-boss (`17 * * * *`), per project, `source = "implicit"`, `actor = "system"`, capped at 500 runs per sweep.** Cheap, idempotent (correction_count > 0 excludes a run), and the hourly jitter avoids the top-of-hour pile-up.
 - **pg-boss lives in the `pgboss` schema of the same database; `JOBS_DISABLED=1` keeps it off in tests.** One Postgres, no Redis, as the brief asks.
-- **The CLI bundles `@overturn/sdk` and `@overturn/shared` so `npx overturn` has no peer deps; it exports `defineConfig` for `overturn.config.ts`.** One install, one import.
+- **The CLI bundles `@overturn-ai/sdk` and `@overturn-ai/shared` so `npx overturn` has no peer deps; it exports `defineConfig` for `overturn.config.ts`.** One install, one import.
 - **`overturn init` writes `.env` (and warns when `.env` is not gitignored) rather than a JSON config with the key.** Keys live in `.env`, per the brief.
 
 ## 2026-10-18 (M4)
@@ -94,3 +94,4 @@ One line of reasoning each. Newest at the bottom.
 - **Hosted: Railway project `overturn` (Postgres + `api` + `web`), custom domains via Squarespace DNS, deploys from `main` through `deploy-railway.yml`.** Set up on day 14 with the founder; both domains live and signed in end to end.
 - **CORS lists its methods explicitly (`GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS`) and a test sends a real preflight.** `@fastify/cors` under the Nest adapter answered preflights with `GET,HEAD,POST` only, so every DELETE/PATCH from the browser (revoke key, archive case, save settings) silently failed on the hosted deploy; same-origin tests never exercised a preflight.
 - **The example's corrections set `json_match` on `priority` + `team` for every case they create.** The first real-model replay on the hosted deploy regressed on `$.reply` wording for 10/21 cases; the decision under test is the routing, and a different model's phrasing is not a regression. Found by testing the hosted loop end to end against Claude Haiku 4.5.
+- **npm scope is `@overturn-ai` (`@overturn-ai/sdk`, `@overturn-ai/shared`); the CLI stays the unscoped `overturn`.** The npm name `overturn` is held by an existing user, so the `@overturn` scope cannot exist; the whole workspace moved to one scope rather than mixing two.

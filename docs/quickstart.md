@@ -11,7 +11,7 @@ cp .env.example .env                 # DATABASE_URL points at your Postgres
 pnpm db:migrate
 pnpm bootstrap --email you@example.com
 #   -> OVERTURN_API_KEY=ov_live_...   (paste it into .env)
-pnpm --filter @overturn/api start &   # API on http://localhost:4000
+pnpm --filter @overturn-ai/api start &   # API on http://localhost:4000
 ```
 
 Or `docker compose up` and create the key in the web UI (http://localhost:3000 â†’ Settings).
@@ -21,14 +21,14 @@ Or `docker compose up` and create the key in the web UI (http://localhost:3000 â
 The reference agent triages 30 support tickets. Without `OPENAI_API_KEY` it runs against a deterministic fake model, so the whole loop works offline.
 
 ```bash
-pnpm --filter @overturn/example-ticket-triage seed
+pnpm --filter @overturn-ai/example-ticket-triage seed
 npx overturn runs list
 ```
 
 In your own agent:
 
 ```ts
-import { Overturn } from "@overturn/sdk";
+import { Overturn } from "@overturn-ai/sdk";
 import OpenAI from "openai";
 
 const ov = new Overturn();                      // reads OVERTURN_API_KEY / OVERTURN_BASE_URL
@@ -71,7 +71,7 @@ Open http://localhost:3000, pick a run, click **Correct** on a model step (appro
 await ov.correct({ runId, stepId, kind: "edit", correctedOutput: { priority: "P1" }, note: "Enterprise customer", actor: "rayfan@acme.com" });
 ```
 
-Or apply the scripted 20 corrections to the example: `pnpm --filter @overturn/example-ticket-triage corrections`.
+Or apply the scripted 20 corrections to the example: `pnpm --filter @overturn-ai/example-ticket-triage corrections`.
 
 Every correction is a case: `npx overturn cases list`.
 

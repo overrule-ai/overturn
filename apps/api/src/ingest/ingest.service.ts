@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { IngestPayload, IngestResponse, RunUpsert, StepUpsert } from "@overturn/shared";
+import type { IngestPayload, IngestResponse, RunUpsert, StepUpsert } from "@overturn-ai/shared";
 import { inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";

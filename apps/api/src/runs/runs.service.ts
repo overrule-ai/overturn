@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { Page, Run, RunListQuery, RunWithSteps, Step } from "@overturn/shared";
+import type { Page, Run, RunListQuery, RunWithSteps, Step } from "@overturn-ai/shared";
 import { and, asc, desc, eq, gt, gte, lt, lte, or, type SQL, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";

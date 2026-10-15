@@ -1,6 +1,6 @@
 "use client";
 
-import type { Step } from "@overturn/shared";
+import type { Step } from "@overturn-ai/shared";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";

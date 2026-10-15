@@ -8,11 +8,11 @@ FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc turbo.json tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
-RUN pnpm install --frozen-lockfile --filter @overturn/api... \
- && pnpm --filter @overturn/shared build \
- && pnpm --filter @overturn/api build \
+RUN pnpm install --frozen-lockfile --filter @overturn-ai/api... \
+ && pnpm --filter @overturn-ai/shared build \
+ && pnpm --filter @overturn-ai/api build \
  && rm -rf node_modules apps/api/node_modules packages/shared/node_modules \
- && pnpm install --frozen-lockfile --prod --offline --filter @overturn/api...
+ && pnpm install --frozen-lockfile --prod --offline --filter @overturn-ai/api...
 
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production PNPM_HOME=/pnpm PATH=/pnpm:$PATH

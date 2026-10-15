@@ -1,5 +1,5 @@
 /**
- * OpenAPI 3.1 document assembled from the zod schemas in @overturn/shared, the single
+ * OpenAPI 3.1 document assembled from the zod schemas in @overturn-ai/shared, the single
  * source of truth for payload shapes. Served at GET /openapi.json.
  */
 import {
@@ -33,7 +33,7 @@ import {
   runListQuerySchema,
   runSchema,
   runWithStepsSchema,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 import { z } from "zod";
 
 interface Route {

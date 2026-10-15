@@ -1,4 +1,4 @@
-import type { IngestPayload } from "@overturn/shared";
+import type { IngestPayload } from "@overturn-ai/shared";
 import { generateText, streamText, wrapLanguageModel } from "ai";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 import { describe, expect, it } from "vitest";

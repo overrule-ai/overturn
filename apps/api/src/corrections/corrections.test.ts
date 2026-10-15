@@ -7,8 +7,8 @@ import type {
   Page,
   Project,
   RunWithSteps,
-} from "@overturn/shared";
-import { toolFingerprint } from "@overturn/shared";
+} from "@overturn-ai/shared";
+import { toolFingerprint } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { api, startTestApp, type TestContext } from "../test/harness";

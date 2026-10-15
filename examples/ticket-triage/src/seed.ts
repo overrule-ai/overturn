@@ -1,11 +1,11 @@
 /**
  * Runs the triage agent over the 30 synthetic tickets and records every run.
  *
- *   OVERTURN_API_KEY=ov_live_... pnpm --filter @overturn/example-ticket-triage seed
+ *   OVERTURN_API_KEY=ov_live_... pnpm --filter @overturn-ai/example-ticket-triage seed
  *
  * Without OPENAI_API_KEY it starts the fake model server itself.
  */
-import { Overturn } from "@overturn/sdk";
+import { Overturn } from "@overturn-ai/sdk";
 import { makeAgent, makeOpenAI } from "./agent.js";
 import { tickets } from "./data.js";
 import { startFakeOpenAI } from "./fake-openai.js";

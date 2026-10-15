@@ -3,10 +3,10 @@
  *   8 priority edits for enterprise customers (the v1 prompt lacks the enterprise bump),
  *   2 rejects (wrong team), 10 approves.
  *
- *   OVERTURN_API_KEY=ov_live_... pnpm --filter @overturn/example-ticket-triage corrections
+ *   OVERTURN_API_KEY=ov_live_... pnpm --filter @overturn-ai/example-ticket-triage corrections
  */
-import { Overturn } from "@overturn/sdk";
-import type { CorrectionResult, Run } from "@overturn/shared";
+import { Overturn } from "@overturn-ai/sdk";
+import type { CorrectionResult, Run } from "@overturn-ai/shared";
 import { customers, type Priority, tickets } from "./data.js";
 
 const bump = (p: string): Priority => (p === "P0" ? "P0" : (`P${Number(p[1]) - 1}` as Priority));

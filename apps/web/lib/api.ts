@@ -17,7 +17,7 @@ import type {
   ReplayResult,
   Run,
   RunWithSteps,
-} from "@overturn/shared";
+} from "@overturn-ai/shared";
 
 const PROJECT_KEY = "overturn.project";
 

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { PromptVersion, PromptVersionCreate } from "@overturn/shared";
+import type { PromptVersion, PromptVersionCreate } from "@overturn-ai/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import type { Db } from "../db/client";

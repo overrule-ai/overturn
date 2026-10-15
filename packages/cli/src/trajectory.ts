@@ -2,7 +2,7 @@
  * Trajectory replay: loads overturn.config.ts, puts the SDK in replay mode with each
  * case's tool recordings and the target model, calls agent(input, ctx) and posts the
  * results to the job. Tools never execute: unseen fingerprints and side-effect tools
- * end the case as unreplayable (see @overturn/sdk replay guarantees).
+ * end the case as unreplayable (see @overturn-ai/sdk replay guarantees).
  */
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -16,8 +16,8 @@ import {
   type ReplayModelOutput,
   SideEffectRefusedError,
   UnreplayableError,
-} from "@overturn/sdk";
-import { type Case, extractAnswer, type ReplayResultPost } from "@overturn/shared";
+} from "@overturn-ai/sdk";
+import { type Case, extractAnswer, type ReplayResultPost } from "@overturn-ai/shared";
 import type { OverturnConfig } from "./config.js";
 
 export interface TrajectoryOptions {

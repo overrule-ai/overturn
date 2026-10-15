@@ -2,7 +2,7 @@
  * Registers this checkout's v1 prompt as `ticket-triage@pr`, so a replay can target the
  * prompt in a pull request against cases recorded with the production prompt.
  */
-import { Overturn } from "@overturn/sdk";
+import { Overturn } from "@overturn-ai/sdk";
 import { PROMPTS } from "./prompts.js";
 
 for (const f of [".env", "../../.env"]) {

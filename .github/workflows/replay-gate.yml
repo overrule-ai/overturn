@@ -50,7 +50,7 @@ jobs:
         run: |
           pnpm db:migrate
           (PORT=4000 LOG_LEVEL=warn node apps/api/dist/main.js > api.log 2>&1 &)
-          (FAKE_OPENAI_PORT=4010 pnpm --filter @overturn/example-ticket-triage fake-openai > fake.log 2>&1 &)
+          (FAKE_OPENAI_PORT=4010 pnpm --filter @overturn-ai/example-ticket-triage fake-openai > fake.log 2>&1 &)
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4000/health >/dev/null && break; sleep 1; done
           KEY=$(cd apps/api && pnpm exec tsx src/scripts/bootstrap.ts --email ci@example.com --org CI --project gate --json | tail -1 | node -e "process.stdin.on('data',d=>console.log(JSON.parse(d).apiKey))")
           echo "::add-mask::$KEY"
@@ -61,12 +61,12 @@ jobs:
           git worktree add ../base origin/${{ github.base_ref }}
           cd ../base
           pnpm install --frozen-lockfile
-          pnpm --filter @overturn/shared --filter @overturn/sdk build
-          pnpm --filter @overturn/example-ticket-triage seed
-          pnpm --filter @overturn/example-ticket-triage corrections
+          pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk build
+          pnpm --filter @overturn-ai/example-ticket-triage seed
+          pnpm --filter @overturn-ai/example-ticket-triage corrections
 
       - name: Register this PR's prompt as ticket-triage@pr
-        run: pnpm --filter @overturn/example-ticket-triage exec tsx src/register-pr-prompt.ts
+        run: pnpm --filter @overturn-ai/example-ticket-triage exec tsx src/register-pr-prompt.ts
 
       - name: Replay the PR prompt against the recorded cases
         uses: ./packages/replay-action
