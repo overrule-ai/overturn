@@ -1,19 +1,39 @@
 name: Release
 
-# Tag v<version> on main to publish @overturn/shared, @overturn/sdk and overturn to npm and
-# overturn to PyPI. Needs NPM_TOKEN and PYPI_TOKEN as repository secrets.
+# Actions → Release → "Run workflow" on main. Publishes @overturn/shared, @overturn/sdk and
+# overturn to npm and overturn to PyPI at the version in package.json / pyproject.toml, then
+# tags v<version> and creates the GitHub release. Needs NPM_TOKEN and PYPI_TOKEN secrets.
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
   id-token: write
 
+concurrency: release
+
 jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          v=$(node -p "require('./packages/sdk/package.json').version")
+          for f in packages/shared/package.json packages/cli/package.json; do
+            [ "$(node -p "require('./$f').version")" = "$v" ] || { echo "$f is not at $v"; exit 1; }
+          done
+          grep -q "^version = \"$v\"" packages/sdk-python/pyproject.toml || { echo "pyproject.toml is not at $v"; exit 1; }
+          if git ls-remote --tags origin "refs/tags/v$v" | grep -q .; then echo "tag v$v already exists"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
   npm:
     name: Publish to npm
     runs-on: ubuntu-latest
+    needs: version
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -25,10 +45,6 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @overturn/shared --filter @overturn/sdk --filter overturn build
-      - name: Check tag matches package version
-        run: |
-          v=$(node -p "require('./packages/sdk/package.json').version")
-          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != package version $v"; exit 1; }
       - run: pnpm publish -r --filter @overturn/shared --filter @overturn/sdk --filter overturn --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -36,6 +52,7 @@ jobs:
   pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
+    needs: version
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -47,12 +64,15 @@ jobs:
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-  github-release:
-    name: GitHub release
+  tag:
+    name: Tag and GitHub release
     runs-on: ubuntu-latest
-    needs: [npm, pypi]
+    needs: [version, npm, pypi]
     steps:
       - uses: actions/checkout@v4
-      - run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+      - run: |
+          git tag "v$V" && git push origin "v$V"
+          gh release create "v$V" --generate-notes --title "v$V"
         env:
+          V: ${{ needs.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}

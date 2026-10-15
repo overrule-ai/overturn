@@ -86,6 +86,6 @@ One line of reasoning each. Newest at the bottom.
 
 - **The README quickstart is a CI job: `scripts/quickstart-check.sh` clones the repo fresh, runs every README command against a throwaway database and asserts the report has a regression and a fix.** "Works from the README alone" is a test, not a hope.
 - **The README GIF is recorded by `apps/web/scripts/record-loop.mjs` in a real browser against the seeded example and assembled with Pillow.** Reproducible after UI changes; no hand-made screenshots to go stale.
-- **Publishing runs from a `v*` tag in GitHub Actions with `NPM_TOKEN` / `PYPI_TOKEN` secrets; the tag check refuses a tag that does not match `package.json`.** Tokens never enter the build workspace, and a release is one `git tag`.
+- **Publishing is a manually run GitHub workflow that checks all four packages share one version, publishes to npm and PyPI, then tags `v<version>` and creates the release.** Tokens never enter the build workspace, the tag only exists once the packages do, and the build sandbox cannot push tags anyway.
 - **Hosted domain: `overturn.run` (`api.overturn.run`, `app.overturn.run`) is the default base URL in both SDKs, the CLI and the Action.** Cheapest developer-coded TLD on offer and "run" is the product's noun; one constant to change if the founder picks another.
 - **The example's `register-pr-prompt` script and the repo's replay gate stay in; the test PR that proves the gate is closed, not merged.** The gate must have failed once for real before v0.1 ships.
