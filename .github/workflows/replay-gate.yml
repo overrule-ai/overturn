@@ -1,0 +1,81 @@
+# Self-test of the replay gate: on a PR that touches the example agent or prompts, record the
+# base branch's runs and corrections against a local Overturn, register the PR's prompt, replay,
+# comment the report and fail on regressions. Uses the fake model provider, so it needs no keys.
+name: Replay gate
+
+on:
+  pull_request:
+    paths:
+      - "examples/ticket-triage/src/prompts.ts"
+      - "examples/ticket-triage/src/agent.ts"
+      - "packages/replay-action/**"
+      - ".github/workflows/replay-gate.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: overturn
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/overturn
+      OVERTURN_BASE_URL: http://127.0.0.1:4000
+      FAKE_OPENAI_URL: http://127.0.0.1:4010/v1
+      JOBS_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Start Overturn (API + fake model) and mint a key
+        run: |
+          pnpm db:migrate
+          (PORT=4000 LOG_LEVEL=warn node apps/api/dist/main.js > api.log 2>&1 &)
+          (FAKE_OPENAI_PORT=4010 pnpm --filter @overturn/example-ticket-triage fake-openai > fake.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4000/health >/dev/null && break; sleep 1; done
+          KEY=$(cd apps/api && pnpm exec tsx src/scripts/bootstrap.ts --email ci@example.com --org CI --project gate --json | tail -1 | node -e "process.stdin.on('data',d=>console.log(JSON.parse(d).apiKey))")
+          echo "::add-mask::$KEY"
+          echo "OVERTURN_API_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Record production runs and corrections from the base branch
+        run: |
+          git worktree add ../base origin/${{ github.base_ref }}
+          cd ../base
+          pnpm install --frozen-lockfile
+          pnpm --filter @overturn/shared --filter @overturn/sdk build
+          pnpm --filter @overturn/example-ticket-triage seed
+          pnpm --filter @overturn/example-ticket-triage corrections
+
+      - name: Register this PR's prompt as ticket-triage@pr
+        run: pnpm --filter @overturn/example-ticket-triage exec tsx src/register-pr-prompt.ts
+
+      - name: Replay the PR prompt against the recorded cases
+        uses: ./packages/replay-action
+        with:
+          api-key: ${{ env.OVERTURN_API_KEY }}
+          base-url: http://127.0.0.1:4000
+          model: fake/fake-triage-v1
+          prompt: ticket-triage@pr
+          agent: ticket-triage
+          since: 1d
+          fail-on-regression: 0
+          cli-command: node ${{ github.workspace }}/packages/cli/dist/index.js

@@ -1,5 +1,6 @@
 import { estimateCostUsd, type Usage } from "@overturn/shared";
 import { currentRun } from "./context.js";
+import { getGlobalReplay, type ReplayModelOutput } from "./replay.js";
 import type { Run } from "./run.js";
 
 /**
@@ -48,6 +49,51 @@ interface ChatCompletionLike {
 export interface ModelCallHooks {
   /** Replay: substitute the model call entirely. Returns the completion to use. */
   intercept?: (params: Record<string, unknown>) => Promise<unknown> | unknown;
+}
+
+/** Builds an OpenAI chat.completion-shaped object from a replayed model answer. */
+export function toOpenAICompletion(
+  out: ReplayModelOutput,
+  model: string | null,
+): ChatCompletionLike & Record<string, unknown> {
+  const message: Record<string, unknown> = {
+    role: "assistant",
+    content: out.toolCalls.length ? null : out.text,
+    refusal: null,
+  };
+  if (out.toolCalls.length) {
+    message.tool_calls = out.toolCalls.map((tc) => ({
+      id: tc.id,
+      type: "function",
+      function: { name: tc.name, arguments: JSON.stringify(tc.args ?? {}) },
+    }));
+  }
+  return {
+    id: `replay-${Date.now().toString(36)}`,
+    object: "chat.completion",
+    created: Math.floor(Date.now() / 1000),
+    model: out.modelId ?? model ?? "replay",
+    choices: [
+      { index: 0, message, finish_reason: out.toolCalls.length ? "tool_calls" : out.finishReason || "stop" },
+    ],
+    usage: {
+      prompt_tokens: out.usage.inputTokens ?? 0,
+      completion_tokens: out.usage.outputTokens ?? 0,
+      total_tokens: out.usage.totalTokens ?? 0,
+    },
+  };
+}
+
+/** The replay-mode interceptor, when a trajectory replay is active with a target model. */
+function replayIntercept(): ModelCallHooks["intercept"] | undefined {
+  const replay = getGlobalReplay();
+  if (!replay?.modelCall) return undefined;
+  const call = replay.modelCall;
+  return async (params) => {
+    const { input, params: p, model } = splitChatParams(params);
+    const out = await call({ provider: "openai", ...input, params: p });
+    return toOpenAICompletion(out, model);
+  };
 }
 
 const INPUT_KEYS = new Set([
@@ -131,18 +177,19 @@ export function assembleChatStream(chunks: ChatChunk[]): ChatCompletionLike {
  * is recorded as an llm_call step on the ambient run. Streaming responses are
  * buffered and recorded as the final message; firstTokenMs is kept in usage.
  */
-export function wrapOpenAI<T extends OpenAILike>(client: T, hooks: ModelCallHooks = {}): T {
+export function wrapOpenAI<T extends OpenAILike>(client: T, _host?: unknown, hooks: ModelCallHooks = {}): T {
   const completions = client.chat.completions as { create: LooseCreate };
   const originalCreate: LooseCreate = completions.create.bind(completions);
 
   const recordedCreate = async (params: Record<string, unknown>, options?: unknown): Promise<unknown> => {
     const run = currentRun();
-    if (!run && !hooks.intercept) return originalCreate(params, options);
+    const intercept = hooks.intercept ?? replayIntercept();
+    if (!run && !intercept) return originalCreate(params, options);
     const startedAt = new Date();
     const { input, params: p, model } = splitChatParams(params);
 
-    if (hooks.intercept) {
-      const out = await hooks.intercept(params);
+    if (intercept) {
+      const out = await intercept(params);
       recordChat(run, "chat.completions", model, input, p, out as ChatCompletionLike, startedAt, undefined);
       return out;
     }

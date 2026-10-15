@@ -60,3 +60,13 @@ One line of reasoning each. Newest at the bottom.
 - **Prompt versions are stored templates; `--prompt name@version` replaces the first system message (or adds one) in step mode.** Lets a PR's prompt be replayed without re-recording.
 - **Trajectory jobs are created with `mode: "trajectory"` and filled by `POST /v1/replays/:id/results` (scored server-side with the same scorers and baseline).** Only the customer's code can orchestrate the agent; scoring stays in one place.
 - **Replay results `diff` stores `{expected, baseline, target}` so the report shows all three side by side without recomputation.** The report page is a read.
+
+## 2026-10-19 (M5)
+
+- **Replay state and the run context live on `globalThis` (`Symbol.for`), not in module scope.** The CLI bundles its own copy of the SDK; the customer's agent imports another. Both must see the same replay mode and the same ambient run.
+- **In replay mode nothing is sent to the API: `emitRun` is a no-op and `emitStep` collects into the replay state.** Replay trajectories must never show up as production runs or corrupt the corrected-rate stat.
+- **Trajectory model calls go through the server (`POST /v1/replays/model`) and the same cache, not to providers from the customer's machine.** Keys stay on the server, costs are counted once, and step and trajectory mode share one model path.
+- **A refused side-effect tool ends the trajectory; the answer under test is the last model answer (or the refused call itself for `tool_choice` cases), recorded under `refusedSideEffects`.** The decision happened before the side effect; scoring it is the point, and the tool still never ran.
+- **`overturn.config.ts` is loaded with jiti so it can import the agent's TypeScript directly; the runner wraps each case in an ambient run.** No build step for the customer; tools and wrapped clients record as they do in production.
+- **The GitHub Action is composite (shell + `actions/github-script`), not a bundled JS action.** Nothing to compile or vendor; it runs `npx overturn` and upserts one marker-tagged comment per PR.
+- **The repo's own replay gate records the base branch in a git worktree and replays the PR's prompt as `ticket-triage@pr`.** That is the real semantics of a prompt change: production cases vs the new prompt.

@@ -6,6 +6,7 @@
 import type { LanguageModelV2Middleware, LanguageModelV2StreamPart } from "@ai-sdk/provider";
 import { estimateCostUsd, type Usage } from "@overturn/shared";
 import { currentRun } from "./context.js";
+import { getGlobalReplay } from "./replay.js";
 
 type Params = Parameters<NonNullable<LanguageModelV2Middleware["wrapGenerate"]>>[0]["params"];
 
@@ -39,14 +40,17 @@ export function aiMiddleware(): LanguageModelV2Middleware {
   return {
     wrapGenerate: async ({ doGenerate, params, model }) => {
       const run = currentRun();
-      if (!run) return doGenerate();
+      const replay = getGlobalReplay();
+      if (!run && !replay?.modelCall) return doGenerate();
       const startedAt = new Date();
       const { input, rest } = splitParams(params);
       const modelId = `${model.provider}/${model.modelId}`;
       try {
-        const result = await doGenerate();
+        const result = replay?.modelCall
+          ? await replayGenerate(replay.modelCall, params)
+          : await doGenerate();
         const usage = usageFrom(result.usage);
-        run.step({
+        run?.step({
           kind: "llm_call",
           name: "ai.generate",
           provider: model.provider,
@@ -61,7 +65,7 @@ export function aiMiddleware(): LanguageModelV2Middleware {
         });
         return result;
       } catch (err) {
-        run.step({
+        run?.step({
           kind: "llm_call",
           name: "ai.generate",
           provider: model.provider,
@@ -125,5 +129,45 @@ export function aiMiddleware(): LanguageModelV2Middleware {
       });
       return { ...result, stream: result.stream.pipeThrough(transform) };
     },
+  };
+}
+
+type GenerateResult = Awaited<
+  ReturnType<Parameters<NonNullable<LanguageModelV2Middleware["wrapGenerate"]>>[0]["doGenerate"]>
+>;
+
+/** Trajectory replay: answer an AI SDK generate call from the target model on the server. */
+async function replayGenerate(
+  call: NonNullable<ReturnType<typeof getGlobalReplay>>["modelCall"] & {},
+  params: Params,
+): Promise<GenerateResult> {
+  const { input, rest } = splitParams(params);
+  const out = await call({
+    provider: "ai",
+    messages: input.messages,
+    tools: input.tools,
+    tool_choice: input.tool_choice,
+    response_format: input.response_format,
+    params: rest,
+  });
+  const content: GenerateResult["content"] = [];
+  if (out.text) content.push({ type: "text", text: out.text });
+  for (const tc of out.toolCalls)
+    content.push({
+      type: "tool-call",
+      toolCallId: tc.id,
+      toolName: tc.name,
+      input: JSON.stringify(tc.args ?? {}),
+    });
+  return {
+    content,
+    finishReason: out.toolCalls.length ? "tool-calls" : "stop",
+    usage: {
+      inputTokens: out.usage.inputTokens,
+      outputTokens: out.usage.outputTokens,
+      totalTokens: out.usage.totalTokens,
+    },
+    warnings: [],
+    response: { modelId: out.modelId ?? undefined },
   };
 }

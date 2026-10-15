@@ -166,3 +166,50 @@ describe("the README demo", () => {
     expect(goodReport.fixed.length).toBeGreaterThanOrEqual(report.fixed.length);
   });
 });
+
+describe("trajectory replay through overturn.config.ts", () => {
+  it("replays whole trajectories with tools answered from recordings and side effects refused", async () => {
+    const { runTrajectory } = await import("overturn");
+    const { ticketState } = await import("./tools.js");
+    const ov = new Overturn({ apiKey: ctx.apiKey, baseUrl: ctx.baseUrl });
+    const before = JSON.stringify([...ticketState.entries()]);
+    const cwd = process.cwd();
+    process.chdir(new URL("..", import.meta.url).pathname);
+    let job: Awaited<ReturnType<typeof runTrajectory>>;
+    try {
+      job = await runTrajectory({
+        api: ov.api,
+        model: "fake/fake-triage-weak",
+        promptVersion: "ticket-triage@v2",
+        filter: { agent: "ticket-triage" },
+        log: () => {},
+      });
+    } finally {
+      process.chdir(cwd);
+    }
+    expect(job.status).toBe("completed");
+    expect(job.mode).toBe("trajectory");
+    expect(job.summary!.completed).toBe(20);
+    // side-effect tools never ran: the in-memory ticket system is untouched
+    expect(JSON.stringify([...ticketState.entries()])).toBe(before);
+    const results = await ov.api.replays.results(job.id);
+    const diffs = results.map(
+      (r) =>
+        r.diff as { refusedSideEffects: Array<{ toolName: string }> | null; steps: Array<{ name: string }> },
+    );
+    expect(diffs.every((d) => d.refusedSideEffects?.[0]?.toolName === "set_priority")).toBe(true);
+    expect(
+      diffs.every(
+        (d) =>
+          d.steps
+            .map((s) => s.name)
+            .slice(0, 3)
+            .join(",") === "lookup_customer,search_kb,chat.completions",
+      ),
+    ).toBe(true);
+    const report = await ov.api.replays.report(job.id);
+    expect(report.regressions.length).toBeGreaterThanOrEqual(1);
+    expect(report.fixed.length).toBeGreaterThanOrEqual(1);
+    expect(report.unreplayable).toHaveLength(0);
+  });
+});

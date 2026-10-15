@@ -11,6 +11,7 @@ export interface ReplayContext {
 }
 
 export interface OverturnConfig {
+  /** Called once per case with the recorded run input; return the run's output. */
   agent: (input: unknown, ctx: ReplayContext) => Promise<unknown>;
   /** Stop a trajectory after this many steps. Default 50. */
   maxSteps?: number;

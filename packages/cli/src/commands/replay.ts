@@ -13,6 +13,7 @@ export interface ReplayOptions {
   kind?: string;
   set?: string;
   prompt?: string;
+  config?: string;
   maxCost?: string;
   failOnRegression?: string;
   format: "table" | "json" | "md";
@@ -122,6 +123,7 @@ export function registerReplay(program: Command): void {
     .option("--kind <kind>", "approve | edit | reject | escalate")
     .option("--set <name>", "A saved case set")
     .option("--prompt <name@version>", "Replace the system prompt with a registered prompt version")
+    .option("--config <file>", "overturn.config.ts to use in trajectory mode")
     .option("--max-cost <usd>", "Stop the job cleanly past this spend")
     .option("--fail-on-regression <n>", "Exit 1 when regressions exceed n (default 0 when set)")
     .option("--format <fmt>", "table | json | md", "table")

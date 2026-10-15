@@ -1,0 +1,7 @@
+{
+  "name": "@overturn/replay-action",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub Action: replay human-corrected cases on pull requests (composite, see action.yml)",
+  "license": "Apache-2.0"
+}

@@ -1,9 +1,15 @@
 import type { IngestPayload, StepUpsert } from "@overturn/shared";
 import { toolFingerprint } from "@overturn/shared";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { Overturn } from "./client.js";
 import { assembleChatStream, type OpenAILike } from "./openai.js";
-import { SideEffectRefusedError, UnreplayableError } from "./replay.js";
+import {
+  MaxStepsExceededError,
+  type ReplayModelOutput,
+  SideEffectRefusedError,
+  setGlobalReplay,
+  UnreplayableError,
+} from "./replay.js";
 
 function capture() {
   const batches: IngestPayload[] = [];
@@ -246,6 +252,8 @@ describe("Overturn recording", () => {
   });
 });
 
+afterEach(() => setGlobalReplay(null));
+
 describe("replay mode (tool guarantees)", () => {
   it("answers from recordings and never executes the real tool", async () => {
     const { ov } = capture();
@@ -303,5 +311,107 @@ describe("assembleChatStream", () => {
     ]);
     expect(out.choices?.[0]?.message).toEqual({ role: "assistant", content: "Hello" });
     expect(out.choices?.[0]?.finish_reason).toBe("stop");
+  });
+});
+
+describe("replay mode (trajectory)", () => {
+  it("swaps model calls for the target, collects steps locally and sends nothing", async () => {
+    const { ov, steps, batches } = capture();
+    const openai = ov.wrapOpenAI(fakeOpenAI());
+    const lookup = ov.tool("lookup", async () => ({ live: true }));
+    const fp = lookup.fingerprint({});
+    const calls: unknown[] = [];
+    const modelCall = async (input: unknown): Promise<ReplayModelOutput> => {
+      calls.push(input);
+      return {
+        text: '{"priority":"P0"}',
+        toolCalls: [],
+        finishReason: "stop",
+        usage: { inputTokens: 1, outputTokens: 2 },
+        modelId: "target-model",
+        costUsd: 0,
+      };
+    };
+    const state = ov.replayMode(
+      { [fp]: { name: "lookup", args: {}, output: { recorded: true } } },
+      { modelCall },
+    );
+    const run = ov.startRun({ agent: "a" });
+    const out = await run.context(async () => {
+      await lookup({});
+      const completion = (await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [{ role: "user", content: "x" }],
+      })) as { choices: Array<{ message: { content: string } }>; model: string };
+      run.end({ output: completion.choices[0]!.message.content });
+      return completion;
+    });
+    expect(out.model).toBe("target-model");
+    expect(out.choices[0]!.message.content).toBe('{"priority":"P0"}');
+    expect(calls[0]).toMatchObject({ provider: "openai", messages: [{ role: "user", content: "x" }] });
+    expect(state.steps.map((s) => s.name)).toEqual(["lookup", "chat.completions"]);
+    expect(state.steps[1]!.model).toBe("target-model");
+    await ov.flush();
+    expect(batches).toHaveLength(0);
+    expect(steps()).toHaveLength(0);
+    // a second Overturn instance (e.g. the customer's own) sees the same mode
+    const other = new Overturn({
+      apiKey: "ov_live_other",
+      baseUrl: "http://y",
+      transport: { fetch: async () => new Response("{}"), disableTimer: true },
+    });
+    expect(other.replay).toBe(state);
+  });
+
+  it("stops at maxSteps", async () => {
+    const { ov } = capture();
+    const t = ov.tool("t", async () => 1);
+    const fp = t.fingerprint({});
+    ov.replayMode({ [fp]: { name: "t", args: {}, output: 1 } }, { maxSteps: 2 });
+    const run = ov.startRun({ agent: "a" });
+    await expect(
+      run.context(async () => {
+        await t({});
+        await t({});
+        await t({});
+      }),
+    ).rejects.toBeInstanceOf(MaxStepsExceededError);
+  });
+
+  it("intercepts Anthropic and AI SDK calls too", async () => {
+    const { ov } = capture();
+    const modelCall = async (input: { provider: string }): Promise<ReplayModelOutput> => ({
+      text: "",
+      toolCalls: [{ id: "c1", name: `via_${input.provider}`, args: { a: 1 } }],
+      finishReason: "tool-calls",
+      usage: {},
+      modelId: null,
+      costUsd: null,
+    });
+    ov.replayMode({}, { modelCall });
+    const anthropic = ov.wrapAnthropic({
+      messages: {
+        create: async (_params: Record<string, unknown>) => ({ content: [{ type: "text", text: "real" }] }),
+      },
+    });
+    const msg = (await anthropic.messages.create({ model: "m", max_tokens: 1, messages: [] })) as {
+      content: Array<{ type: string; name?: string }>;
+    };
+    expect(msg.content[0]).toMatchObject({ type: "tool_use", name: "via_anthropic" });
+    const { generateText, wrapLanguageModel } = await import("ai");
+    const { MockLanguageModelV2 } = await import("ai/test");
+    const model = wrapLanguageModel({
+      model: new MockLanguageModelV2({
+        doGenerate: async () => ({
+          content: [{ type: "text", text: "real" }],
+          finishReason: "stop",
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+          warnings: [],
+        }),
+      }),
+      middleware: ov.aiMiddleware(),
+    });
+    const res = await generateText({ model, prompt: "hi" });
+    expect(res.toolCalls[0]).toMatchObject({ toolName: "via_ai", input: { a: 1 } });
   });
 });

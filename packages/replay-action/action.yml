@@ -1,0 +1,142 @@
+name: "Overturn replay"
+description: "Replay human-corrected cases against a model or prompt on pull requests; comment the report and fail on regressions."
+author: "Overturn"
+branding:
+  icon: "rewind"
+  color: "purple"
+
+inputs:
+  api-key:
+    description: "Overturn API key (store it as a repository secret)"
+    required: true
+  base-url:
+    description: "Overturn API base URL"
+    required: false
+    default: "https://api.overturn.dev"
+  model:
+    description: "Target model, provider/model (e.g. openai/gpt-4.1-mini)"
+    required: true
+  mode:
+    description: "step | trajectory"
+    required: false
+    default: "step"
+  since:
+    description: "Only cases created since (30d, 12h, ISO date)"
+    required: false
+    default: "30d"
+  agent:
+    description: "Only cases from this agent"
+    required: false
+  tag:
+    description: "Only cases with this tag"
+    required: false
+  set:
+    description: "A saved case set"
+    required: false
+  prompt:
+    description: "Registered prompt version to target (name@version)"
+    required: false
+  max-cost:
+    description: "Stop the replay past this spend in USD"
+    required: false
+  fail-on-regression:
+    description: "Fail the check when regressions exceed this number"
+    required: false
+    default: "0"
+  comment:
+    description: "Post the markdown report as a PR comment"
+    required: false
+    default: "true"
+  config:
+    description: "overturn.config.ts path (trajectory mode)"
+    required: false
+  working-directory:
+    description: "Directory to run in (trajectory mode needs the agent's package)"
+    required: false
+    default: "."
+  cli-command:
+    description: "How to invoke the CLI"
+    required: false
+    default: "npx --yes overturn@latest"
+  github-token:
+    description: "Token used to post the comment"
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  regressions:
+    description: "Number of regressions"
+    value: ${{ steps.replay.outputs.regressions }}
+  job-id:
+    description: "Replay job id"
+    value: ${{ steps.replay.outputs.job_id }}
+  report-path:
+    description: "Path of the markdown report"
+    value: ${{ steps.replay.outputs.report }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Replay
+      id: replay
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        OVERTURN_API_KEY: ${{ inputs.api-key }}
+        OVERTURN_BASE_URL: ${{ inputs.base-url }}
+      run: |
+        set +e
+        REPORT="$RUNNER_TEMP/overturn-report.md"
+        JSON="$RUNNER_TEMP/overturn-report.json"
+        ARGS=(replay --model "${{ inputs.model }}" --mode "${{ inputs.mode }}" --since "${{ inputs.since }}" -y --format json --output "$JSON")
+        [ -n "${{ inputs.agent }}" ] && ARGS+=(--agent "${{ inputs.agent }}")
+        [ -n "${{ inputs.tag }}" ] && ARGS+=(--tag "${{ inputs.tag }}")
+        [ -n "${{ inputs.set }}" ] && ARGS+=(--set "${{ inputs.set }}")
+        [ -n "${{ inputs.prompt }}" ] && ARGS+=(--prompt "${{ inputs.prompt }}")
+        [ -n "${{ inputs.max-cost }}" ] && ARGS+=(--max-cost "${{ inputs.max-cost }}")
+        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
+        ${{ inputs.cli-command }} "${ARGS[@]}"
+        CODE=$?
+        if [ -f "$JSON" ]; then
+          JOB_ID=$(node -e "const r=require(process.argv[1]);console.log(r.job.id)" "$JSON")
+          REGRESSIONS=$(node -e "const r=require(process.argv[1]);console.log(r.regressions.length)" "$JSON")
+          ${{ inputs.cli-command }} report "$JOB_ID" --format md --output "$REPORT" >/dev/null
+          echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
+          echo "regressions=$REGRESSIONS" >> "$GITHUB_OUTPUT"
+          echo "report=$REPORT" >> "$GITHUB_OUTPUT"
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$REGRESSIONS" -gt "${{ inputs.fail-on-regression }}" ]; then echo "failed=true" >> "$GITHUB_OUTPUT"; else echo "failed=false" >> "$GITHUB_OUTPUT"; fi
+        else
+          echo "failed=true" >> "$GITHUB_OUTPUT"
+          echo "::error::overturn replay produced no report (exit $CODE)"
+        fi
+        exit 0
+
+    - name: Comment on the pull request
+      if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' && steps.replay.outputs.report != '' }}
+      uses: actions/github-script@v7
+      env:
+        REPORT_PATH: ${{ steps.replay.outputs.report }}
+        REGRESSIONS: ${{ steps.replay.outputs.regressions }}
+        LIMIT: ${{ inputs.fail-on-regression }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require("fs");
+          const marker = "<!-- overturn-replay-report -->";
+          const report = fs.readFileSync(process.env.REPORT_PATH, "utf8");
+          const failed = Number(process.env.REGRESSIONS) > Number(process.env.LIMIT);
+          const body = `${marker}\n${failed ? "### ❌ Overturn: regressions found" : "### ✅ Overturn: no regressions"}\n\n${report}`;
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+          const existing = comments.find((c) => c.body && c.body.includes(marker));
+          if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+    - name: Fail on regressions
+      if: ${{ steps.replay.outputs.failed == 'true' }}
+      shell: bash
+      run: |
+        echo "::error::Overturn found ${{ steps.replay.outputs.regressions }} regression(s) (limit ${{ inputs.fail-on-regression }})"
+        exit 1

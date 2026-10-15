@@ -28,8 +28,15 @@ export { Overturn, type OverturnOptions } from "./client.js";
 export { currentRun } from "./context.js";
 export { assembleChatStream, type OpenAILike, splitChatParams, wrapOpenAI } from "./openai.js";
 export {
+  getGlobalReplay,
+  MaxStepsExceededError,
+  type ReplayModelCall,
+  type ReplayModelInput,
+  type ReplayModelOutput,
+  type ReplayOptions,
   ReplayState,
   SideEffectRefusedError,
+  setGlobalReplay,
   type ToolRecording,
   type ToolRecordings,
   UnreplayableError,

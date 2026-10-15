@@ -14,6 +14,11 @@ import {
   tool,
 } from "ai";
 
+export interface ModelCallResultFull extends ModelCallResult {
+  text: string;
+  toolCalls: Array<{ id: string; name: string; args: unknown }>;
+}
+
 export interface ModelCallResult {
   answer: unknown;
   raw: unknown;
@@ -123,6 +128,20 @@ export function fromAnthropicMessages(system: unknown, messages: Msg[]): ModelMe
   return out;
 }
 
+/** AI SDK prompts are already ModelMessage-shaped (content as string or parts); normalize tool results. */
+export function fromAiMessages(messages: Msg[]): ModelMessage[] {
+  return messages.map((m) => {
+    const role = m.role as string;
+    if (role === "system") return { role: "system", content: asText(m.content) };
+    if (role === "user")
+      return typeof m.content === "string"
+        ? { role: "user", content: m.content }
+        : { role: "user", content: asText(m.content) };
+    if (role === "tool") return m as unknown as ModelMessage;
+    return m as unknown as ModelMessage;
+  });
+}
+
 function toolsFrom(frozen: FrozenInput): ToolSet | undefined {
   const raw = frozen.tools;
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
@@ -179,7 +198,7 @@ export async function callModel(
   model: LanguageModel,
   frozen: FrozenInput,
   opts: BuildOptions = {},
-): Promise<ModelCallResult> {
+): Promise<ModelCallResultFull> {
   const messages = buildMessages(frozen, opts);
   const params = frozen.params ?? {};
   const tools = toolsFrom(frozen);
@@ -220,6 +239,8 @@ export async function callModel(
   }
   return {
     answer,
+    text: result.text,
+    toolCalls: result.toolCalls.map((tc) => ({ id: tc.toolCallId, name: tc.toolName, args: tc.input })),
     raw: {
       text: result.text,
       toolCalls: result.toolCalls.map((tc) => ({ name: tc.toolName, args: tc.input })),

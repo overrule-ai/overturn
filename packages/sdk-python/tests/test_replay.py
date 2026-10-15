@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from overturn import SideEffectRefusedError, UnreplayableError, tool
@@ -76,5 +78,54 @@ async def test_async_tool_in_replay(capture: Capture) -> None:
     capture.ov.replay_mode({fp: {"name": "fetch", "args": {"url": "u"}, "output": "cached"}})
     try:
         assert await fetch("u") == "cached"
+    finally:
+        capture.ov.exit_replay_mode()
+
+
+def test_model_call_swaps_the_model_and_collects_steps(capture: Capture) -> None:
+    from tests.test_recording import FakeOpenAI
+
+    seen: list[dict[str, Any]] = []
+
+    def model_call(inp: dict[str, Any]) -> Any:
+        seen.append(inp)
+        return {
+            "text": '{"priority":"P0"}',
+            "toolCalls": [],
+            "finishReason": "stop",
+            "usage": {"inputTokens": 1},
+            "modelId": "target",
+        }
+
+    state = capture.ov.replay_mode({}, model_call=model_call)
+    try:
+        openai = capture.ov.wrap_openai(FakeOpenAI())
+        with capture.ov.run(agent="a"):
+            completion = openai.chat.completions.create(
+                model="gpt-4.1-mini", messages=[{"role": "user", "content": "x"}]
+            )
+        assert completion["model"] == "target"
+        assert completion["choices"][0]["message"]["content"] == '{"priority":"P0"}'
+        assert seen[0]["provider"] == "openai" and seen[0]["messages"] == [{"role": "user", "content": "x"}]
+        assert [s.name for s in state.steps] == ["chat.completions"]
+        capture.ov.flush()
+        assert capture.batches == []  # nothing recorded as a production run
+    finally:
+        capture.ov.exit_replay_mode()
+
+
+def test_max_steps(capture: Capture) -> None:
+    from overturn import MaxStepsExceededError
+
+    @tool
+    def t() -> int:
+        return 1
+
+    capture.ov.replay_mode({t.fingerprint(): {"name": "t", "args": {}, "output": 1}}, max_steps=2)
+    try:
+        with pytest.raises(MaxStepsExceededError), capture.ov.run(agent="a"):
+            t()
+            t()
+            t()
     finally:
         capture.ov.exit_replay_mode()

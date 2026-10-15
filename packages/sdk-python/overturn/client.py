@@ -11,7 +11,7 @@ from . import tools as _tools
 from .anthropic_wrap import wrap_anthropic
 from .api import CorrectionKind, OverturnApi
 from .openai_wrap import wrap_openai
-from .replay import ReplayState, ToolRecordings
+from .replay import ReplayModelCall, ReplayState, ToolRecordings
 from .run import Run
 from .tools import Tool
 from .transport import OnError, Transport
@@ -62,10 +62,16 @@ class Overturn:
 
     # ---- sink ----
     def emit_run(self, run: RunUpsert) -> None:
+        if _tools.get_replay_state() is not None:
+            return  # replay runs are never recorded as production runs
         if self.transport:
             self.transport.enqueue_run(run)
 
     def emit_step(self, step: StepUpsert) -> None:
+        replay = _tools.get_replay_state()
+        if replay is not None:
+            replay.record(step)
+            return
         if not self.transport:
             return
         out = self.redact(step) if self.redact else step
@@ -149,9 +155,19 @@ class Overturn:
             body["actor"] = actor
         return self.api.create_correction(body)
 
-    def replay_mode(self, recordings: ToolRecordings, *, allow_side_effects: bool = False) -> ReplayState:
-        """Every @tool is answered from recordings and never executed, until exit_replay_mode()."""
-        self.replay = ReplayState(recordings, allow_side_effects=allow_side_effects)
+    def replay_mode(
+        self,
+        recordings: ToolRecordings,
+        *,
+        allow_side_effects: bool = False,
+        model_call: ReplayModelCall | None = None,
+        max_steps: int = 50,
+    ) -> ReplayState:
+        """Every @tool is answered from recordings and never executed, until exit_replay_mode().
+        With model_call, wrapped model clients answer from the target model instead of the provider."""
+        self.replay = ReplayState(
+            recordings, allow_side_effects=allow_side_effects, model_call=model_call, max_steps=max_steps
+        )
         _tools.set_replay_state(self.replay)
         return self.replay
 
