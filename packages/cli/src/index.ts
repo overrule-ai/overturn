@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { registerCases } from "./commands/cases.js";
 import { registerInit } from "./commands/init.js";
+import { registerReplay } from "./commands/replay.js";
 import { registerRuns } from "./commands/runs.js";
 
 export { defineConfig, type OverturnConfig } from "./config.js";
@@ -18,6 +19,7 @@ export function buildProgram(): Command {
   registerInit(program);
   registerRuns(program);
   registerCases(program);
+  registerReplay(program);
   return program;
 }
 

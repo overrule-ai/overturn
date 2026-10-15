@@ -13,6 +13,14 @@ import type {
   Page,
   Project,
   ProjectPatch,
+  PromptVersion,
+  PromptVersionCreate,
+  ReplayCreate,
+  ReplayEstimate,
+  ReplayJob,
+  ReplayReport,
+  ReplayResult,
+  ReplayResultsPost,
   Run,
   RunListQuery,
   RunWithSteps,
@@ -102,6 +110,30 @@ export class OverturnApi {
       this.request("GET", "/v1/cases", undefined, q),
     get: (id: string): Promise<Case> => this.request("GET", `/v1/cases/${id}`),
     patch: (id: string, body: CasePatch): Promise<Case> => this.request("PATCH", `/v1/cases/${id}`, body),
+  };
+
+  readonly replays = {
+    estimate: (body: { model: string; filter?: Partial<CaseListQuery> }): Promise<ReplayEstimate> =>
+      this.request("POST", "/v1/replays/estimate", body),
+    create: (
+      body: Partial<ReplayCreate> & { model: string },
+    ): Promise<{ job: ReplayJob; estimate: ReplayEstimate; caseIds: string[] }> =>
+      this.request("POST", "/v1/replays", body),
+    list: (q: { limit?: number; status?: ReplayJob["status"] } = {}): Promise<ReplayJob[]> =>
+      this.request("GET", "/v1/replays", undefined, q),
+    get: (id: string): Promise<ReplayJob> => this.request("GET", `/v1/replays/${id}`),
+    cancel: (id: string): Promise<ReplayJob> => this.request("POST", `/v1/replays/${id}/cancel`),
+    results: (id: string): Promise<ReplayResult[]> => this.request("GET", `/v1/replays/${id}/results`),
+    postResults: (id: string, body: ReplayResultsPost): Promise<ReplayJob> =>
+      this.request("POST", `/v1/replays/${id}/results`, body),
+    report: (id: string): Promise<ReplayReport> => this.request("GET", `/v1/replays/${id}/report`),
+  };
+
+  readonly prompts = {
+    register: (body: PromptVersionCreate): Promise<PromptVersion> =>
+      this.request("POST", "/v1/prompts", body),
+    list: (name?: string): Promise<PromptVersion[]> =>
+      this.request("GET", "/v1/prompts", undefined, { name }),
   };
 
   readonly caseSets = {

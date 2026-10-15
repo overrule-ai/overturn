@@ -15,12 +15,18 @@
     "bootstrap": "tsx src/scripts/bootstrap.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.109",
+    "@ai-sdk/google": "^2.0.103",
+    "@ai-sdk/openai": "^2.0.135",
+    "@ai-sdk/openai-compatible": "^1.0.58",
     "@fastify/cors": "^11.0.1",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-fastify": "^11.1.0",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
     "@opentelemetry/otlp-transformer": "0.57.0",
     "@overturn/shared": "workspace:*",
+    "ai": "^5.0.277",
     "drizzle-orm": "^0.44.7",
     "fastify": "^5.11.3",
     "pg-boss": "^10.4.2",

@@ -4,6 +4,9 @@ export type {
   Correction,
   CorrectionKind,
   CorrectionResult,
+  ReplayJob,
+  ReplayReport,
+  ReplayResult,
   Run as RunRecord,
   RunWithSteps,
 } from "@overturn/shared";

@@ -90,3 +90,62 @@ describe("overturn CLI", () => {
     expect(get).toContain("chat.completions");
   });
 });
+
+describe("overturn replay / report", () => {
+  it("runs a step replay against the fake provider and prints the report", async () => {
+    const { startFakeOpenAI, echoModel } = await import("../../../apps/api/dist/test/fake-openai.js");
+    const fake = await startFakeOpenAI();
+    process.env.FAKE_OPENAI_URL = fake.url;
+    try {
+      const runId = "01a14000-0000-7000-8000-000000000011";
+      await harness.api(ctx, "POST", "/v1/ingest", {
+        v: 1,
+        runs: [
+          {
+            id: runId,
+            agent: "replay-cli",
+            status: "completed",
+            output: { priority: "P1" },
+            startedAt: new Date().toISOString(),
+          },
+        ],
+        steps: [
+          {
+            id: "01a14000-0000-7000-8000-000000000012",
+            runId,
+            seq: 0,
+            kind: "llm_call",
+            name: "chat.completions",
+            model: "m",
+            input: { messages: [{ role: "user", content: "triage" }] },
+            output: { message: { role: "assistant", content: '{"priority":"P1"}' } },
+            startedAt: new Date().toISOString(),
+          },
+        ],
+      });
+      await harness.api(ctx, "POST", "/v1/corrections", { runId, kind: "approve" });
+      const out = await run([
+        "replay",
+        "--model",
+        echoModel({ priority: "P2" }),
+        "--agent",
+        "replay-cli",
+        "--format",
+        "md",
+        "-y",
+      ]);
+      expect(out).toContain("### Regressions (1)");
+      const jobs = JSON.parse(await run(["--json", "replays", "list"])) as Array<{
+        id: string;
+        status: string;
+      }>;
+      expect(jobs[0]!.status).toBe("completed");
+      const report = await run(["report", jobs[0]!.id]);
+      expect(report).toContain("regression");
+      const asJson = JSON.parse(await run(["--json", "report", jobs[0]!.id])) as { regressions: unknown[] };
+      expect(asJson.regressions).toHaveLength(1);
+    } finally {
+      await fake.close();
+    }
+  });
+});

@@ -23,6 +23,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "jsonpath-plus": "^10.4.0",
     "zod": "^4.1.0"
   },
   "devDependencies": {

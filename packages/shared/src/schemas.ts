@@ -374,3 +374,169 @@ export const projectPatchSchema = z.object({
   settings: projectSettingsSchema.partial().optional(),
 });
 export type ProjectPatch = z.infer<typeof projectPatchSchema>;
+
+// ---------- replay ----------
+
+export const replayModeSchema = z.enum(["step", "trajectory"]);
+export type ReplayMode = z.infer<typeof replayModeSchema>;
+export const replayStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled"]);
+export type ReplayStatus = z.infer<typeof replayStatusSchema>;
+
+export const replayCreateSchema = z.object({
+  /** provider/model, e.g. openai/gpt-4.1-mini, anthropic/claude-sonnet-4-5, fake/fake-triage-weak */
+  model: z.string().regex(/^[a-z0-9_-]+\/.+$/i, "model must be provider/model"),
+  mode: replayModeSchema.default("step"),
+  /** name@version of a registered prompt; replaces the system prompt in step mode */
+  promptVersion: z.string().max(200).nullish(),
+  filter: caseFilterSchema.partial().default({}),
+  maxCostUsd: z.number().positive().nullish(),
+  /** Start the job immediately (default) or just create it (trajectory mode posts results itself). */
+  start: z.boolean().default(true),
+});
+export type ReplayCreate = z.infer<typeof replayCreateSchema>;
+
+export const replayEstimateSchema = z.object({
+  cases: z.number().int(),
+  estimatedCostUsd: z.number().nullable(),
+  estimatedInputTokens: z.number().int(),
+  estimatedOutputTokens: z.number().int(),
+  priced: z.boolean(),
+});
+export type ReplayEstimate = z.infer<typeof replayEstimateSchema>;
+
+export const replaySummarySchema = z.object({
+  cases: z.number().int(),
+  completed: z.number().int(),
+  passed: z.number().int(),
+  failed: z.number().int(),
+  passRate: z.number(),
+  verdicts: z.record(verdictSchema, z.number().int()),
+  costUsd: z.number(),
+  durationMs: z.number().nullable(),
+  baseline: z
+    .object({ kind: z.enum(["job", "recorded"]), jobId: uuidSchema.nullable(), model: z.string().nullable() })
+    .nullable(),
+  stoppedByCostCap: z.boolean().default(false),
+});
+export type ReplaySummary = z.infer<typeof replaySummarySchema>;
+
+export const replayJobSchema = z.object({
+  id: uuidSchema,
+  projectId: uuidSchema,
+  targetModel: z.string(),
+  targetPromptVersion: z.string().nullable(),
+  mode: replayModeSchema,
+  caseFilter: jsonValueSchema,
+  status: replayStatusSchema,
+  summary: replaySummarySchema.nullable(),
+  estimatedCostUsd: z.number().nullable(),
+  maxCostUsd: z.number().nullable(),
+  costUsd: z.number(),
+  caseCount: z.number().int(),
+  completedCount: z.number().int(),
+  error: z.string().nullable(),
+  startedAt: isoDateSchema.nullable(),
+  finishedAt: isoDateSchema.nullable(),
+  createdAt: isoDateSchema,
+});
+export type ReplayJob = z.infer<typeof replayJobSchema>;
+
+export const replayResultSchema = z.object({
+  id: uuidSchema,
+  jobId: uuidSchema,
+  caseId: uuidSchema,
+  output: jsonValueSchema.nullable(),
+  score: z.number().nullable(),
+  passed: z.boolean().nullable(),
+  verdict: verdictSchema,
+  reason: z.string().nullable(),
+  latencyMs: z.number().nullable(),
+  costUsd: z.number().nullable(),
+  diff: jsonValueSchema.nullable(),
+  error: z.string().nullable(),
+  createdAt: isoDateSchema,
+});
+export type ReplayResult = z.infer<typeof replayResultSchema>;
+
+/** A result the trajectory runner (CLI) posts back. */
+export const replayResultPostSchema = z.object({
+  caseId: uuidSchema,
+  output: jsonValueSchema.optional(),
+  latencyMs: z.number().nonnegative().nullish(),
+  costUsd: z.number().nonnegative().nullish(),
+  error: z.string().max(10_000).nullish(),
+  /** Set when the agent hit a tool call with no recording or a refused side-effect tool. */
+  unreplayable: z
+    .object({ toolName: z.string(), args: jsonValueSchema, reason: z.enum(["unseen", "refused"]) })
+    .nullish(),
+  /** Steps the agent took during replay (recorded in replay mode), for the report. */
+  steps: z.array(jsonValueSchema).optional(),
+});
+export type ReplayResultPost = z.infer<typeof replayResultPostSchema>;
+
+export const replayResultsPostSchema = z.object({
+  results: z.array(replayResultPostSchema).min(1).max(500),
+  /** Mark the job finished after storing these results. */
+  finish: z.boolean().default(false),
+  error: z.string().nullish(),
+});
+export type ReplayResultsPost = z.infer<typeof replayResultsPostSchema>;
+
+/** One row of the report: a case with its baseline, target and human correction side by side. */
+export const reportRowSchema = z.object({
+  caseId: uuidSchema,
+  title: z.string(),
+  kind: correctionKindSchema,
+  agent: z.string(),
+  runId: uuidSchema,
+  scorer: scorerNameSchema,
+  verdict: verdictSchema,
+  passed: z.boolean().nullable(),
+  score: z.number().nullable(),
+  reason: z.string().nullable(),
+  baselineOutput: jsonValueSchema.nullable(),
+  targetOutput: jsonValueSchema.nullable(),
+  expected: jsonValueSchema.nullable(),
+  note: z.string().nullable(),
+  actor: z.string().nullable(),
+  error: z.string().nullable(),
+  costUsd: z.number().nullable(),
+  latencyMs: z.number().nullable(),
+});
+export type ReportRow = z.infer<typeof reportRowSchema>;
+
+export const replayReportSchema = z.object({
+  job: replayJobSchema,
+  summary: replaySummarySchema,
+  regressions: z.array(reportRowSchema),
+  stillWrong: z.array(reportRowSchema),
+  fixed: z.array(reportRowSchema),
+  passed: z.array(reportRowSchema),
+  unreplayable: z.array(reportRowSchema),
+  errors: z.array(reportRowSchema),
+});
+export type ReplayReport = z.infer<typeof replayReportSchema>;
+
+export const replayListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: replayStatusSchema.optional(),
+});
+
+// ---------- prompt versions ----------
+
+export const promptVersionCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  version: z.string().min(1).max(100),
+  template: z.string().min(1).max(200_000),
+});
+export type PromptVersionCreate = z.infer<typeof promptVersionCreateSchema>;
+
+export const promptVersionSchema = z.object({
+  id: uuidSchema,
+  name: z.string(),
+  version: z.string(),
+  template: z.string(),
+  hash: z.string(),
+  createdAt: isoDateSchema,
+});
+export type PromptVersion = z.infer<typeof promptVersionSchema>;

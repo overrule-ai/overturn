@@ -9,7 +9,15 @@ import { Overturn } from "@overturn/sdk";
 import { makeAgent, makeOpenAI } from "./agent.js";
 import { tickets } from "./data.js";
 import { startFakeOpenAI } from "./fake-openai.js";
-import { PROMPT_VERSION } from "./prompts.js";
+import { PROMPT_VERSION, PROMPTS } from "./prompts.js";
+
+/** Registers every prompt variant so `overturn replay --prompt ticket-triage@v2` can target it. */
+export async function registerPrompts(ov: Overturn): Promise<void> {
+  if (!ov.apiKey) return;
+  for (const [version, template] of Object.entries(PROMPTS)) {
+    await ov.api.prompts.register({ name: "ticket-triage", version, template });
+  }
+}
 
 export interface SeedResult {
   runIds: string[];
@@ -31,6 +39,7 @@ export async function seed(
   const triage = makeAgent({ ov, openai, model });
   const runIds: string[] = [];
   try {
+    await registerPrompts(ov);
     for (const ticket of tickets.slice(0, opts.limit ?? tickets.length)) {
       const run = ov.startRun({
         agent: "ticket-triage",
