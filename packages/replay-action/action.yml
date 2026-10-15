@@ -12,7 +12,7 @@ inputs:
   base-url:
     description: "Overturn API base URL"
     required: false
-    default: "https://api.overturn.dev"
+    default: "https://api.overturn.run"
   model:
     description: "Target model, provider/model (e.g. openai/gpt-4.1-mini)"
     required: true

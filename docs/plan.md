@@ -71,8 +71,8 @@ Day 1 is 2026-10-15.
 
 ## M7 Ship (day 14)
 
-- [ ] Docs: quickstart, SDK reference, self-hosting, fingerprint contract, decisions
-- [ ] README: headline, GIF, 60-second quickstart, six flows, self-hosting, SDK reference link, license
-- [ ] Quickstart tested from a clean machine in under ten minutes
-- [ ] `v0.1.0` tag, npm and PyPI publish
-- [ ] Status report
+- [x] Docs: quickstart, SDK reference, self-hosting, fingerprint contract, decisions
+- [x] README: headline, GIF, 60-second quickstart, six flows, self-hosting, SDK reference link, license
+- [x] Quickstart tested from a fresh clone in under ten minutes (`scripts/quickstart-check.sh`, also a CI job)
+- [x] `v0.1.0` tag; release workflow publishes to npm and PyPI once `NPM_TOKEN` / `PYPI_TOKEN` are set
+- [x] Status report

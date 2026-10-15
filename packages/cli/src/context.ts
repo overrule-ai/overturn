@@ -35,7 +35,7 @@ export function loadDotEnv(cwd = process.cwd()): void {
 export function resolveConnection(opts: CliOptions): { apiKey: string; baseUrl: string } {
   loadDotEnv();
   const apiKey = opts.apiKey ?? process.env.OVERTURN_API_KEY ?? "";
-  const baseUrl = opts.baseUrl ?? process.env.OVERTURN_BASE_URL ?? "https://api.overturn.dev";
+  const baseUrl = opts.baseUrl ?? process.env.OVERTURN_BASE_URL ?? "https://api.overturn.run";
   if (!apiKey) {
     fail("No API key. Set OVERTURN_API_KEY (run `overturn init`) or pass --api-key.");
   }

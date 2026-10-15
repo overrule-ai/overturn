@@ -40,7 +40,7 @@ class Overturn:
         background: bool = True,
     ) -> None:
         self.api_key = api_key or os.environ.get("OVERTURN_API_KEY", "")
-        self.base_url = base_url or os.environ.get("OVERTURN_BASE_URL", "https://api.overturn.dev")
+        self.base_url = base_url or os.environ.get("OVERTURN_BASE_URL", "https://api.overturn.run")
         self.debug = debug if debug is not None else os.environ.get("OVERTURN_DEBUG") == "1"
         self.redact = redact
         self.replay: ReplayState | None = None

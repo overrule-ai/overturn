@@ -17,7 +17,7 @@ import { Transport, type TransportOptions } from "./transport.js";
 
 export interface OverturnOptions {
   apiKey?: string;
-  /** Defaults to OVERTURN_BASE_URL or https://api.overturn.dev */
+  /** Defaults to OVERTURN_BASE_URL or https://api.overturn.run */
   baseUrl?: string;
   /** Called on every step before it is sent. Return null to drop it. */
   redact?: (step: StepUpsert) => StepUpsert | null;
@@ -44,7 +44,7 @@ export class Overturn implements RunSink {
   constructor(opts: OverturnOptions = {}) {
     const env = typeof process !== "undefined" ? process.env : {};
     this.apiKey = opts.apiKey ?? env.OVERTURN_API_KEY ?? "";
-    this.baseUrl = opts.baseUrl ?? env.OVERTURN_BASE_URL ?? "https://api.overturn.dev";
+    this.baseUrl = opts.baseUrl ?? env.OVERTURN_BASE_URL ?? "https://api.overturn.run";
     this.debug = opts.debug ?? env.OVERTURN_DEBUG === "1";
     this.redact = opts.redact;
     this.api = new OverturnApi({ apiKey: this.apiKey, baseUrl: this.baseUrl, fetch: opts.transport?.fetch });

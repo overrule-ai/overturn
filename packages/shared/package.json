@@ -3,6 +3,25 @@
   "version": "0.1.0",
   "description": "Shared schemas, types, fingerprinting and scorers for Overturn",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overrule-ai/overturn.git",
+    "directory": "packages/shared"
+  },
+  "homepage": "https://github.com/overrule-ai/overturn#readme",
+  "bugs": {
+    "url": "https://github.com/overrule-ai/overturn/issues"
+  },
+  "keywords": [
+    "llm",
+    "agents",
+    "evals",
+    "regression-testing",
+    "replay",
+    "openai",
+    "anthropic",
+    "observability"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
