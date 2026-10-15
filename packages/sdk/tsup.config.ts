@@ -7,5 +7,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: "node22",
-  external: ["openai", "@anthropic-ai/sdk", "ai"],
+  external: ["openai", "@anthropic-ai/sdk", "ai", "@ai-sdk/provider"],
 });

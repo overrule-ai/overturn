@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   customType,
   doublePrecision,
@@ -164,7 +165,8 @@ export const steps = pgTable(
       .notNull()
       .references(() => runs.id, { onDelete: "cascade" }),
     parentStepId: uuid("parent_step_id"),
-    seq: integer("seq").notNull(),
+    /** Order within the run. SDKs count from 0; OTLP uses the span start time in microseconds. */
+    seq: bigint("seq", { mode: "number" }).notNull(),
     kind: stepKind("kind").notNull(),
     name: text("name").notNull(),
     input: jsonb("input"),

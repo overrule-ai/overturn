@@ -1,0 +1,11 @@
+{
+  "name": "@overturn/example-ticket-triage-python",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "setup": "uv sync --group dev",
+    "typecheck": "uv run --no-sync pyright",
+    "lint": "uv run --no-sync ruff check . && uv run --no-sync ruff format --check .",
+    "seed": "uv run --no-sync python -m triage.seed"
+  }
+}

@@ -64,6 +64,15 @@ export class IngestService {
         }
       }
 
+      // Serialize concurrent batches for the same runs so the step_count recount below
+      // sees every committed step (exporters often send a trace's spans in parallel requests).
+      const touched = [...new Set([...runIds, ...stepRunIds])];
+      if (touched.length > 0) {
+        await tx.execute(
+          sql`select 1 from runs where id in ${touched} and project_id = ${projectId} for update`,
+        );
+      }
+
       if (payload.steps.length > 0) {
         await tx
           .insert(steps)
@@ -88,7 +97,6 @@ export class IngestService {
           });
       }
 
-      const touched = [...new Set([...runIds, ...stepRunIds])];
       if (touched.length > 0) {
         await tx.execute(sql`
           update runs r set

@@ -9,6 +9,8 @@ export {
   toolFingerprint,
   type Usage,
 } from "@overturn/shared";
+export { aiMiddleware } from "./ai-sdk.js";
+export { type AnthropicLike, assembleMessageStream, splitMessageParams, wrapAnthropic } from "./anthropic.js";
 export { Overturn, type OverturnOptions } from "./client.js";
 export { currentRun } from "./context.js";
 export { assembleChatStream, type OpenAILike, splitChatParams, wrapOpenAI } from "./openai.js";

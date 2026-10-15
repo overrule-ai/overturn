@@ -1,0 +1,24 @@
+[project]
+name = "overturn-example-ticket-triage"
+version = "0.1.0"
+description = "Python port of the Overturn reference support-triage agent"
+requires-python = ">=3.10"
+dependencies = ["overturn", "openai>=1.40"]
+
+[tool.uv.sources]
+overturn = { path = "../../../packages/sdk-python", editable = true }
+
+[dependency-groups]
+dev = ["pytest>=8", "pyright>=1.1.400", "ruff>=0.6"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["triage"]
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 110
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

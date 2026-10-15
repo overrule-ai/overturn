@@ -23,6 +23,13 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
     { logger: LEVELS[config.LOG_LEVEL] },
   );
   await app.register(cors, { origin: true, credentials: true });
+  // OTLP/HTTP protobuf bodies arrive as raw bytes
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addContentTypeParser("application/x-protobuf", { parseAs: "buffer" }, (_req, body, done) => {
+      done(null, body);
+    });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableShutdownHooks();
   return app;

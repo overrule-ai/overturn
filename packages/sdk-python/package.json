@@ -1,0 +1,13 @@
+{
+  "name": "@overturn/sdk-python",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turbo wrapper for the Python SDK (published to PyPI as `overturn`)",
+  "scripts": {
+    "setup": "uv sync --all-extras --group dev",
+    "typecheck": "uv run --no-sync pyright",
+    "lint": "uv run --no-sync ruff check . && uv run --no-sync ruff format --check .",
+    "test": "uv run --no-sync pytest -q",
+    "build": "uv build"
+  }
+}

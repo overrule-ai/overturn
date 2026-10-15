@@ -21,12 +21,12 @@ Day 1 is 2026-10-15.
 
 ## M2 Ingest everywhere (days 3–4)
 
-- [ ] `packages/sdk-python`: `Overturn`, `run()` context manager, `@tool`, `wrap_openai`, `wrap_anthropic`, batched ingest, `flush()`, `redact`; pyright strict; pytest
-- [ ] `examples/ticket-triage` Python port recording the same runs
-- [ ] `POST /v1/otlp/v1/traces` (OTLP/HTTP, JSON and protobuf) mapping GenAI semantic-convention spans to runs and steps
-- [ ] `wrapAnthropic` in the TypeScript SDK; Vercel AI SDK middleware
-- [ ] OTel-instrumented sample that shows up as runs
-- [ ] Push, status report
+- [x] `packages/sdk-python`: `Overturn`, `run()` context manager, `@tool`, `wrap_openai`, `wrap_anthropic`, batched ingest, `flush()`, `redact`; pyright strict; pytest
+- [x] `examples/ticket-triage/python` port recording the same runs
+- [x] `POST /v1/traces` (+ `/v1/otlp/v1/traces`) OTLP/HTTP, JSON and protobuf, GenAI semantic-convention spans to runs and steps
+- [x] `wrapAnthropic` in the TypeScript SDK; Vercel AI SDK middleware (`ov.aiMiddleware()`)
+- [x] `examples/otel-sample`: OTel-instrumented agent that shows up as runs
+- [x] Push, status report
 
 ## M3 Correct and case (days 5–6)
 

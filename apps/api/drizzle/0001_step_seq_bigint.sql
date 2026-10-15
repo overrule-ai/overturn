@@ -1,0 +1,1 @@
+ALTER TABLE "steps" ALTER COLUMN "seq" SET DATA TYPE bigint;
