@@ -21,3 +21,16 @@ One line of reasoning each. Newest at the bottom.
 - **(superseded by the rename below) Package-name fallbacks for the `overrule` collision.**
 - **Model keys never enter the build workspace; tests use the fake provider and real-model runs happen in GitHub Actions and Railway from secrets.** No secret store here, and the brief forbids keys in chat.
 - **Renamed Overrule → Overturn (founder: "rename").** `overrule` was taken on npm and PyPI; `overturn` is free on both, so `npx overturn` and `pip install overturn` work and the metaphor survives. Packages: `overturn` (CLI), `@overturn/sdk`, `@overturn/shared` on npm; `overturn` on PyPI.
+
+## 2026-10-16 (M2)
+
+- **Python mirrors the TypeScript SDK name for name (`wrap_openai`, `@tool`, `ov.run()` as a context manager) and shares the fingerprint vectors file.** One contract, two implementations, one test fixture.
+- **Python ingest runs on a daemon thread with a lock-protected queue; `flush()` drains from the caller's thread.** No asyncio dependency, works in sync and async agents.
+- **`@tool` works at module level without a client reference: it records on the ambient run (contextvars) and reads the module-level replay state.** Matches how Python agents declare tools; `ov.tool(name, fn)` exists for the explicit style.
+- **OTLP endpoint lives at the standard `/v1/traces` path (alias `/v1/otlp/v1/traces`) and accepts JSON and protobuf; protobuf is decoded with the generated root shipped in `@opentelemetry/otlp-transformer`.** Exporters work with just an endpoint and an `authorization` header; no vendored `.proto` files.
+- **OTLP run id = trace id reshaped into a UUID; step id = sha256(traceId:spanId) reshaped.** Re-exports are idempotent and spans exported in separate requests land in the same run.
+- **A batch without the trace's root span emits steps only; ingest stubs the run and the root's batch fills it in.** Guessing agent/tags from a child span clobbered the real values when requests arrived out of order.
+- **`steps.seq` is bigint; OTLP uses the span start time in microseconds, SDKs count from 0.** Ordering must be stable across independently exported batches.
+- **Ingest locks the touched run rows (`select … for update`) before inserting steps.** Concurrent batches for one run otherwise raced the `step_count` recount.
+- **Supported GenAI attribute dialects: OTel GenAI semconv (`gen_ai.input.messages`, `gen_ai.tool.call.arguments`), OpenLLMetry (`gen_ai.prompt.N.*`, `traceloop.entity.*`), OpenInference (`llm.*`, `input.value`).** Covers the three instrumentations teams actually run.
+- **Vercel AI SDK middleware records `generateText`/`streamText` as `ai.generate`/`ai.stream` steps with the AI SDK's own prompt shape as input.** Replay of these cases goes through the AI SDK too (M4), so no translation layer.

@@ -1,4 +1,6 @@
 import type { RunUpsert, StepUpsert } from "@overturn/shared";
+import { aiMiddleware } from "./ai-sdk.js";
+import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { currentRun } from "./context.js";
 import { type OpenAILike, wrapOpenAI } from "./openai.js";
 import { ReplayState, type ToolRecordings } from "./replay.js";
@@ -82,6 +84,15 @@ export class Overturn implements RunSink {
 
   wrapOpenAI<T extends OpenAILike>(client: T): T {
     return wrapOpenAI(client);
+  }
+
+  wrapAnthropic<T extends AnthropicLike>(client: T): T {
+    return wrapAnthropic(client);
+  }
+
+  /** Vercel AI SDK: `wrapLanguageModel({ model, middleware: ov.aiMiddleware() })`. */
+  aiMiddleware() {
+    return aiMiddleware();
   }
 
   /** Puts every ov.tool() into replay: answered from recordings, never executed. */

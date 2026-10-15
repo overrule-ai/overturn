@@ -43,7 +43,10 @@
     }
   },
   "devDependencies": {
+    "@ai-sdk/provider": "^2.0.5",
+    "@anthropic-ai/sdk": "^0.134.0",
     "@types/node": "^22.20.5",
+    "ai": "^5.0.277",
     "openai": "^5.23.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",

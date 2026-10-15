@@ -4,7 +4,7 @@
 
 Overturn records your agent's runs, turns human corrections into regression cases automatically, and replays them against any model with tools mocked, so nothing fires twice.
 
-> Status: v0.1 in progress. Milestone 1 (record) is done; corrections, cases and replay land over the next two weeks. See [docs/plan.md](docs/plan.md).
+> Status: v0.1 in progress. Recording (TypeScript, Python, OpenTelemetry) is done; corrections, cases and replay land over the next two weeks. See [docs/plan.md](docs/plan.md).
 
 ## 60-second quickstart
 
@@ -52,6 +52,33 @@ await run.context(async () => {
 });
 await ov.flush();
 ```
+
+## Python
+
+```python
+from overturn import Overturn, tool
+
+ov = Overturn(api_key=os.environ["OVERTURN_API_KEY"])
+client = ov.wrap_openai(OpenAI())
+
+@tool(side_effect=False, match_on=["email"])
+def lookup_customer(email: str) -> dict: ...
+
+with ov.run(agent="ticket-triage", version="1.4.0", input=ticket) as run:
+    ...
+    run.end(output=decision)
+```
+
+## OpenTelemetry
+
+Already tracing with the GenAI semantic conventions? Point your exporter at Overturn and keep your stack:
+
+```
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://<api>/v1/traces
+OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ov_live_..."
+```
+
+A trace becomes a run; `chat`/`execute_tool` spans become steps. See `examples/otel-sample`.
 
 ## Self-hosting
 

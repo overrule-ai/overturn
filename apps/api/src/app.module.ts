@@ -6,6 +6,7 @@ import { HealthController } from "./health/health.controller";
 import { IngestController } from "./ingest/ingest.controller";
 import { IngestService } from "./ingest/ingest.service";
 import { MeController } from "./me/me.controller";
+import { OtlpController } from "./otlp/otlp.controller";
 import { RunsController } from "./runs/runs.controller";
 import { RunsService } from "./runs/runs.service";
 
@@ -15,7 +16,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [DbModule, AuthModule],
-      controllers: [HealthController, MeController, IngestController, RunsController],
+      controllers: [HealthController, MeController, IngestController, OtlpController, RunsController],
       providers: [{ provide: APP_CONFIG, useValue: config }, IngestService, RunsService],
       exports: [APP_CONFIG],
       global: true,
