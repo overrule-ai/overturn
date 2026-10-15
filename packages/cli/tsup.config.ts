@@ -7,7 +7,6 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: "node22",
-  banner: { js: "#!/usr/bin/env node" },
   // bundle workspace packages so `npx overturn` works standalone
   noExternal: ["@overturn/sdk", "@overturn/shared"],
 });
