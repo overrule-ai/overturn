@@ -23,7 +23,11 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
     new FastifyAdapter({ bodyLimit: 32 * 1024 * 1024, trustProxy: true }),
     { logger: LEVELS[config.LOG_LEVEL] },
   );
-  await app.register(cors, { origin: true, credentials: true });
+  await app.register(cors, {
+    origin: true,
+    credentials: true,
+    methods: ["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  });
   await app.register(cookie);
   // OTLP/HTTP protobuf bodies arrive as raw bytes
   app
