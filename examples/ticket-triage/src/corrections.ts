@@ -64,6 +64,8 @@ export function planCorrections(): PlannedCorrection[] {
   return [...edits, ...rejects, ...approves];
 }
 
+const SCORED_FIELDS = ["priority", "team"];
+
 export async function applyCorrections(ov: Overturn): Promise<CorrectionResult[]> {
   const page = await ov.api.runs.list({ agent: "ticket-triage", limit: 200 });
   const byTicket = new Map<string, Run>();
@@ -76,15 +78,22 @@ export async function applyCorrections(ov: Overturn): Promise<CorrectionResult[]
     if (!run) throw new Error(`No recorded run for ${plan.ticketId}; run the seed first`);
     const output = run.output as { priority: string } | null;
     const correctedOutput = plan.kind === "edit" ? { priority: bump(output?.priority ?? "P3") } : undefined;
-    results.push(
-      await ov.correct({
-        runId: run.id,
-        kind: plan.kind,
-        correctedOutput,
-        note: plan.note,
-        actor: plan.actor,
-      }),
-    );
+    const result = await ov.correct({
+      runId: run.id,
+      kind: plan.kind,
+      correctedOutput,
+      note: plan.note,
+      actor: plan.actor,
+    });
+    // The decision under test is the routing, not the wording of the reply: score on
+    // priority + team so a different model's phrasing is not a regression.
+    if (result.case) {
+      await ov.api.cases.patch(result.case.id, {
+        scorer: "json_match",
+        scorerConfig: { fields: SCORED_FIELDS },
+      });
+    }
+    results.push(result);
   }
   return results;
 }
