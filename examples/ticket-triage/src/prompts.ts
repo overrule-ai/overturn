@@ -20,7 +20,7 @@ const urgencyRule = `
 Outage keywords ("down", "outage", "502", "cannot log in", "locked out", "crash") indicate production impact: never classify them below P1.`;
 
 export const PROMPTS: Record<string, string> = {
-  v1: base + urgencyRule,
+  v1: base, // oops: the urgency rule was dropped
   v2: base + urgencyRule + enterpriseRule,
   weak: base,
 };
