@@ -6,7 +6,18 @@ export interface RunContext {
   parentStepId: string | null;
 }
 
-export const runStorage = new AsyncLocalStorage<RunContext>();
+// One AsyncLocalStorage per process, shared across copies of this package (the CLI bundles its own),
+// so a run started by the trajectory runner is visible to the customer's agent code.
+const KEY = Symbol.for("overturn.run.storage");
+const g = globalThis as Record<symbol, unknown>;
+function sharedStorage(): AsyncLocalStorage<RunContext> {
+  const existing = g[KEY] as AsyncLocalStorage<RunContext> | undefined;
+  if (existing) return existing;
+  const created = new AsyncLocalStorage<RunContext>();
+  g[KEY] = created;
+  return created;
+}
+export const runStorage: AsyncLocalStorage<RunContext> = sharedStorage();
 
 export function currentRun(): Run | undefined {
   return runStorage.getStore()?.run;

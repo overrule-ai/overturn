@@ -22,7 +22,7 @@ npx overturn cases list
 npx overturn replay --model fake/fake-triage-weak --prompt ticket-triage@v2 --format md
 ```
 
-The last command replays the 20 cases against a deliberately weaker model with a new prompt and prints regressions, still-wrong and fixed cases side by side with the human correction. With `OPENAI_API_KEY` set, try `--model openai/gpt-4.1-mini` or `--model anthropic/claude-haiku-4-5` (server needs the key).
+The last command replays the 20 cases against a deliberately weaker model with a new prompt and prints regressions, still-wrong and fixed cases side by side with the human correction. With `OPENAI_API_KEY` set, try `--model openai/gpt-4.1-mini` or `--model anthropic/claude-haiku-4-5` (server needs the key). Add `--mode trajectory` to re-run whole trajectories through `overturn.config.ts` with every tool answered from the recording and side-effect tools refused.
 
 Without `OPENAI_API_KEY` the example runs against a deterministic fake model so everything above works offline.
 
@@ -33,7 +33,7 @@ Without `OPENAI_API_KEY` the example runs against a deterministic fake model so 
 3. **Auto-case.** Each correction freezes the step's exact input, the run's tool recordings and the expected answer as a regression case.
 4. **Replay.** `overturn replay --model anthropic/claude-sonnet-4-5 --since 30d` re-runs the cases with tools answered from the recording. Side-effect tools never execute.
 5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction side by side.
-6. **CI gate.** The GitHub Action comments the report on PRs that touch prompts or agent code and fails on regressions.
+6. **CI gate.** The [GitHub Action](packages/replay-action) comments the report on PRs that touch prompts or agent code and fails on regressions.
 
 ## Record a run
 

@@ -471,6 +471,8 @@ export const replayResultPostSchema = z.object({
     .nullish(),
   /** Steps the agent took during replay (recorded in replay mode), for the report. */
   steps: z.array(jsonValueSchema).optional(),
+  /** Side-effect tools the agent tried to call; refused, never executed. The trajectory ended there. */
+  refusedSideEffects: z.array(z.object({ toolName: z.string(), args: jsonValueSchema })).optional(),
 });
 export type ReplayResultPost = z.infer<typeof replayResultPostSchema>;
 
@@ -540,3 +542,32 @@ export const promptVersionSchema = z.object({
   createdAt: isoDateSchema,
 });
 export type PromptVersion = z.infer<typeof promptVersionSchema>;
+
+// ---------- trajectory model calls ----------
+
+export const replayModelCallSchema = z.object({
+  model: z.string().regex(/^[a-z0-9_-]+\/.+$/i, "model must be provider/model"),
+  promptVersion: z.string().max(200).nullish(),
+  input: z
+    .object({
+      provider: z.enum(["openai", "anthropic", "ai"]),
+      messages: jsonValueSchema.optional(),
+      system: jsonValueSchema.optional(),
+      tools: jsonValueSchema.optional(),
+      tool_choice: jsonValueSchema.optional(),
+      response_format: jsonValueSchema.optional(),
+      params: z.record(z.string(), jsonValueSchema).optional(),
+    })
+    .loose(),
+});
+export type ReplayModelCallRequest = z.infer<typeof replayModelCallSchema>;
+
+export const replayModelCallResponseSchema = z.object({
+  text: z.string(),
+  toolCalls: z.array(z.object({ id: z.string(), name: z.string(), args: jsonValueSchema })),
+  finishReason: z.string(),
+  usage: usageSchema,
+  modelId: z.string().nullable(),
+  costUsd: z.number().nullable(),
+});
+export type ReplayModelCallResponse = z.infer<typeof replayModelCallResponseSchema>;

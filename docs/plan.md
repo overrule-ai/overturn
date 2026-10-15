@@ -54,10 +54,11 @@ Day 1 is 2026-10-15.
 
 ## M5 Trajectory replay and CI (days 10–11)
 
-- [ ] SDK `replayMode(recordings)`: tools answered from recordings by fingerprint; unseen fingerprint → `unreplayable`; `sideEffect: true` refused outright. One test per guarantee.
-- [ ] `overturn.config.ts` loader, trajectory mode in the CLI, `maxSteps`
-- [ ] `packages/replay-action`: GitHub Action posting the markdown report as a PR comment, failing on `--fail-on-regression`
-- [ ] Push, status report
+- [x] SDK `replayMode(recordings, { modelCall, maxSteps })` in TS and Python: tools answered from recordings by fingerprint; unseen fingerprint → `UnreplayableError`; `sideEffect: true` refused outright; model calls swapped for the target through `POST /v1/replays/model`; steps collected locally, nothing recorded. Replay state and run context are process-global so the customer's own SDK copy sees them.
+- [x] `overturn.config.ts` loader (jiti), trajectory mode in the CLI (`--mode trajectory`), `maxSteps`, batched result posting; the first refused side-effect tool ends the trajectory and the decision before it is scored
+- [x] `packages/replay-action`: composite GitHub Action — replay, markdown report in the job summary, upserted PR comment, failing check on `fail-on-regression`
+- [x] `.github/workflows/replay-gate.yml`: self-test on PRs touching the example prompt (base branch recorded, PR prompt registered as `ticket-triage@pr`, replayed with the fake provider)
+- [x] Push, status report
 
 ## M6 Web UI and self-host (days 12–13)
 

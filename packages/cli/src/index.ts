@@ -6,7 +6,8 @@ import { registerInit } from "./commands/init.js";
 import { registerReplay } from "./commands/replay.js";
 import { registerRuns } from "./commands/runs.js";
 
-export { defineConfig, type OverturnConfig } from "./config.js";
+export { defineConfig, type OverturnConfig, type ReplayContext } from "./config.js";
+export { findConfig, loadConfig, runTrajectory } from "./trajectory.js";
 
 export function buildProgram(): Command {
   const program = new Command("overturn")

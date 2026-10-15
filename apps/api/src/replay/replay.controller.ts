@@ -6,12 +6,15 @@ import {
   type ReplayCreate,
   type ReplayEstimate,
   type ReplayJob,
+  type ReplayModelCallRequest,
+  type ReplayModelCallResponse,
   type ReplayReport,
   type ReplayResult,
   type ReplayResultsPost,
   renderMarkdownReport,
   replayCreateSchema,
   replayListQuerySchema,
+  replayModelCallSchema,
   replayResultsPostSchema,
 } from "@overturn/shared";
 import { z } from "zod";
@@ -83,6 +86,15 @@ export class ReplayController {
     @Body(zod(replayResultsPostSchema)) body: ReplayResultsPost,
   ): Promise<ReplayJob> {
     return this.replay.postResults(auth.projectId, id, body);
+  }
+
+  @Post("replays/model")
+  @HttpCode(200)
+  modelCall(
+    @Auth() auth: AuthContext,
+    @Body(zod(replayModelCallSchema)) body: ReplayModelCallRequest,
+  ): Promise<ReplayModelCallResponse> {
+    return this.replay.modelCall(auth.projectId, body);
   }
 
   @Get("replays/:id/report")

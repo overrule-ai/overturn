@@ -1,5 +1,6 @@
 import { estimateCostUsd, type Usage } from "@overturn/shared";
 import { currentRun } from "./context.js";
+import { getGlobalReplay, type ReplayModelOutput } from "./replay.js";
 import type { Run } from "./run.js";
 
 /** Structural type so `@anthropic-ai/sdk` stays an optional peer dependency. */
@@ -138,14 +139,42 @@ function record(
 }
 
 /** Wraps an Anthropic client so messages.create (streaming or not) is recorded as an llm_call step. */
-export function wrapAnthropic<T extends AnthropicLike>(client: T): T {
+/** Builds an Anthropic Message-shaped object from a replayed model answer. */
+export function toAnthropicMessage(
+  out: ReplayModelOutput,
+  model: string | null,
+): MessageLike & Record<string, unknown> {
+  const content: unknown[] = [];
+  if (out.text) content.push({ type: "text", text: out.text });
+  for (const tc of out.toolCalls)
+    content.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.args ?? {} });
+  return {
+    id: `replay-${Date.now().toString(36)}`,
+    type: "message",
+    role: "assistant",
+    model: out.modelId ?? model ?? "replay",
+    content,
+    stop_reason: out.toolCalls.length ? "tool_use" : "end_turn",
+    stop_sequence: null,
+    usage: { input_tokens: out.usage.inputTokens ?? 0, output_tokens: out.usage.outputTokens ?? 0 },
+  };
+}
+
+export function wrapAnthropic<T extends AnthropicLike>(client: T, _host?: unknown): T {
   const messages = client.messages as { create: LooseCreate };
   const original: LooseCreate = messages.create.bind(messages);
   messages.create = async (params: Record<string, unknown>, options?: unknown) => {
     const run = currentRun();
-    if (!run) return original(params, options);
+    const replay = getGlobalReplay();
+    if (!run && !replay?.modelCall) return original(params, options);
     const startedAt = new Date();
     const { input, params: p, model } = splitMessageParams(params);
+    if (replay?.modelCall) {
+      const out = await replay.modelCall({ provider: "anthropic", ...input, params: p });
+      const message = toAnthropicMessage(out, model);
+      record(run, model, input, p, message, startedAt);
+      return message;
+    }
     let result: unknown;
     try {
       result = await original(params, options);

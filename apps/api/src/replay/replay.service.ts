@@ -3,6 +3,7 @@ import {
   type Case,
   type CaseFilter,
   estimateCostUsd,
+  type FrozenInput,
   hashJSON,
   type JudgeVerdict,
   parseJsonText,
@@ -10,6 +11,8 @@ import {
   type ReplayCreate,
   type ReplayEstimate,
   type ReplayJob,
+  type ReplayModelCallRequest,
+  type ReplayModelCallResponse,
   type ReplayReport,
   type ReplayResult,
   type ReplayResultsPost,
@@ -641,6 +644,42 @@ export class ReplayService {
     };
   }
 
+  // ---------- trajectory model calls (the SDK in replay mode calls the target model through the server) ----------
+
+  async modelCall(projectId: string, req: ReplayModelCallRequest): Promise<ReplayModelCallResponse> {
+    const { provider } = parseModel(req.model);
+    if (!this.registry.isConfigured(provider))
+      throw new BadRequestException(
+        `Provider "${provider}" is not configured on this server (missing API key)`,
+      );
+    const systemPrompt = req.promptVersion
+      ? (await this.prompts.resolve(projectId, req.promptVersion)).template
+      : null;
+    const { provider: inputProvider, params, ...rest } = req.input;
+    const frozen: FrozenInput = {
+      name: "replay",
+      provider: inputProvider,
+      model: null,
+      params: params ?? null,
+      ...rest,
+    };
+    const cacheInput = { frozen, systemPrompt };
+    const hit = await this.cached(req.model, cacheInput);
+    if (hit) return hit.output as ReplayModelCallResponse;
+    const model = this.registry.languageModel(req.model);
+    const res = await this.withRetry(provider, () => callModel(model, frozen, { systemPrompt }));
+    const out: ReplayModelCallResponse = {
+      text: res.text,
+      toolCalls: res.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, args: tc.args ?? {} })),
+      finishReason: res.finishReason,
+      usage: res.usage,
+      modelId: res.modelId,
+      costUsd: estimateCostUsd(req.model, res.usage),
+    };
+    await this.cache(req.model, cacheInput, out, out.costUsd, res.usage);
+    return out;
+  }
+
   // ---------- trajectory results (posted by the CLI, M5) ----------
 
   async postResults(projectId: string, jobId: string, body: ReplayResultsPost): Promise<ReplayJob> {
@@ -721,6 +760,7 @@ export class ReplayService {
           target: r.output ?? null,
           steps: r.steps ?? null,
           unreplayable: r.unreplayable ?? null,
+          refusedSideEffects: r.refusedSideEffects ?? null,
         },
       });
     }

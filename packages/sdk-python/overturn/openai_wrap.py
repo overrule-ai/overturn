@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import AsyncIterator, Iterator
 from datetime import datetime, timezone
 from typing import Any, TypeVar, cast
 
 from . import context
+from . import tools as _tools
 from ._json import as_dict, get_dict, get_int, get_list, get_str, is_jsonable
 from .pricing import estimate_cost_usd
 from .types import Usage
@@ -187,6 +189,44 @@ class _TappedStream:
             close()
 
 
+def to_openai_completion(out: dict[str, Any], model: str | None) -> dict[str, Any]:
+    """OpenAI chat.completion-shaped dict from a replayed model answer."""
+    tool_calls = [
+        {
+            "id": tc.get("id", f"call_{i}"),
+            "type": "function",
+            "function": {"name": tc.get("name"), "arguments": json.dumps(tc.get("args") or {})},
+        }
+        for i, tc in enumerate(out.get("toolCalls") or [])
+    ]
+    message: dict[str, Any] = {"role": "assistant", "content": None if tool_calls else out.get("text", "")}
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+    usage = get_dict(out, "usage")
+    return {
+        "id": "replay",
+        "object": "chat.completion",
+        "model": out.get("modelId") or model or "replay",
+        "choices": [
+            {"index": 0, "message": message, "finish_reason": "tool_calls" if tool_calls else "stop"}
+        ],
+        "usage": {
+            "prompt_tokens": get_int(usage, "inputTokens") or 0,
+            "completion_tokens": get_int(usage, "outputTokens") or 0,
+            "total_tokens": get_int(usage, "totalTokens") or 0,
+        },
+    }
+
+
+def _replay_completion(kwargs: dict[str, Any]) -> dict[str, Any] | None:
+    replay = _tools.get_replay_state()
+    if replay is None or replay.model_call is None:
+        return None
+    inp, params, model = split_chat_params(kwargs)
+    out = replay.model_call({"provider": "openai", **inp, "params": params})
+    return to_openai_completion(dict(out), model)
+
+
 def wrap_openai(client: T) -> T:
     """Patches client.chat.completions.create in place (works for OpenAI and AsyncOpenAI)."""
     completions = cast(Any, client).chat.completions
@@ -203,10 +243,14 @@ def wrap_openai(client: T) -> T:
 
         async def create_async(*args: Any, **kwargs: Any) -> Any:
             run = context.current_run()
-            if run is None:
+            replayed = _replay_completion(kwargs)
+            if run is None and replayed is None:
                 return await original(*args, **kwargs)
             started = datetime.now(timezone.utc)
             inp, params, model = split_chat_params(kwargs)
+            if replayed is not None:
+                _record(run, model, inp, params, replayed, started, None)
+                return replayed
             if kwargs.get("stream"):
                 kwargs.setdefault("stream_options", {"include_usage": True})
             try:
@@ -224,10 +268,14 @@ def wrap_openai(client: T) -> T:
 
         def create_sync(*args: Any, **kwargs: Any) -> Any:
             run = context.current_run()
-            if run is None:
+            replayed = _replay_completion(kwargs)
+            if run is None and replayed is None:
                 return original(*args, **kwargs)
             started = datetime.now(timezone.utc)
             inp, params, model = split_chat_params(kwargs)
+            if replayed is not None:
+                _record(run, model, inp, params, replayed, started, None)
+                return replayed
             if kwargs.get("stream"):
                 kwargs.setdefault("stream_options", {"include_usage": True})
             try:

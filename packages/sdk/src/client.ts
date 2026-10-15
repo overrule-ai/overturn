@@ -4,7 +4,13 @@ import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { OverturnApi } from "./api.js";
 import { currentRun } from "./context.js";
 import { type OpenAILike, wrapOpenAI } from "./openai.js";
-import { ReplayState, type ToolRecordings } from "./replay.js";
+import {
+  getGlobalReplay,
+  type ReplayOptions,
+  ReplayState,
+  setGlobalReplay,
+  type ToolRecordings,
+} from "./replay.js";
 import { Run, type RunSink, type StartRunOptions, type StepInput } from "./run.js";
 import { makeTool, type ToolImpl, type ToolOptions, type WrappedTool } from "./tool.js";
 import { Transport, type TransportOptions } from "./transport.js";
@@ -28,8 +34,10 @@ export class Overturn implements RunSink {
   readonly apiKey: string;
   /** Typed REST client (runs, cases, corrections, project). */
   readonly api: OverturnApi;
-  /** Non-null while in replay mode. */
-  replay: ReplayState | null = null;
+  /** Non-null while in replay mode (process-global, shared by every Overturn instance). */
+  get replay(): ReplayState | null {
+    return getGlobalReplay();
+  }
   private readonly redact: OverturnOptions["redact"];
   private readonly debug: boolean;
 
@@ -59,9 +67,15 @@ export class Overturn implements RunSink {
 
   // ---- RunSink ----
   emitRun(run: RunUpsert): void {
+    if (this.replay) return; // replay runs are never recorded as production runs
     this.transport?.enqueueRun(run);
   }
   emitStep(step: StepUpsert): void {
+    const replay = this.replay;
+    if (replay) {
+      replay.record(step);
+      return;
+    }
     if (!this.transport) return;
     const out = this.redact ? this.redact(step) : step;
     if (out) this.transport.enqueueStep(out);
@@ -87,11 +101,11 @@ export class Overturn implements RunSink {
   }
 
   wrapOpenAI<T extends OpenAILike>(client: T): T {
-    return wrapOpenAI(client);
+    return wrapOpenAI(client, this);
   }
 
   wrapAnthropic<T extends AnthropicLike>(client: T): T {
-    return wrapAnthropic(client);
+    return wrapAnthropic(client, this);
   }
 
   /** Vercel AI SDK: `wrapLanguageModel({ model, middleware: ov.aiMiddleware() })`. */
@@ -115,13 +129,14 @@ export class Overturn implements RunSink {
   }
 
   /** Puts every ov.tool() into replay: answered from recordings, never executed. */
-  replayMode(recordings: ToolRecordings, options: { allowSideEffects?: boolean } = {}): ReplayState {
-    this.replay = new ReplayState(recordings, options);
-    return this.replay;
+  replayMode(recordings: ToolRecordings, options: ReplayOptions = {}): ReplayState {
+    const state = new ReplayState(recordings, options);
+    setGlobalReplay(state);
+    return state;
   }
 
   exitReplayMode(): void {
-    this.replay = null;
+    setGlobalReplay(null);
   }
 
   /** Sends everything queued. Call before the process exits. */
