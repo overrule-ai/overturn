@@ -11,7 +11,8 @@ COPY apps/api ./apps/api
 RUN pnpm install --frozen-lockfile --filter @overturn/api... \
  && pnpm --filter @overturn/shared build \
  && pnpm --filter @overturn/api build \
- && pnpm prune --prod
+ && rm -rf node_modules apps/api/node_modules packages/shared/node_modules \
+ && pnpm install --frozen-lockfile --prod --offline --filter @overturn/api...
 
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production PNPM_HOME=/pnpm PATH=/pnpm:$PATH
