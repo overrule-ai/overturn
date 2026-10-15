@@ -10,8 +10,19 @@ export async function ensureDatabase(url: string): Promise<void> {
   u.pathname = "/postgres";
   const sql = postgres(u.toString(), { max: 1, onnotice: () => {} });
   try {
-    const rows = await sql`select 1 from pg_database where datname = ${dbName}`;
-    if (rows.length === 0) await sql.unsafe(`create database "${dbName}"`);
+    // Several packages create their test databases at the same time in CI; Postgres refuses
+    // concurrent CREATE DATABASE from the same template, so retry with a short backoff.
+    for (let attempt = 0; ; attempt++) {
+      const rows = await sql`select 1 from pg_database where datname = ${dbName}`;
+      if (rows.length > 0) return;
+      try {
+        await sql.unsafe(`create database "${dbName}"`);
+        return;
+      } catch (err) {
+        if (attempt >= 20) throw err;
+        await new Promise((r) => setTimeout(r, 250 + Math.random() * 500));
+      }
+    }
   } finally {
     await sql.end();
   }
