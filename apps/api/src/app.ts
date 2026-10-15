@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import { Logger, type LogLevel } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
@@ -23,6 +24,7 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
     { logger: LEVELS[config.LOG_LEVEL] },
   );
   await app.register(cors, { origin: true, credentials: true });
+  await app.register(cookie);
   // OTLP/HTTP protobuf bodies arrive as raw bytes
   app
     .getHttpAdapter()

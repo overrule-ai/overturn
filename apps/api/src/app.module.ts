@@ -1,4 +1,5 @@
 import { type DynamicModule, Module } from "@nestjs/common";
+import { AuthController } from "./auth/auth.controller";
 import { AuthModule } from "./auth/auth.module";
 import { CasesController } from "./cases/cases.controller";
 import { CasesService } from "./cases/cases.service";
@@ -27,6 +28,7 @@ export class AppModule {
       imports: [DbModule, AuthModule],
       controllers: [
         HealthController,
+        AuthController,
         MeController,
         ProjectsController,
         IngestController,

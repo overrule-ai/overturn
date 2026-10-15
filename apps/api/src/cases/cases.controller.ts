@@ -46,6 +46,12 @@ export class CasesController {
     return this.cases.get(auth.projectId, id);
   }
 
+  /** Result history across replay jobs, newest first. */
+  @Get("cases/:id/results")
+  results(@Auth() auth: AuthContext, @Param("id", zod(z.uuid())) id: string) {
+    return this.cases.results(auth.projectId, id);
+  }
+
   @Patch("cases/:id")
   patch(
     @Auth() auth: AuthContext,

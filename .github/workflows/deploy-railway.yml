@@ -1,0 +1,23 @@
+name: Deploy (Railway)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # Only when a Railway project token is configured.
+    if: ${{ vars.RAILWAY_DEPLOY == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g @railway/cli
+      - run: railway up --service api --detach
+      - run: railway up --service web --detach

@@ -28,6 +28,8 @@ export interface AuthContext {
   keyId: string;
   keyPrefix: string;
   settings: Record<string, unknown>;
+  /** Present when authenticated with a web session instead of an API key. */
+  user?: { id: string; email: string; name: string | null };
 }
 
 @Injectable()
