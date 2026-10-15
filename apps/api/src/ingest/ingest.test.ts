@@ -210,3 +210,22 @@ describe("GET /openapi.json", () => {
     expect(doc.paths["/v1/replays/{id}/report"]!.get!.responses["200"]).toBeDefined();
   });
 });
+
+describe("CORS", () => {
+  it("preflight allows the browser UI to DELETE and PATCH with credentials", async () => {
+    const res = await fetch(`${ctx.baseUrl}/v1/api-keys/01a141aa-24c0-775f-b5e4-71b83af3ae56`, {
+      method: "OPTIONS",
+      headers: {
+        origin: "https://app.overturn.run",
+        "access-control-request-method": "DELETE",
+        "access-control-request-headers": "x-overturn-project,content-type",
+      },
+    });
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBe("https://app.overturn.run");
+    expect(res.headers.get("access-control-allow-credentials")).toBe("true");
+    const methods = res.headers.get("access-control-allow-methods") ?? "";
+    for (const m of ["DELETE", "PATCH", "POST"]) expect(methods).toContain(m);
+    expect(res.headers.get("access-control-allow-headers")).toContain("x-overturn-project");
+  });
+});
