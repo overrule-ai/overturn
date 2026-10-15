@@ -1,0 +1,56 @@
+[
+  {
+    "id": "KB-101",
+    "title": "Service status and outage communication",
+    "body": "Check status.example.com. P0 incidents get a status page post within 15 minutes. Platform-wide outages are owned by the Infrastructure team.",
+    "tags": ["outage", "status", "downtime"]
+  },
+  {
+    "id": "KB-102",
+    "title": "Resetting SSO / SAML configuration",
+    "body": "SSO misconfiguration locks out all users of an org. Admins can use the break-glass login link. Owned by the Identity team.",
+    "tags": ["sso", "saml", "login", "locked out"]
+  },
+  {
+    "id": "KB-103",
+    "title": "Refunds and invoice corrections",
+    "body": "Refunds within 30 days are approved by Billing. Duplicate charges are refunded automatically within 5 business days.",
+    "tags": ["refund", "invoice", "charge", "billing"]
+  },
+  {
+    "id": "KB-104",
+    "title": "Export to CSV and PDF",
+    "body": "Exports over 50k rows run asynchronously and are emailed. Known issue: PDF export fails for dashboards with more than 20 widgets.",
+    "tags": ["export", "csv", "pdf"]
+  },
+  {
+    "id": "KB-105",
+    "title": "API rate limits",
+    "body": "Pro: 600 requests/minute. Enterprise: custom limits. 429 responses include a Retry-After header.",
+    "tags": ["api", "rate limit", "429"]
+  },
+  {
+    "id": "KB-106",
+    "title": "Data deletion and GDPR requests",
+    "body": "Deletion requests are fulfilled within 30 days by the Trust team. Enterprise DPAs may require 7-day turnaround.",
+    "tags": ["gdpr", "delete", "privacy"]
+  },
+  {
+    "id": "KB-107",
+    "title": "Mobile app sync issues",
+    "body": "Sync failures on mobile are usually caused by an expired session. Reinstalling does not help; sign out and back in. Owned by the Mobile team.",
+    "tags": ["mobile", "sync", "ios", "android"]
+  },
+  {
+    "id": "KB-108",
+    "title": "Feature requests",
+    "body": "Feature requests are logged by Support in the product board and acknowledged within 2 business days.",
+    "tags": ["feature", "request", "idea"]
+  },
+  {
+    "id": "KB-109",
+    "title": "Webhooks and integrations",
+    "body": "Webhook deliveries retry 5 times with exponential backoff. Slack and Jira integrations are owned by the Integrations team.",
+    "tags": ["webhook", "integration", "slack", "jira"]
+  }
+]

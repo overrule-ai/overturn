@@ -1,0 +1,86 @@
+[
+  {
+    "email": "rayfan@acme.com",
+    "name": "Rayfan Lee",
+    "company": "Acme Corp",
+    "plan": "enterprise",
+    "seats": 850
+  },
+  {
+    "email": "ops@northwind.io",
+    "name": "Priya Natarajan",
+    "company": "Northwind",
+    "plan": "enterprise",
+    "seats": 1200
+  },
+  {
+    "email": "cto@globex.com",
+    "name": "Hank Scorpio",
+    "company": "Globex",
+    "plan": "enterprise",
+    "seats": 400
+  },
+  {
+    "email": "it@initech.net",
+    "name": "Milton Waddams",
+    "company": "Initech",
+    "plan": "enterprise",
+    "seats": 300
+  },
+  {
+    "email": "dana@vandelay.co",
+    "name": "Dana Ortiz",
+    "company": "Vandelay Industries",
+    "plan": "pro",
+    "seats": 40
+  },
+  {
+    "email": "sam@pied-piper.dev",
+    "name": "Sam Okafor",
+    "company": "Pied Piper",
+    "plan": "pro",
+    "seats": 25
+  },
+  {
+    "email": "lin@hooli.xyz",
+    "name": "Lin Zhao",
+    "company": "Hooli Labs",
+    "plan": "pro",
+    "seats": 60
+  },
+  {
+    "email": "jo@stark.industries",
+    "name": "Jo Baptiste",
+    "company": "Stark Industries",
+    "plan": "pro",
+    "seats": 15
+  },
+  {
+    "email": "maya@freelance.me",
+    "name": "Maya Singh",
+    "company": null,
+    "plan": "free",
+    "seats": 1
+  },
+  {
+    "email": "tom@gmail.com",
+    "name": "Tom Reyes",
+    "company": null,
+    "plan": "free",
+    "seats": 1
+  },
+  {
+    "email": "student@uni.edu",
+    "name": "Ava Chen",
+    "company": "State University",
+    "plan": "free",
+    "seats": 2
+  },
+  {
+    "email": "dev@sideproject.app",
+    "name": "Kai Novak",
+    "company": null,
+    "plan": "free",
+    "seats": 1
+  }
+]

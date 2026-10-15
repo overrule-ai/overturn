@@ -1,0 +1,26 @@
+{
+  "name": "overturn-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "db:migrate": "pnpm --filter @overturn/api db:migrate",
+    "db:generate": "pnpm --filter @overturn/api db:generate",
+    "bootstrap": "pnpm --filter @overturn/api bootstrap"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "turbo": "^2.11.8",
+    "typescript": "^5.9.3"
+  }
+}
