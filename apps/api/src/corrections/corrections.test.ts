@@ -332,4 +332,14 @@ describe("project settings + implicit approval", () => {
     expect(oldRun2.body.correctionCount).toBe(1);
     expect(again).toBeLessThanOrEqual(n);
   });
+
+  it("pg-boss starts with its queues and schedules (what boots in production)", async () => {
+    const { JobsService } = await import("../jobs/jobs.service");
+    const jobs = ctx.app.get(JobsService);
+    await jobs.start();
+    const schedules = await jobs.boss.getSchedules();
+    expect(schedules.map((s) => s.name).sort()).toEqual(["cache-purge", "implicit-approve"]);
+    expect(await jobs.boss.getQueue("replay")).not.toBeNull();
+    await jobs.boss.stop({ graceful: false, timeout: 1000 });
+  }, 30_000);
 });
