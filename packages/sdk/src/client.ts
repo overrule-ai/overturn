@@ -1,6 +1,7 @@
-import type { RunUpsert, StepUpsert } from "@overturn/shared";
+import type { CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn/shared";
 import { aiMiddleware } from "./ai-sdk.js";
 import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
+import { OverturnApi } from "./api.js";
 import { currentRun } from "./context.js";
 import { type OpenAILike, wrapOpenAI } from "./openai.js";
 import { ReplayState, type ToolRecordings } from "./replay.js";
@@ -25,6 +26,8 @@ export class Overturn implements RunSink {
   readonly transport: Transport | null;
   readonly baseUrl: string;
   readonly apiKey: string;
+  /** Typed REST client (runs, cases, corrections, project). */
+  readonly api: OverturnApi;
   /** Non-null while in replay mode. */
   replay: ReplayState | null = null;
   private readonly redact: OverturnOptions["redact"];
@@ -36,6 +39,7 @@ export class Overturn implements RunSink {
     this.baseUrl = opts.baseUrl ?? env.OVERTURN_BASE_URL ?? "https://api.overturn.dev";
     this.debug = opts.debug ?? env.OVERTURN_DEBUG === "1";
     this.redact = opts.redact;
+    this.api = new OverturnApi({ apiKey: this.apiKey, baseUrl: this.baseUrl, fetch: opts.transport?.fetch });
     const enabled = opts.enabled ?? true;
     if (!enabled) {
       this.transport = null;
@@ -93,6 +97,21 @@ export class Overturn implements RunSink {
   /** Vercel AI SDK: `wrapLanguageModel({ model, middleware: ov.aiMiddleware() })`. */
   aiMiddleware() {
     return aiMiddleware();
+  }
+
+  /**
+   * Records a human correction and freezes a regression case from it. Call this from
+   * your own approve/edit UI. Sends immediately (not batched) and returns the case.
+   */
+  correct(input: {
+    runId: string;
+    stepId?: string | null;
+    kind: CorrectionKind;
+    correctedOutput?: unknown;
+    note?: string | null;
+    actor?: string | null;
+  }): Promise<CorrectionResult> {
+    return this.api.corrections.create({ ...input, source: "sdk" });
   }
 
   /** Puts every ov.tool() into replay: answered from recordings, never executed. */

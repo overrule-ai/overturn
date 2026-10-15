@@ -13,6 +13,10 @@ const configSchema = z.object({
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  JOBS_DISABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "true"),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

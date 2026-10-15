@@ -1,3 +1,12 @@
+export type {
+  Case,
+  CaseSummary,
+  Correction,
+  CorrectionKind,
+  CorrectionResult,
+  Run as RunRecord,
+  RunWithSteps,
+} from "@overturn/shared";
 export {
   canonicalJSON,
   estimateCostUsd,
@@ -11,6 +20,7 @@ export {
 } from "@overturn/shared";
 export { aiMiddleware } from "./ai-sdk.js";
 export { type AnthropicLike, assembleMessageStream, splitMessageParams, wrapAnthropic } from "./anthropic.js";
+export { OverturnApi, OverturnApiError } from "./api.js";
 export { Overturn, type OverturnOptions } from "./client.js";
 export { currentRun } from "./context.js";
 export { assembleChatStream, type OpenAILike, splitChatParams, wrapOpenAI } from "./openai.js";

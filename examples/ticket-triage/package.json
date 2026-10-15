@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "seed": "tsx src/seed.ts",
+    "corrections": "tsx src/corrections.ts",
     "fake-openai": "tsx src/fake-openai.ts"
   },
   "dependencies": {

@@ -32,6 +32,7 @@ export async function startTestApp(): Promise<TestContext> {
     DATABASE_URL: TEST_DATABASE_URL,
     PORT: "0",
     LOG_LEVEL: "warn",
+    JOBS_DISABLED: "1",
   });
   const app = await createApp(config);
   await app.listen({ port: 0, host: "127.0.0.1" });
@@ -64,7 +65,7 @@ export async function api<T>(
   const res = await fetch(`${ctx.baseUrl}${path}`, {
     method,
     headers: {
-      "content-type": "application/json",
+      ...(body === undefined ? {} : { "content-type": "application/json" }),
       authorization: `Bearer ${ctx.apiKey}`,
       ...headers,
     },

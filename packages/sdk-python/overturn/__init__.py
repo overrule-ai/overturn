@@ -13,6 +13,7 @@ with ov.run(agent="ticket-triage", version="1.4.0", input=ticket) as run:
     run.end(output=decision)
 """
 
+from .api import OverturnApi, OverturnApiError
 from .client import Overturn
 from .context import current_run
 from .fingerprint import FINGERPRINT_VERSION, canonical_json, fingerprint, hash_json, tool_fingerprint
@@ -29,6 +30,8 @@ __all__ = [
     "FINGERPRINT_VERSION",
     "IngestPayload",
     "Overturn",
+    "OverturnApi",
+    "OverturnApiError",
     "ReplayState",
     "Run",
     "RunUpsert",

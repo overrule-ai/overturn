@@ -61,3 +61,48 @@ describe("ticket-triage seed", () => {
     expect(run.body.steps[0]!.fingerprint).toHaveLength(64);
   });
 });
+
+describe("scripted corrections", () => {
+  it("20 corrections produce 20 cases with the right expected", async () => {
+    const { applyCorrections, planCorrections } = await import("./corrections.js");
+    const ov = new Overturn({ apiKey: ctx.apiKey, baseUrl: ctx.baseUrl });
+    const results = await applyCorrections(ov);
+    expect(results).toHaveLength(20);
+    expect(results.every((r) => r.case !== null)).toBe(true);
+    const kinds = results.map((r) => r.correction.kind);
+    expect(kinds.filter((k) => k === "edit")).toHaveLength(8);
+    expect(kinds.filter((k) => k === "reject")).toHaveLength(2);
+    expect(kinds.filter((k) => k === "approve")).toHaveLength(10);
+
+    const plan = planCorrections();
+    for (const [i, r] of results.entries()) {
+      const c = r.case!;
+      const p = plan[i]!;
+      expect(c.agent).toBe("ticket-triage");
+      expect(c.recordedModel).toBe("fake-triage-v1");
+      expect(Object.keys(c.toolRecordings)).toHaveLength(4);
+      expect(c.frozenInput.name).toBe("chat.completions");
+      if (p.kind === "edit") {
+        const original = c.originalOutput as { priority: string };
+        const expected = c.expected as { priority: string };
+        expect(c.scorer).toBe("json_match");
+        expect(Number(expected.priority[1])).toBe(Math.max(0, Number(original.priority[1]) - 1));
+      } else if (p.kind === "approve") {
+        expect(c.scorer).toBe("json_match");
+        expect(c.expected).toEqual(c.originalOutput);
+      } else {
+        expect(c.scorer).toBe("not_equals");
+        expect(c.expected).toMatchObject({ not_equals: c.originalOutput, rubric: p.note });
+      }
+    }
+    const list = await harness.api<Page<{ id: string }>>(
+      ctx,
+      "GET",
+      "/v1/cases?agent=ticket-triage&limit=100",
+    );
+    expect(list.body.items).toHaveLength(20);
+    const stats = await harness.api<{ corrected7d: number; runs7d: number }>(ctx, "GET", "/v1/runs/stats");
+    expect(stats.body.runs7d).toBe(30);
+    expect(stats.body.corrected7d).toBe(20);
+  });
+});

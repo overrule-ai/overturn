@@ -210,3 +210,37 @@ def test_nested_runs(capture: Capture) -> None:
         t()
     capture.ov.flush()
     assert [s["runId"] for s in capture.steps()] == [outer.id, inner.id, outer.id]
+
+
+def test_correct_posts_immediately() -> None:
+    import httpx
+
+    seen: list[tuple[str, dict[str, Any]]] = []
+
+    def app(request: httpx.Request) -> httpx.Response:
+        import json as _json
+
+        seen.append((request.url.path, _json.loads(request.content)))
+        return httpx.Response(
+            201, json={"correction": {"id": "c1"}, "case": {"id": "k1", "scorer": "json_match"}}
+        )
+
+    from overturn import Overturn
+
+    ov = Overturn(
+        api_key="k",
+        base_url="http://x",
+        http_client=httpx.Client(transport=httpx.MockTransport(app)),
+        background=False,
+    )
+    out = ov.correct(run_id="r1", kind="edit", corrected_output={"priority": "P1"}, note="n", actor="a")
+    assert out["case"]["id"] == "k1"
+    assert seen[0][0] == "/v1/corrections"
+    assert seen[0][1] == {
+        "runId": "r1",
+        "kind": "edit",
+        "source": "sdk",
+        "correctedOutput": {"priority": "P1"},
+        "note": "n",
+        "actor": "a",
+    }
