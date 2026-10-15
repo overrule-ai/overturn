@@ -11,6 +11,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.5.15
         version: 2.5.15
+      overturn:
+        specifier: workspace:*
+        version: link:packages/cli
       turbo:
         specifier: ^2.11.8
         version: 2.11.8

@@ -195,3 +195,18 @@ describe("GET /v1/runs", () => {
     expect(me.body.keyPrefix.startsWith("ov_live_")).toBe(true);
   });
 });
+
+describe("GET /openapi.json", () => {
+  it("documents every route with schemas from @overturn/shared", async () => {
+    const res = await fetch(`${ctx.baseUrl}/openapi.json`);
+    expect(res.status).toBe(200);
+    const doc = (await res.json()) as {
+      openapi: string;
+      paths: Record<string, Record<string, { requestBody?: unknown; responses: Record<string, unknown> }>>;
+    };
+    expect(doc.openapi).toBe("3.1.0");
+    expect(Object.keys(doc.paths).length).toBeGreaterThan(30);
+    expect(doc.paths["/v1/ingest"]!.post!.requestBody).toBeDefined();
+    expect(doc.paths["/v1/replays/{id}/report"]!.get!.responses["200"]).toBeDefined();
+  });
+});

@@ -17,11 +17,13 @@
     "lint:fix": "biome check --write .",
     "db:migrate": "pnpm --filter @overturn/api db:migrate",
     "db:generate": "pnpm --filter @overturn/api db:generate",
-    "bootstrap": "pnpm --filter @overturn/api bootstrap"
+    "bootstrap": "pnpm --filter @overturn/api bootstrap",
+    "quickstart:check": "bash scripts/quickstart-check.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "turbo": "^2.11.8",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "overturn": "workspace:*"
   }
 }
