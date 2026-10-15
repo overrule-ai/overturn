@@ -1,0 +1,47 @@
+stderr | src/replay/replay.test.ts > replay jobs (step mode) > estimates, runs, scores, assigns verdicts and reports
+AI SDK Warning: System messages in the prompt or messages fields can be a security risk because they may enable prompt injection attacks. Use the system option instead when possible. Set allowSystemInMessages to true to suppress this warning, or false to throw an error.
+
+stderr | src/replay/replay.test.ts > replay jobs (step mode) > estimates, runs, scores, assigns verdicts and reports
+AI SDK Warning: System messages in the prompt or messages fields can be a security risk because they may enable prompt injection attacks. Use the system option instead when possible. Set allowSystemInMessages to true to suppress this warning, or false to throw an error.
+
+(node:15260) Warning: AI SDK Warning System: To turn off warning logging, set the AI_SDK_LOG_WARNINGS global to false.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15260) Warning: AI SDK Warning: The "responseFormat" setting is not supported by this model - JSON response format schema is only supported with structuredOutputs
+(node:15260) Warning: AI SDK Warning: The "responseFormat" setting is not supported by this model - JSON response format schema is only supported with structuredOutputs
+stderr | src/replay/replay.test.ts > replay jobs (step mode) > estimates, runs, scores, assigns verdicts and reports
+AI SDK Warning: System messages in the prompt or messages fields can be a security risk because they may enable prompt injection attacks. Use the system option instead when possible. Set allowSystemInMessages to true to suppress this warning, or false to throw an error.
+
+(node:15260) Warning: AI SDK Warning: The "responseFormat" setting is not supported by this model - JSON response format schema is only supported with structuredOutputs
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/replay/replay.test.ts > replay jobs (step mode) > estimates, runs, scores, assigns verdicts and reports
+AssertionError: expected { Object (cases, failed, ...) } to match object { cases: 3, completed: 3, …(3) }
+(8 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -2,10 +2,9 @@[39m
+[2m    "cases": 3,[22m
+[2m    "completed": 3,[22m
+[2m    "failed": 1,[22m
+[2m    "passed": 2,[22m
+[2m    "verdicts": {[22m
+[32m-     "fixed": 1,[39m
+[32m-     "pass": 1,[39m
+[31m+     "fixed": 2,[39m
+[2m      "regression": 1,[22m
+[2m    },[22m
+[2m  }[22m
+
+ ❯ src/replay/replay.test.ts:132:25
+    130|     const job = await waitForJob(created.body.job.id);
+    131|     expect(job.status).toBe("completed");
+    132|     expect(job.summary).toMatchObject({ cases: 3, completed: 3, passed…
+       |                         ^
+    133|     expect(job.summary!.baseline).toEqual({ kind: "recorded", jobId: n…
+    134| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

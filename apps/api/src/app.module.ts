@@ -13,6 +13,9 @@ import { JobsService } from "./jobs/jobs.service";
 import { MeController } from "./me/me.controller";
 import { OtlpController } from "./otlp/otlp.controller";
 import { ProjectsController } from "./projects/projects.controller";
+import { PromptsService } from "./replay/prompts.service";
+import { ReplayController } from "./replay/replay.controller";
+import { ReplayService } from "./replay/replay.service";
 import { RunsController } from "./runs/runs.controller";
 import { RunsService } from "./runs/runs.service";
 
@@ -31,6 +34,7 @@ export class AppModule {
         RunsController,
         CorrectionsController,
         CasesController,
+        ReplayController,
       ],
       providers: [
         { provide: APP_CONFIG, useValue: config },
@@ -38,6 +42,8 @@ export class AppModule {
         RunsService,
         CasesService,
         CorrectionsService,
+        PromptsService,
+        ReplayService,
         JobsService,
       ],
       exports: [APP_CONFIG],

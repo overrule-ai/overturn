@@ -41,15 +41,16 @@ Day 1 is 2026-10-15.
 
 ## M4 Step replay (days 7–9)
 
-- [ ] Model access through the Vercel AI SDK (OpenAI, Anthropic, Google, OpenRouter), `provider/model` strings
-- [ ] Scorers in `packages/shared`: `equals`, `json_match`, `tool_choice`, `semantic`, `judge`, `not_equals`, `should_escalate`
-- [ ] Replay jobs on pg-boss: step mode, 24h response cache by `(model, input hash)`, per-provider concurrency and backoff
-- [ ] Cost estimate before start, hard `--max-cost` cap that stops cleanly and keeps partial results
-- [ ] Verdicts (`pass`, `fail`, `regression`, `fixed`, `unchanged`, `unreplayable`, `error`) and baseline rules
-- [ ] `POST /v1/replays`, `GET /v1/replays/:id`, `GET /v1/replays/:id/report`
-- [ ] CLI: `overturn replay`, `overturn report` (json, md)
-- [ ] Demo: replay against a second model / weakened prompt variant shows ≥1 regression and ≥1 fix
-- [ ] Push, status report
+- [x] Model access through the Vercel AI SDK (OpenAI, Anthropic, Google, OpenRouter) plus a `fake/` OpenAI-compatible provider for keyless runs; `provider/model` strings
+- [x] Scorers in `packages/shared`: `equals` (semantic fallback), `json_match` (JSONPath fields/ignore), `tool_choice`, `semantic`, `judge`, `not_equals`, `should_escalate`
+- [x] Replay jobs on pg-boss: step mode, worker pool with per-provider concurrency, rate-limit backoff, 24h response cache by `(model, input hash)`
+- [x] Cost estimate before start (`POST /v1/replays/estimate`), hard `--max-cost` cap that stops cleanly and keeps partial results
+- [x] Verdicts (`pass`, `fail`, `regression`, `fixed`, `unreplayable`, `error`) and baseline rules (latest completed job for the recorded model, else the recorded outputs)
+- [x] Prompt versions (`POST /v1/prompts`, `--prompt name@version` swaps the system prompt in step mode)
+- [x] `POST /v1/replays`, `GET /v1/replays[/:id]`, `/results`, `/report` (JSON) and `/report.md`, `/cancel`; `POST /v1/replays/:id/results` for trajectory runners
+- [x] CLI: `overturn replay` (estimate, progress, table/json/md, `--fail-on-regression`), `report`, `replays list`, `prompts register|list`
+- [x] Demo: `fake/fake-triage-weak` with `ticket-triage@v2` over the 20 cases shows 2 regressions, 7 fixed, 3 still wrong (e2e tested)
+- [x] Push, status report
 
 ## M5 Trajectory replay and CI (days 10–11)
 

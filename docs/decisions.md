@@ -46,3 +46,17 @@ One line of reasoning each. Newest at the bottom.
 - **pg-boss lives in the `pgboss` schema of the same database; `JOBS_DISABLED=1` keeps it off in tests.** One Postgres, no Redis, as the brief asks.
 - **The CLI bundles `@overturn/sdk` and `@overturn/shared` so `npx overturn` has no peer deps; it exports `defineConfig` for `overturn.config.ts`.** One install, one import.
 - **`overturn init` writes `.env` (and warns when `.env` is not gitignored) rather than a JSON config with the key.** Keys live in `.env`, per the brief.
+
+## 2026-10-18 (M4)
+
+- **Step replay goes through the Vercel AI SDK `generateText` with the frozen messages converted to `ModelMessage[]`, tools as schema-only (no `execute`), `temperature: 0`, `seed: 42` where supported, and `response_format: json_schema` mapped to `Output.object`.** One call path for every provider; a model that stops at tool calls yields a tool decision to score.
+- **The `fake/` provider is an OpenAI-compatible endpoint (`FAKE_OPENAI_URL`); its embedding model is a deterministic bag-of-words vector.** Keyless tests and demos stay reproducible and the code path is the real one.
+- **Baseline = latest completed job for the case's recorded model with no prompt override; otherwise the recorded original output is scored with the same scorer.** Approve cases pass on the recorded baseline by construction, so any failure is a regression; edit cases fail by construction, so any pass is a fix.
+- **Verdicts: `regression` / `fixed` only when the result flips against the baseline; otherwise `pass` / `fail`; `unchanged` is reserved for comparing two jobs; a reject case that now differs from the rejected output counts as `fixed`.** Keeps the report's three sections (regressions, still wrong, fixed) disjoint and literal.
+- **Cost cap is checked before each case starts in a worker pool (not `Promise.all`); completed results are kept and the job finishes `completed` with `stoppedByCostCap`.** A cap that cancels in-flight calls would waste the spend it was meant to limit.
+- **No estimate-vs-cap guard on job creation; the CLI shows the estimate and asks before a > $1 run without `--max-cost` or `-y`.** The cap is the hard limit; the estimate is advice.
+- **Response cache lives in Postgres (`response_cache`, 24h TTL, purged hourly) keyed by model + canonical input hash + prompt override; judge and embedding calls are cached the same way.** No Redis; a rerun of the same job costs nothing.
+- **Judge = `generateText` with the rubric prompt and a `{pass, reason}` JSON contract, project `judgeModel`, cached; falls back to a pass/fail regex if the model ignores the JSON contract.** Structured enough to be stable, loose enough for cheap models.
+- **Prompt versions are stored templates; `--prompt name@version` replaces the first system message (or adds one) in step mode.** Lets a PR's prompt be replayed without re-recording.
+- **Trajectory jobs are created with `mode: "trajectory"` and filled by `POST /v1/replays/:id/results` (scored server-side with the same scorers and baseline).** Only the customer's code can orchestrate the agent; scoring stays in one place.
+- **Replay results `diff` stores `{expected, baseline, target}` so the report shows all three side by side without recomputation.** The report page is a read.

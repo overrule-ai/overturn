@@ -12,12 +12,17 @@ import { seed } from "./seed.js";
 const harness = await import("../../../apps/api/dist/test/harness.js");
 
 let ctx: Awaited<ReturnType<typeof harness.startTestApp>>;
+let fakeServer: { server: import("node:http").Server; url: string };
 
 beforeAll(async () => {
+  const { startFakeOpenAI } = await import("./fake-openai.js");
+  fakeServer = await startFakeOpenAI(0);
+  process.env.FAKE_OPENAI_URL = fakeServer.url; // the seed and the API's fake/ provider share it
   ctx = await harness.startTestApp();
 });
 afterAll(async () => {
   await ctx.close();
+  fakeServer.server.close();
 });
 
 describe("ticket-triage seed", () => {
@@ -104,5 +109,60 @@ describe("scripted corrections", () => {
     const stats = await harness.api<{ corrected7d: number; runs7d: number }>(ctx, "GET", "/v1/runs/stats");
     expect(stats.body.runs7d).toBe(30);
     expect(stats.body.corrected7d).toBe(20);
+  });
+});
+
+describe("the README demo", () => {
+  it("replaying the weak model with the v2 prompt shows regressions and fixes", async () => {
+    const ov = new Overturn({ apiKey: ctx.apiKey, baseUrl: ctx.baseUrl });
+    const prompts = await ov.api.prompts.list("ticket-triage");
+    expect(prompts.map((p) => p.version).sort()).toEqual(["v1", "v2", "weak"]);
+
+    const created = await ov.api.replays.create({
+      model: "fake/fake-triage-weak",
+      promptVersion: "ticket-triage@v2",
+      filter: { agent: "ticket-triage" },
+    });
+    expect(created.job.caseCount).toBe(20);
+    let job = created.job;
+    for (let i = 0; i < 200 && (job.status === "pending" || job.status === "running"); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      job = await ov.api.replays.get(job.id);
+    }
+    expect(job.status).toBe("completed");
+    const report = await ov.api.replays.report(job.id);
+    // weak model demotes outages -> approved outage tickets from non-enterprise customers regress
+    // (enterprise ones like T-1001 are rescued by the v2 bump, which is the point of the demo)
+    expect(report.regressions.length).toBeGreaterThanOrEqual(1);
+    expect(report.regressions.some((r) => r.title.includes("T-1020") || r.title.includes("T-1022"))).toBe(
+      true,
+    );
+    expect(report.regressions.some((r) => r.title.includes("T-1001"))).toBe(false);
+    // v2 prompt adds the enterprise bump -> some priority edits are fixed
+    expect(report.fixed.length).toBeGreaterThanOrEqual(1);
+    expect(report.fixed.some((r) => r.kind === "edit")).toBe(true);
+    expect(job.summary!.completed).toBe(20);
+    expect(job.summary!.baseline).toEqual({ kind: "recorded", jobId: null, model: "fake-triage-v1" });
+
+    const { renderMarkdownReport } = await import("@overturn/shared");
+    const md = renderMarkdownReport(report);
+    expect(md).toMatch(/### Regressions \([1-9]\d*\)/);
+    expect(md).toMatch(/### Fixed \([1-9]\d*\)/);
+    console.log(md.split("\n").slice(0, 4).join("\n"));
+
+    // the same prompt with the good model: no regressions, fixes stay
+    const good = await ov.api.replays.create({
+      model: "fake/fake-triage-v1",
+      promptVersion: "ticket-triage@v2",
+      filter: { agent: "ticket-triage" },
+    });
+    let gj = good.job;
+    for (let i = 0; i < 200 && (gj.status === "pending" || gj.status === "running"); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      gj = await ov.api.replays.get(gj.id);
+    }
+    const goodReport = await ov.api.replays.report(gj.id);
+    expect(goodReport.regressions).toHaveLength(0);
+    expect(goodReport.fixed.length).toBeGreaterThanOrEqual(report.fixed.length);
   });
 });

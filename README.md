@@ -4,12 +4,12 @@
 
 Overturn records your agent's runs, turns human corrections into regression cases automatically, and replays them against any model with tools mocked, so nothing fires twice.
 
-> Status: v0.1 in progress. Recording (TypeScript, Python, OpenTelemetry) is done; corrections, cases and replay land over the next two weeks. See [docs/plan.md](docs/plan.md).
+> Status: v0.1 in progress. Record, correct, auto-case and step replay work end to end; trajectory replay, the GitHub Action and the web UI land next. See [docs/plan.md](docs/plan.md).
 
 ## 60-second quickstart
 
 ```bash
-git clone https://github.com/<owner>/overturn && cd overturn
+git clone https://github.com/overrule-ai/overturn && cd overturn
 pnpm install && pnpm build
 cp .env.example .env                              # set DATABASE_URL to a Postgres 16 with pgvector
 pnpm db:migrate
@@ -17,8 +17,12 @@ pnpm bootstrap --email you@example.com            # prints OVERTURN_API_KEY=ov_l
 pnpm --filter @overturn/api start &               # API on :4000
 OVERTURN_API_KEY=ov_live_... OVERTURN_BASE_URL=http://localhost:4000 \
   pnpm --filter @overturn/example-ticket-triage seed   # records 30 runs
-curl -H "authorization: Bearer ov_live_..." localhost:4000/v1/runs | jq '.items[0]'
+pnpm --filter @overturn/example-ticket-triage corrections   # 20 human corrections -> 20 cases
+npx overturn cases list
+npx overturn replay --model fake/fake-triage-weak --prompt ticket-triage@v2 --format md
 ```
+
+The last command replays the 20 cases against a deliberately weaker model with a new prompt and prints regressions, still-wrong and fixed cases side by side with the human correction. With `OPENAI_API_KEY` set, try `--model openai/gpt-4.1-mini` or `--model anthropic/claude-haiku-4-5` (server needs the key).
 
 Without `OPENAI_API_KEY` the example runs against a deterministic fake model so everything above works offline.
 
