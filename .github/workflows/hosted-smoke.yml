@@ -1,0 +1,36 @@
+name: Hosted smoke test
+
+# Records the example agent's 30 runs and 20 corrections against a hosted Overturn
+# (OVERTURN_API_KEY secret; OVERTURN_BASE_URL variable, default api.overturn.run) and
+# lists what landed. Run it from Actions → Hosted smoke test → Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OVERTURN_API_KEY: ${{ secrets.OVERTURN_API_KEY }}
+      OVERTURN_BASE_URL: ${{ vars.OVERTURN_BASE_URL || 'https://api.overturn.run' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: '[ -n "$OVERTURN_API_KEY" ] || { echo "OVERTURN_API_KEY secret is not set"; exit 1; }'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @overturn/shared --filter @overturn/sdk --filter overturn build
+      - name: Health
+        run: curl -fsS "$OVERTURN_BASE_URL/health"
+      - name: Record 30 runs (fake model on the runner, real ingest)
+        run: pnpm --filter @overturn/example-ticket-triage seed
+      - name: Apply 20 corrections
+        run: pnpm --filter @overturn/example-ticket-triage corrections
+      - name: What landed
+        run: |
+          npx overturn runs list --limit 5
+          npx overturn cases list --limit 5
+          npx overturn prompts list
