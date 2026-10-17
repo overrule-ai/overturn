@@ -355,7 +355,7 @@ export function buildOpenApi(serverUrl?: string): Record<string, unknown> {
     openapi: "3.1.0",
     info: {
       title: "Overturn API",
-      version: "0.1.0",
+      version: "0.1.1",
       description:
         "Every time a human corrects your agent, it becomes a test. Record runs, turn corrections into cases, replay against any model.",
       license: { name: "Apache-2.0" },
