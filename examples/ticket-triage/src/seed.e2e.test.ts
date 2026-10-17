@@ -169,7 +169,7 @@ describe("the README demo", () => {
 
 describe("trajectory replay through overturn.config.ts", () => {
   it("replays whole trajectories with tools answered from recordings and side effects refused", async () => {
-    const { runTrajectory } = await import("overturn");
+    const { runTrajectory } = await import("overturn-cli");
     const { ticketState } = await import("./tools.js");
     const ov = new Overturn({ apiKey: ctx.apiKey, baseUrl: ctx.baseUrl });
     const before = JSON.stringify([...ticketState.entries()]);

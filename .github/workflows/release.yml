@@ -44,8 +44,14 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn build
-      - run: pnpm publish -r --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn --access public --no-git-checks
+      - run: pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn-cli build
+      - name: Publish (skips versions already on npm, so a rerun is safe)
+        run: |
+          for dir in packages/shared packages/sdk packages/cli; do
+            name=$(node -p "require('./$dir/package.json').name"); v=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$v" version >/dev/null 2>&1; then echo "$name@$v already published, skipping"; continue; fi
+            (cd "$dir" && pnpm publish --access public --no-git-checks)
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -59,7 +65,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv build
         working-directory: packages/sdk-python
-      - run: uv publish --token "$PYPI_TOKEN"
+      - run: uv publish --token "$PYPI_TOKEN" --check-url https://pypi.org/simple/
         working-directory: packages/sdk-python
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

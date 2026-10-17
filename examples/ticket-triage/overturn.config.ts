@@ -1,6 +1,6 @@
 import { Overturn } from "@overturn-ai/sdk";
 import OpenAI from "openai";
-import { defineConfig } from "overturn";
+import { defineConfig } from "overturn-cli";
 import { makeAgent } from "./src/agent.js";
 import type { Ticket } from "./src/data.js";
 

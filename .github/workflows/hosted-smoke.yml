@@ -28,7 +28,7 @@ jobs:
           echo "::add-mask::$key"; echo "OVERTURN_API_KEY=$key" >> "$GITHUB_ENV"
           case "$key" in ov_live_*) ;; *) echo "secret does not look like an Overturn key (expected ov_live_...)"; exit 1;; esac
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn build
+      - run: pnpm --filter @overturn-ai/shared --filter @overturn-ai/sdk --filter overturn-cli build
       - name: Health
         run: curl -fsS "$OVERTURN_BASE_URL/health"
       - name: Record 30 runs (fake model on the runner, real ingest)
