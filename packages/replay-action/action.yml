@@ -57,7 +57,7 @@ inputs:
   cli-command:
     description: "How to invoke the CLI"
     required: false
-    default: "npx --yes overturn-cli@latest"
+    default: "npx --yes @overturn-ai/cli@latest"
   github-token:
     description: "Token used to post the comment"
     required: false

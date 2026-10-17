@@ -52,6 +52,12 @@ jobs:
             if npm view "$name@$v" version >/dev/null 2>&1; then echo "$name@$v already published, skipping"; continue; fi
             (cd "$dir" && pnpm publish --access public --no-git-checks)
           done
+          # The CLI is also published under the scoped alias @overturn-ai/cli: new unscoped names
+          # sit in npm's staging review, the scoped one is installable immediately.
+          v=$(node -p "require('./packages/cli/package.json').version")
+          if npm view "@overturn-ai/cli@$v" version >/dev/null 2>&1; then echo "@overturn-ai/cli@$v already published, skipping"; else
+            (cd packages/cli && npm pkg set name=@overturn-ai/cli && pnpm publish --access public --no-git-checks; git checkout package.json)
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

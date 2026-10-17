@@ -113,7 +113,7 @@ Return `null` to drop a step entirely. Applied before the step leaves the proces
 
 ## CLI
 
-`npm i -g overturn-cli` (the command is `overturn`; `npx overturn-cli …` works too).
+`npm i -g @overturn-ai/cli` (the command is `overturn`; `npx @overturn-ai/cli …` works too). The same package is published as `overturn-cli` once npm's new-name review clears.
 
 ```
 overturn init                                  # writes .env + overturn.config.ts, verifies the key
