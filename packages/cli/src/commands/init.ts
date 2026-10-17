@@ -6,7 +6,7 @@ import type { Command } from "commander";
 import pc from "picocolors";
 import { fail, loadDotEnv } from "../context.js";
 
-const CONFIG_TEMPLATE = `import { defineConfig } from "overturn";
+const CONFIG_TEMPLATE = `import { defineConfig } from "overturn-cli";
 
 /**
  * Overturn trajectory replay entry point. \`agent\` is called with a case's

@@ -113,6 +113,8 @@ Return `null` to drop a step entirely. Applied before the step leaves the proces
 
 ## CLI
 
+`npm i -g overturn-cli` (the command is `overturn`; `npx overturn-cli …` works too).
+
 ```
 overturn init                                  # writes .env + overturn.config.ts, verifies the key
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
