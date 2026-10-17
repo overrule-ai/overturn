@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { OverturnApi } from "@overturn-ai/sdk";
 import pc from "picocolors";
+import { VERSION } from "./version.js";
 
 export interface CliOptions {
   apiKey?: string;
@@ -44,7 +45,7 @@ export function resolveConnection(opts: CliOptions): { apiKey: string; baseUrl: 
 
 export function apiFor(opts: CliOptions): OverturnApi {
   const { apiKey, baseUrl } = resolveConnection(opts);
-  return new OverturnApi({ apiKey, baseUrl, userAgent: "overturn-cli/0.1.0" });
+  return new OverturnApi({ apiKey, baseUrl, userAgent: `overturn-cli/${VERSION}` });
 }
 
 export function fail(message: string, code = 1): never {

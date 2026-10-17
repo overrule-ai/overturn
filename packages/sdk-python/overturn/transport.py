@@ -137,7 +137,10 @@ class Transport:
         res = self._client.post(
             f"{self.base_url}/v1/ingest",
             json=payload,
-            headers={"authorization": f"Bearer {self.api_key}", "user-agent": "overturn-sdk-python/0.1.0"},
+            headers={
+                "authorization": f"Bearer {self.api_key}",
+                "user-agent": f"overturn-sdk-python/{_version()}",
+            },
         )
         if res.is_success:
             return
@@ -163,3 +166,9 @@ def build_payload(items: list[tuple[str, Any]]) -> dict[str, Any]:
         prev = target.get(wire["id"])
         target[wire["id"]] = {**prev, **wire} if prev else wire
     return {"v": INGEST_VERSION, "runs": list(runs.values()), "steps": list(steps.values())}
+
+
+def _version() -> str:
+    from . import __version__
+
+    return __version__

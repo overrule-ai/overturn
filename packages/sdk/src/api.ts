@@ -25,6 +25,7 @@ import type {
   RunListQuery,
   RunWithSteps,
 } from "@overturn-ai/shared";
+import { VERSION } from "./version.js";
 
 export class OverturnApiError extends Error {
   constructor(
@@ -64,7 +65,7 @@ export class OverturnApi {
       headers: {
         ...(body === undefined ? {} : { "content-type": "application/json" }),
         authorization: `Bearer ${this.options.apiKey}`,
-        "user-agent": this.options.userAgent ?? "overturn-sdk-js/0.1.0",
+        "user-agent": this.options.userAgent ?? `overturn-sdk-js/${VERSION}`,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });

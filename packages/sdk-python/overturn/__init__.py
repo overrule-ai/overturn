@@ -13,6 +13,9 @@ with ov.run(agent="ticket-triage", version="1.4.0", input=ticket) as run:
     run.end(output=decision)
 """
 
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+
 from .api import OverturnApi, OverturnApiError
 from .client import Overturn
 from .context import current_run
@@ -33,7 +36,10 @@ from .tools import Tool, tool
 from .transport import Transport, TransportError
 from .types import IngestPayload, RunUpsert, StepUpsert, Usage
 
-__version__ = "0.1.0"
+try:
+    __version__ = _pkg_version("overturn")
+except PackageNotFoundError:  # running from source
+    __version__ = "dev"
 
 __all__ = [
     "FINGERPRINT_VERSION",

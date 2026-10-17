@@ -1,4 +1,5 @@
 import { INGEST_VERSION, type IngestPayload, type RunUpsert, type StepUpsert } from "@overturn-ai/shared";
+import { VERSION } from "./version.js";
 
 export interface TransportOptions {
   apiKey: string;
@@ -162,7 +163,7 @@ export class Transport {
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${this.opts.apiKey}`,
-        "user-agent": "overturn-sdk-js/0.1.0",
+        "user-agent": `overturn-sdk-js/${VERSION}`,
       },
       body: JSON.stringify(payload),
     });

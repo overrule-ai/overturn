@@ -5,6 +5,7 @@ import { registerCases } from "./commands/cases.js";
 import { registerInit } from "./commands/init.js";
 import { registerReplay } from "./commands/replay.js";
 import { registerRuns } from "./commands/runs.js";
+import { VERSION } from "./version.js";
 
 export { defineConfig, type OverturnConfig, type ReplayContext } from "./config.js";
 export { findConfig, loadConfig, runTrajectory } from "./trajectory.js";
@@ -12,7 +13,7 @@ export { findConfig, loadConfig, runTrajectory } from "./trajectory.js";
 export function buildProgram(): Command {
   const program = new Command("overturn")
     .description("Every time a human corrects your agent, it becomes a test.")
-    .version("0.1.0")
+    .version(VERSION)
     .option("--api-key <key>", "API key (default: OVERTURN_API_KEY)")
     .option("--base-url <url>", "API base URL (default: OVERTURN_BASE_URL)")
     .option("--json", "Print JSON instead of tables")
