@@ -30,7 +30,10 @@ class OverturnApi:
             f"{self.base_url}{path}",
             json=body,
             params={k: v for k, v in (params or {}).items() if v is not None},
-            headers={"authorization": f"Bearer {self.api_key}", "user-agent": "overturn-sdk-python/0.1.0"},
+            headers={
+                "authorization": f"Bearer {self.api_key}",
+                "user-agent": f"overturn-sdk-python/{_version()}",
+            },
         )
         parsed: Any = res.json() if res.content else None
         if not res.is_success:
@@ -58,3 +61,9 @@ class OverturnApi:
 
     def get_case(self, case_id: str) -> dict[str, Any]:
         return self.request("GET", f"/v1/cases/{case_id}")
+
+
+def _version() -> str:
+    from . import __version__
+
+    return __version__
