@@ -23,7 +23,13 @@ export class CorrectionsController {
     @Auth() auth: AuthContext,
     @Body(zod(correctionCreateSchema)) body: CorrectionCreate,
   ): Promise<CorrectionResult> {
-    return this.corrections.create(auth.projectId, body);
+    // Corrections made from the web app are attributed to the signed-in user unless an actor is given.
+    const actor = body.actor ?? auth.user?.email ?? null;
+    return this.corrections.create(auth.projectId, {
+      ...body,
+      actor,
+      source: auth.user ? "ui" : body.source,
+    });
   }
 
   @Get()

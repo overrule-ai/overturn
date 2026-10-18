@@ -4,6 +4,9 @@ import type { Sql } from "../db/client";
 import { SQL } from "../db/db.module";
 import { buildOpenApi } from "../openapi/openapi";
 
+// CommonJS build: dist/health/health.controller.js -> ../../package.json
+const API_VERSION: string = (require("../../package.json") as { version: string }).version;
+
 @Controller()
 export class HealthController {
   constructor(@Inject(SQL) private readonly sql: Sql) {}
@@ -24,6 +27,6 @@ export class HealthController {
     } catch {
       db = false;
     }
-    return { ok: db, db, version: "0.1.0" };
+    return { ok: db, db, version: API_VERSION };
   }
 }

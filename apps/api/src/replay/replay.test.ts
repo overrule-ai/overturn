@@ -428,6 +428,35 @@ describe("replay jobs (step mode)", () => {
     expect(posted.body.summary!.verdicts).toEqual({ pass: 1, unreplayable: 1 });
     const report = await api<ReplayReport>(ctx, "GET", `/v1/replays/${created.body.job.id}/report`);
     expect(report.body.unreplayable[0]!.reason).toMatch(/side-effect tool refused: send_email/);
+    // trajectory details reach the report rows and the markdown
+    const posted2 = await api<{ job: ReplayJob; caseIds: string[] }>(ctx, "POST", "/v1/replays", {
+      model: "openai/gpt-4.1-mini",
+      mode: "trajectory",
+      filter: { agent: "traj-agent" },
+    });
+    await api(ctx, "POST", `/v1/replays/${posted2.body.job.id}/results`, {
+      results: [
+        {
+          caseId: c1.id,
+          output: { priority: "P1" },
+          steps: [
+            { kind: "tool_call", name: "lookup" },
+            { kind: "llm_call", name: "chat", model: "m" },
+          ],
+          refusedSideEffects: [{ toolName: "set_priority", args: { p: "P1" } }],
+        },
+        { caseId: c2.id, output: { priority: "P1" } },
+      ],
+      finish: true,
+    });
+    const r2 = await api<ReplayReport>(ctx, "GET", `/v1/replays/${posted2.body.job.id}/report`);
+    const row = [...r2.body.passed, ...r2.body.fixed].find((x) => x.caseId === c1.id)!;
+    expect(row.stepCount).toBe(2);
+    expect(row.refusedSideEffects).toEqual([{ toolName: "set_priority", args: { p: "P1" } }]);
+    const md = await fetch(`${ctx.baseUrl}/v1/replays/${posted2.body.job.id}/report.md`, {
+      headers: { authorization: `Bearer ${ctx.apiKey}` },
+    }).then((r) => r.text());
+    expect(md).toContain("refused side effects: set_priority");
   });
 
   it("run detail still works after replays", async () => {

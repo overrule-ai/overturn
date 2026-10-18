@@ -504,6 +504,12 @@ export const reportRowSchema = z.object({
   error: z.string().nullable(),
   costUsd: z.number().nullable(),
   latencyMs: z.number().nullable(),
+  /** Trajectory mode: side-effect tools the agent tried to call; refused, never executed. */
+  refusedSideEffects: z.array(z.object({ toolName: z.string(), args: jsonValueSchema })).optional(),
+  /** Trajectory mode: steps the agent took while replaying. */
+  stepCount: z.number().int().optional(),
+  /** Trajectory mode: tool calls answered from the recordings (simulated, not executed). */
+  simulatedToolCalls: z.number().int().optional(),
 });
 export type ReportRow = z.infer<typeof reportRowSchema>;
 

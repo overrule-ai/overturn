@@ -43,7 +43,7 @@ class OverturnApi:
             )
         return parsed
 
-    # ---- endpoints ----
+    # ---- endpoints (flat) ----
     def me(self) -> dict[str, Any]:
         return self.request("GET", "/v1/me")
 
@@ -61,6 +61,160 @@ class OverturnApi:
 
     def get_case(self, case_id: str) -> dict[str, Any]:
         return self.request("GET", f"/v1/cases/{case_id}")
+
+    def patch_case(self, case_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("PATCH", f"/v1/cases/{case_id}", body=body)
+
+    def list_corrections(self, **params: Any) -> list[dict[str, Any]]:
+        return self.request("GET", "/v1/corrections", params=params)
+
+    def estimate_replay(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("POST", "/v1/replays/estimate", body=body)
+
+    def create_replay(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("POST", "/v1/replays", body=body)
+
+    def list_replays(self, **params: Any) -> list[dict[str, Any]]:
+        return self.request("GET", "/v1/replays", params=params)
+
+    def get_replay(self, job_id: str) -> dict[str, Any]:
+        return self.request("GET", f"/v1/replays/{job_id}")
+
+    def cancel_replay(self, job_id: str) -> dict[str, Any]:
+        return self.request("POST", f"/v1/replays/{job_id}/cancel")
+
+    def replay_results(self, job_id: str) -> list[dict[str, Any]]:
+        return self.request("GET", f"/v1/replays/{job_id}/results")
+
+    def replay_report(self, job_id: str) -> dict[str, Any]:
+        return self.request("GET", f"/v1/replays/{job_id}/report")
+
+    def post_replay_results(self, job_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("POST", f"/v1/replays/{job_id}/results", body=body)
+
+    def register_prompt(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("POST", "/v1/prompts", body=body)
+
+    def list_prompts(self) -> list[dict[str, Any]]:
+        return self.request("GET", "/v1/prompts")
+
+    def get_project(self) -> dict[str, Any]:
+        return self.request("GET", "/v1/project")
+
+    def patch_project(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self.request("PATCH", "/v1/project", body=body)
+
+    # ---- namespaced, mirroring the TypeScript client (ov.api.runs.list(), ...) ----
+    @property
+    def runs(self) -> _Runs:
+        return _Runs(self)
+
+    @property
+    def cases(self) -> _Cases:
+        return _Cases(self)
+
+    @property
+    def corrections(self) -> _Corrections:
+        return _Corrections(self)
+
+    @property
+    def replays(self) -> _Replays:
+        return _Replays(self)
+
+    @property
+    def prompts(self) -> _Prompts:
+        return _Prompts(self)
+
+    @property
+    def project(self) -> _Project:
+        return _Project(self)
+
+
+class _Runs:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def list(self, **params: Any) -> dict[str, Any]:
+        return self._api.list_runs(**params)
+
+    def get(self, run_id: str) -> dict[str, Any]:
+        return self._api.get_run(run_id)
+
+
+class _Cases:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def list(self, **params: Any) -> dict[str, Any]:
+        return self._api.list_cases(**params)
+
+    def get(self, case_id: str) -> dict[str, Any]:
+        return self._api.get_case(case_id)
+
+    def patch(self, case_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.patch_case(case_id, body)
+
+
+class _Corrections:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def create(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.create_correction(body)
+
+    def list(self, **params: Any) -> list[dict[str, Any]]:
+        return self._api.list_corrections(**params)
+
+
+class _Replays:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def estimate(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.estimate_replay(body)
+
+    def create(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.create_replay(body)
+
+    def list(self, **params: Any) -> list[dict[str, Any]]:
+        return self._api.list_replays(**params)
+
+    def get(self, job_id: str) -> dict[str, Any]:
+        return self._api.get_replay(job_id)
+
+    def cancel(self, job_id: str) -> dict[str, Any]:
+        return self._api.cancel_replay(job_id)
+
+    def results(self, job_id: str) -> list[dict[str, Any]]:
+        return self._api.replay_results(job_id)
+
+    def report(self, job_id: str) -> dict[str, Any]:
+        return self._api.replay_report(job_id)
+
+    def post_results(self, job_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.post_replay_results(job_id, body)
+
+
+class _Prompts:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def register(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.register_prompt(body)
+
+    def list(self) -> list[dict[str, Any]]:
+        return self._api.list_prompts()
+
+
+class _Project:
+    def __init__(self, api: OverturnApi) -> None:
+        self._api = api
+
+    def get(self) -> dict[str, Any]:
+        return self._api.get_project()
+
+    def patch(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.patch_project(body)
 
 
 def _version() -> str:

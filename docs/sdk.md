@@ -101,7 +101,7 @@ Replay state is process-global: your agent's own `Overturn` instances see it. `o
 
 ## REST client
 
-`ov.api` (TypeScript) / `ov.api` (Python) is a thin typed client: `runs.list/get`, `cases.list/get/patch`, `corrections.create/list`, `replays.create/get/report/results/postResults`, `prompts.register/list`, `project.get/patch`, `me()`.
+`ov.api` is a thin client in both SDKs: `runs.list/get`, `cases.list/get/patch`, `corrections.create/list`, `replays.estimate/create/list/get/cancel/results/report/postResults`, `prompts.register/list`, `project.get/patch`, `me()`. TypeScript returns typed objects; Python returns plain dicts with the API's camelCase keys (`run["externalId"]`), and also offers flat methods (`ov.api.list_runs(...)`, `ov.api.get_case(id)`, `ov.api.replays.post_results(...)`).
 
 ## Redaction
 

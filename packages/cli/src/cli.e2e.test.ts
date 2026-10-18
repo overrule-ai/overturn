@@ -88,6 +88,13 @@ describe("overturn CLI", () => {
     expect(cases).toContain("equals");
     const get = await run(["runs", "get", "01a14000-0000-7000-8000-000000000001"]);
     expect(get).toContain("chat.completions");
+    // the 8-character ids the tables print are accepted back
+    const short = await run(["runs", "get", "00000001"]);
+    expect(short).toContain("chat.completions");
+    const caseId = (JSON.parse(await run(["--json", "cases", "list"])) as { items: { id: string }[] })
+      .items[0]!.id;
+    const shortCase = await run(["cases", "get", caseId.slice(-8)]);
+    expect(shortCase).toContain("approve");
   });
 });
 

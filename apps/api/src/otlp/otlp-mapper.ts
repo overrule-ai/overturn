@@ -300,6 +300,20 @@ export function mapOtlpTraces(req: OtlpExportTraceServiceRequest): MappedTrace {
     // Steps: parent step = nearest ancestor that is itself a step.
     const stepIdBySpan = new Map<string, string>();
     const parentOf = new Map(spans.map((s) => [s.spanHex, s.parentHex] as const));
+    // Spans that start in the same microsecond get consecutive seqs in nanosecond order,
+    // so a parent and the child it immediately opened keep their order in the timeline.
+    const seqOf = new Map<string, number>();
+    const byStart = [...spans].sort((x, y) =>
+      BigInt(x.span.startTimeUnixNano ?? 0) < BigInt(y.span.startTimeUnixNano ?? 0) ? -1 : 1,
+    );
+    let lastMicros = -1;
+    let tie = 0;
+    for (const s of byStart) {
+      const micros = s.span.startTimeUnixNano ? Number(BigInt(s.span.startTimeUnixNano) / 1000n) : 0;
+      tie = micros === lastMicros ? tie + 1 : 0;
+      lastMicros = micros;
+      seqOf.set(s.spanHex, micros + tie);
+    }
     for (const s of spans) {
       const kind = classifySpan(s.attrs);
       if (!kind) continue;
@@ -326,8 +340,8 @@ export function mapOtlpTraces(req: OtlpExportTraceServiceRequest): MappedTrace {
         id: stepId,
         runId,
         parentStepId,
-        // microseconds since epoch: stable across batches, so spans exported separately still order correctly
-        seq: s.span.startTimeUnixNano ? Number(BigInt(s.span.startTimeUnixNano) / 1000n) : 0,
+        // microseconds since epoch (+ tie-break): stable across batches, so spans exported separately still order correctly
+        seq: seqOf.get(s.spanHex) ?? 0,
         startedAt: (s.start ?? new Date()).toISOString(),
         endedAt: s.end?.toISOString() ?? null,
         latencyMs,
