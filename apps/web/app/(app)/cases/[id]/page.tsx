@@ -56,7 +56,13 @@ export default function CasePage() {
           </p>
           {k.note && <p className="mt-2 rounded-md bg-amber-50 p-2 text-sm text-amber-900">“{k.note}”</p>}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {Array.isArray(k.scorerConfig.fields) && (
+            <span className="text-xs text-muted-foreground" title="Only these fields decide pass/fail">
+              scored on <span className="font-mono">{(k.scorerConfig.fields as string[]).join(", ")}</span>
+              {k.scorerConfig.auto === true ? " (auto)" : ""}
+            </span>
+          )}
           <NativeSelect value={k.scorer} onChange={(e) => patch.mutate({ scorer: e.target.value })}>
             {SCORERS.map((s) => (
               <option key={s} value={s}>
@@ -111,7 +117,9 @@ export default function CasePage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <div className="mb-1 text-xs font-medium text-muted-foreground">Expected (from the human)</div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">
+            {k.kind === "approve" ? "Expected (approved as-is by the human)" : "Expected (from the human)"}
+          </div>
           <JsonView value={k.expected} />
         </div>
         <div>

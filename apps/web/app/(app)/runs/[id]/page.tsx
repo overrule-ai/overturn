@@ -35,7 +35,7 @@ function StepRow({ step, onCorrect }: { step: Step; onCorrect: () => void }) {
       <div className="rounded-lg border">
         <button
           type="button"
-          className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm"
+          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-left text-sm"
           onClick={() => setOpen((o) => !o)}
           data-testid={`step-${step.seq}`}
         >
@@ -46,7 +46,7 @@ function StepRow({ step, onCorrect }: { step: Step; onCorrect: () => void }) {
           {step.model && <span className="text-xs text-muted-foreground">{step.model}</span>}
           {step.sideEffect && <Badge variant="warning">side effect</Badge>}
           {step.error && <Badge variant="danger">error</Badge>}
-          <span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="ml-auto hidden items-center gap-3 text-xs text-muted-foreground sm:flex">
             {step.latencyMs != null && <span>{Math.round(step.latencyMs)} ms</span>}
             {step.costUsd != null && <span>{money(step.costUsd)}</span>}
             {step.usage?.inputTokens != null && (
@@ -142,11 +142,11 @@ export default function RunPage() {
           <div className="mb-2 text-xs font-medium text-muted-foreground">Corrections</div>
           <ul className="space-y-1">
             {corrections.data.map((c) => (
-              <li key={c.id} className="flex items-center gap-2">
+              <li key={c.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <KindBadge kind={c.kind} />
                 <span>{c.stepId ? "step" : "run"}</span>
-                {c.note && <span className="text-muted-foreground">— {c.note}</span>}
-                <span className="ml-auto text-xs text-muted-foreground">
+                {c.note && <span className="min-w-0 flex-1 basis-48 text-muted-foreground">— {c.note}</span>}
+                <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
                   {c.actor ?? c.source} · {ago(c.createdAt)}
                 </span>
                 <Link className="text-xs underline" href={`/cases?runId=${r.id}`}>
