@@ -224,6 +224,9 @@ export const correctionCreateSchema = z.object({
   note: z.string().max(10_000).nullish(),
   actor: z.string().max(200).nullish(),
   source: correctionSourceSchema.default("api"),
+  /** Override the scorer the case gets; omitted = chosen from the shape of the expected answer. */
+  scorer: scorerNameSchema.optional(),
+  scorerConfig: z.record(z.string(), jsonValueSchema).optional(),
 });
 export type CorrectionCreate = z.infer<typeof correctionCreateSchema>;
 

@@ -1,10 +1,10 @@
 "use client";
 
 import type { CorrectionKind, Step } from "@overturn-ai/shared";
-import { extractAnswer } from "@overturn-ai/shared";
+import { decisionFields, extractAnswer } from "@overturn-ai/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Label, Textarea } from "@/components/ui/input";
@@ -42,6 +42,26 @@ export function CorrectDialog({
   const [actor, setActor] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
 
+  // What the case will be scored on: the decision fields of the answer, not its prose.
+  // Shown so the reviewer says what matters while they still remember why.
+  const answerForScoring = useMemo(() => {
+    if (kind === "edit") {
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        return null;
+      }
+    }
+    return original;
+  }, [kind, text, original]);
+  const suggested = useMemo(() => decisionFields(answerForScoring), [answerForScoring]);
+  const [fieldsText, setFieldsText] = useState<string | null>(null);
+  const fields = (fieldsText ?? suggested.fields.join(", "))
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+  const showFields = (kind === "approve" || kind === "edit") && suggested.ignored.length > 0;
+
   const submit = useMutation({
     mutationFn: async () => {
       let correctedOutput: unknown;
@@ -62,6 +82,7 @@ export function CorrectDialog({
         correctedOutput,
         note: note || null,
         actor: actor || null,
+        ...(showFields && fields.length > 0 ? { scorer: "json_match", scorerConfig: { fields } } : {}),
       });
     },
     onSuccess: (r) => {
@@ -106,6 +127,19 @@ export function CorrectDialog({
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
+          </div>
+        )}
+        {showFields && (
+          <div className="mt-4 space-y-1" data-testid="scored-fields">
+            <Label>Score on these fields</Label>
+            <input
+              className="flex h-9 w-full rounded-md border px-3 font-mono text-sm"
+              value={fieldsText ?? suggested.fields.join(", ")}
+              onChange={(e) => setFieldsText(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Not scored (free text, phrased differently by every model): {suggested.ignored.join(", ")}
+            </p>
           </div>
         )}
         <div className="mt-4 space-y-1">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultScorer, expectedFor, extractAnswer } from "./cases.js";
+import { decisionFields, defaultScorer, expectedFor, extractAnswer } from "./cases.js";
 
 describe("extractAnswer", () => {
   it("parses JSON text from an OpenAI message", () => {
@@ -63,6 +63,30 @@ describe("expectedFor + defaultScorer", () => {
     });
     expect(expectedFor("escalate", null, undefined, null)).toEqual({ should_escalate: true, rubric: null });
     expect(defaultScorer("escalate", null, null)).toEqual({ scorer: "should_escalate", config: {} });
+  });
+  it("scores the decision fields, not the prose, when an answer mixes both", () => {
+    const e = {
+      priority: "P1",
+      team: "billing",
+      reply: "Hi Dana, sorry about that. We've routed this to our billing team and will follow up.",
+      flags: ["enterprise", "refund"],
+      meta: { confidence: 0.9, rationale: "The customer was charged twice. Refund is warranted." },
+    };
+    expect(decisionFields(e)).toEqual({
+      fields: ["priority", "team", "flags", "meta.confidence"],
+      ignored: ["reply", "meta.rationale"],
+    });
+    expect(defaultScorer("approve", e, null)).toEqual({
+      scorer: "json_match",
+      config: { fields: ["priority", "team", "flags", "meta.confidence"], auto: true },
+    });
+    // all-decision answers keep plain subset matching
+    expect(defaultScorer("edit", { priority: "P1" }, null)).toEqual({ scorer: "json_match", config: {} });
+    // all-prose answers too (nothing to single out)
+    expect(defaultScorer("approve", { reply: "A long sentence. Another one." }, null)).toEqual({
+      scorer: "json_match",
+      config: {},
+    });
   });
   it("tool decisions pick tool_choice", () => {
     expect(defaultScorer("approve", { tool_calls: [{ name: "t", args: {} }] }, null).scorer).toBe(

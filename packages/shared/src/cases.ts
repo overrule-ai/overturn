@@ -89,6 +89,38 @@ export function expectedFor(
   }
 }
 
+const FREE_TEXT_MIN_CHARS = 64;
+
+function isDecisionValue(v: unknown): boolean {
+  if (v === null || typeof v === "boolean" || typeof v === "number") return true;
+  if (typeof v === "string") return v.length < FREE_TEXT_MIN_CHARS && !/[.!?]\s|\n/.test(v);
+  if (Array.isArray(v)) return v.every(isDecisionValue);
+  return false;
+}
+
+/**
+ * Which keys of a structured answer are the decision, as opposed to prose. Short strings
+ * (ids, enums, labels), numbers, booleans and lists of them count; anything that reads like
+ * a sentence does not, because a different model will phrase it differently and that is not
+ * a regression. Nested objects contribute dotted paths one level down.
+ */
+export function decisionFields(expected: unknown): { fields: string[]; ignored: string[] } {
+  if (!expected || typeof expected !== "object" || Array.isArray(expected))
+    return { fields: [], ignored: [] };
+  const fields: string[] = [];
+  const ignored: string[] = [];
+  for (const [k, v] of Object.entries(expected as Record<string, unknown>)) {
+    if (isDecisionValue(v)) fields.push(k);
+    else if (v && typeof v === "object" && !Array.isArray(v)) {
+      for (const [k2, v2] of Object.entries(v as Record<string, unknown>)) {
+        if (isDecisionValue(v2)) fields.push(`${k}.${k2}`);
+        else ignored.push(`${k}.${k2}`);
+      }
+    } else ignored.push(k);
+  }
+  return { fields, ignored };
+}
+
 /** Default scorer from the shape of `expected` (brief, Replay engine). */
 export function defaultScorer(
   kind: CorrectionKind,
@@ -98,7 +130,13 @@ export function defaultScorer(
   if (kind === "reject") return { scorer: "not_equals", config: note ? { judge: true } : {} };
   if (kind === "escalate") return { scorer: "should_escalate", config: note ? { judge: true } : {} };
   if (isToolDecision(expected)) return { scorer: "tool_choice", config: {} };
-  if (expected !== null && typeof expected === "object") return { scorer: "json_match", config: {} };
+  if (expected !== null && typeof expected === "object") {
+    const { fields, ignored } = decisionFields(expected);
+    // Score the decision, not the prose: only when there is prose to leave out.
+    if (fields.length > 0 && ignored.length > 0)
+      return { scorer: "json_match", config: { fields, auto: true } };
+    return { scorer: "json_match", config: {} };
+  }
   if (typeof expected === "string") {
     if (expected.length < 200) return { scorer: "equals", config: { fallback: "semantic", threshold: 0.85 } };
     return { scorer: "judge", config: {} };

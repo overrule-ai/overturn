@@ -141,10 +141,16 @@ class Overturn:
         corrected_output: Any = None,
         note: str | None = None,
         actor: str | None = None,
+        scorer: str | None = None,
+        scorer_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Record a human correction and freeze a regression case. Sent immediately; returns
-        {"correction": ..., "case": ...}."""
+        {"correction": ..., "case": ...}. The scorer is picked from the answer's shape unless given."""
         body: dict[str, Any] = {"runId": run_id, "kind": kind, "source": "sdk"}
+        if scorer is not None:
+            body["scorer"] = scorer
+        if scorer_config is not None:
+            body["scorerConfig"] = scorer_config
         if step_id is not None:
             body["stepId"] = step_id
         if corrected_output is not None:

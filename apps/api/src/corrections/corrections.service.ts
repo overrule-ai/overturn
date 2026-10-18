@@ -180,7 +180,9 @@ export class CorrectionsService {
           ? extractAnswer(step.output)
           : (run.output ?? extractAnswer(step.output));
         const expected = expectedFor(input.kind, originalAnswer, input.correctedOutput, input.note ?? null);
-        const { scorer, config } = defaultScorer(input.kind, expected, input.note ?? null);
+        const auto = defaultScorer(input.kind, expected, input.note ?? null);
+        const scorer = input.scorer ?? auto.scorer;
+        const config = input.scorerConfig ?? (input.scorer ? {} : auto.config);
         const title = `${input.kind}: ${run.agent} ${run.externalId ?? run.id.slice(-8)}${input.note ? ` — ${input.note.slice(0, 80)}` : ""}`;
 
         const [c] = await tx
