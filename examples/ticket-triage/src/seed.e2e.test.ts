@@ -78,6 +78,11 @@ describe("scripted corrections", () => {
     expect(kinds.filter((k) => k === "edit")).toHaveLength(8);
     expect(kinds.filter((k) => k === "reject")).toHaveLength(2);
     expect(kinds.filter((k) => k === "approve")).toHaveLength(10);
+    // approvals score the routing decision, not the reply wording (auto-picked from the answer's shape)
+    const approved = results.find((r) => r.correction.kind === "approve")!.case!;
+    expect(approved.scorer).toBe("json_match");
+    expect(approved.scorerConfig.auto).toBe(true);
+    expect([...(approved.scorerConfig.fields as string[])].sort()).toEqual(["priority", "team"]);
 
     const plan = planCorrections();
     for (const [i, r] of results.entries()) {

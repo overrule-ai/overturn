@@ -102,6 +102,12 @@ describe("web UI", () => {
     expect(await page.locator("li").filter({ hasText: "lookup_customer" }).count()).toBeGreaterThan(0);
     await page.getByTestId("step-2").getByRole("button", { name: "Correct" }).click();
     await page.getByText("Correct step 2: chat.completions").waitFor();
+    // the answer mixes a decision (priority, team) with prose (reply): the dialog proposes scoring the decision
+    const scored = page.getByTestId("scored-fields");
+    await scored.waitFor();
+    const proposed = (await scored.locator("input").inputValue()).split(", ").sort();
+    expect(proposed).toEqual(["priority", "team"]);
+    expect(await scored.textContent()).toContain("Not scored");
     await page.getByRole("button", { name: /^Edit/ }).click();
     const editor = page.locator("textarea").first();
     await editor.fill(JSON.stringify({ priority: "P0" }));

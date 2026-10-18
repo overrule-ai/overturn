@@ -29,7 +29,7 @@ Open http://localhost:3000 to see the runs, click **Correct** on any model step,
 
 1. **Record.** `ov.wrapOpenAI(client)` turns every model call into a step; `ov.tool(name, fn, { sideEffect })` turns every tool call into a fingerprinted step. Batched, retried, never throws into your agent. OpenTelemetry GenAI traces work too.
 2. **Correct.** A human approves, edits, rejects or escalates: in the UI, from your app with `ov.correct()`, or via `POST /v1/corrections`.
-3. **Auto-case.** Each correction freezes the step's exact input, the run's tool recordings and the expected answer as a regression case.
+3. **Auto-case.** Each correction freezes the step's exact input, the run's tool recordings and the expected answer as a regression case, scored on the decision fields of the answer, not its prose.
 4. **Replay.** `overturn replay --model anthropic/claude-sonnet-4-5 --since 30d` re-runs the cases with every tool answered from the recording. Side-effect tools never execute.
 5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction.
 6. **CI gate.** The [GitHub Action](packages/replay-action) comments the report on pull requests that touch prompts or agent code and fails on regressions.

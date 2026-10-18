@@ -81,6 +81,8 @@ ov.correct(run_id=..., step_id=None, kind="edit", corrected_output={...}, note=N
 
 Sent immediately (not batched). `stepId` omitted = run-level correction (attached to the last model step). The case is returned.
 
+**How the case is scored.** The scorer is picked from the shape of the expected answer: `tool_choice` for tool decisions, `json_match` for objects, `equals` (semantic fallback) for short text, `judge` for long text, `not_equals` / `should_escalate` for rejects and escalations. When an object mixes decision fields (short strings, numbers, booleans, lists of those) with prose, only the decision fields are scored (`scorerConfig.fields`, marked `auto: true`): a different model's phrasing is not a regression. Override per correction with `scorer` / `scorerConfig`, or later with `cases.patch`.
+
 ## Replay mode
 
 ```ts

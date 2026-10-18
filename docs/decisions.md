@@ -108,3 +108,4 @@ One line of reasoning each. Newest at the bottom.
 - **OTLP spans that start in the same microsecond get consecutive seqs.** Three steps shared one `seq` in the OTel sample.
 - **Versions come from package metadata everywhere (CLI, SDKs, API `/health`).**
 - **Logo: the founder's angular-flip mark with an Inter-outlined wordmark; favicon, app header and README use it.**
+- **Cases score the decision fields of a structured answer and ignore its prose by default (`decisionFields`); the Correct dialog shows and lets the reviewer edit that list; corrections accept `scorer`/`scorerConfig` overrides.** The first real-model replay failed 10/21 cases on reply wording; the reviewer knows what mattered at the moment they correct, so ask then.
