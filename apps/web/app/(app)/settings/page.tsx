@@ -106,9 +106,9 @@ export default function SettingsPage() {
               </code>
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Input
-              className="w-56"
+              className="w-56 max-w-full"
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
               placeholder="key name"
@@ -234,7 +234,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <form
-            className="flex gap-2"
+            className="flex flex-wrap gap-2"
             onSubmit={(e) => {
               e.preventDefault();
               addMember.mutate();
@@ -242,7 +242,7 @@ export default function SettingsPage() {
           >
             <Input
               type="email"
-              className="w-72"
+              className="w-72 max-w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="teammate@company.com"

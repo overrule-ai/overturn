@@ -45,17 +45,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
-          <Link href="/runs" className="flex items-center gap-2 font-semibold">
-            <Logo /> Overturn
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6">
+          <Link href="/runs" className="flex shrink-0 items-center gap-2 font-semibold">
+            <Logo /> <span className="hidden sm:inline">Overturn</span>
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                  "whitespace-nowrap rounded-md px-2 py-1.5 text-sm hover:bg-accent sm:px-3",
                   pathname.startsWith(n.href) ? "bg-accent font-medium" : "text-muted-foreground",
                 )}
               >
@@ -63,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             {s.projects.length > 1 && (
               <NativeSelect
                 value={currentProjectId() ?? s.project.id}
@@ -81,7 +81,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </NativeSelect>
             )}
-            <span className="text-sm text-muted-foreground">{s.user?.email ?? s.project.name}</span>
+            <span className="hidden text-sm text-muted-foreground md:inline">
+              {s.user?.email ?? s.project.name}
+            </span>
             {s.user && (
               <Button
                 variant="ghost"
