@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Page, Run, RunListQuery, RunWithSteps, Step } from "@overturn-ai/shared";
-import { and, asc, desc, eq, gt, gte, lt, lte, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, gte, lt, lte, or, type SQL, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { type RunRow, runs, type StepRow, steps } from "../db/schema";
@@ -68,6 +68,9 @@ function decodeCursor(c: string): { startedAt: Date; id: string } | null {
   }
 }
 
+/** Max bytes of input/output embedded in list rows (see list()). */
+const LIST_BODY_LIMIT = 8 * 1024;
+
 @Injectable()
 export class RunsService {
   constructor(@Inject(DB) private readonly db: Db) {}
@@ -89,8 +92,14 @@ export class RunsService {
         );
       }
     }
+    // Lists carry input/output only when small; big bodies are replaced by a size marker and
+    // fetched from GET /v1/runs/:id. Keeps a list page from weighing megabytes.
     const rows = await this.db
-      .select()
+      .select({
+        ...getTableColumns(runs),
+        input: sql<unknown>`case when octet_length(${runs.input}::text) <= ${LIST_BODY_LIMIT} then ${runs.input} else jsonb_build_object('$truncated', octet_length(${runs.input}::text)) end`,
+        output: sql<unknown>`case when octet_length(${runs.output}::text) <= ${LIST_BODY_LIMIT} then ${runs.output} else jsonb_build_object('$truncated', octet_length(${runs.output}::text)) end`,
+      })
       .from(runs)
       .where(and(...where))
       .orderBy(desc(runs.startedAt), desc(runs.id))

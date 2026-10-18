@@ -85,6 +85,25 @@ export function shortId(id: string): string {
   return id.slice(-8);
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Commands print 8-character ids (the UUID's tail); accept those back by looking them up
+ * among recent items. A full UUID passes through untouched.
+ */
+export async function resolveId(
+  id: string,
+  list: () => Promise<{ id: string }[]>,
+  what: string,
+): Promise<string> {
+  if (UUID.test(id)) return id;
+  const needle = id.toLowerCase();
+  const matches = (await list()).filter((x) => x.id.endsWith(needle));
+  if (matches.length === 1) return matches[0]!.id;
+  if (matches.length === 0) return fail(`No recent ${what} matches "${id}"; pass the full id`);
+  return fail(`"${id}" matches ${matches.length} recent ${what}s; pass the full id`);
+}
+
 export function ago(iso: string): string {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return `${Math.round(s)}s`;

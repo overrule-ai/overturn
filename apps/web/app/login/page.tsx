@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Rewind } from "lucide-react";
 import { useState } from "react";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Rewind className="h-5 w-5" /> Sign in to Overturn
+            <Logo /> Sign in to Overturn
           </CardTitle>
           <CardDescription>We email you a link. No password.</CardDescription>
         </CardHeader>

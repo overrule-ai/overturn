@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Rewind } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/input";
 import { ApiError, client, currentProjectId, setCurrentProjectId } from "@/lib/api";
@@ -47,7 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
           <Link href="/runs" className="flex items-center gap-2 font-semibold">
-            <Rewind className="h-5 w-5" /> Overturn
+            <Logo /> Overturn
           </Link>
           <nav className="flex items-center gap-1">
             {NAV.map((n) => (

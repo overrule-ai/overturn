@@ -148,6 +148,8 @@ describe("the README demo", () => {
     const md = renderMarkdownReport(report);
     expect(md).toMatch(/### Regressions \([1-9]\d*\)/);
     expect(md).toMatch(/### Fixed \([1-9]\d*\)/);
+    expect(md).toContain("### Replay receipt");
+    expect(md).toContain("**Blocked:** 0 side-effect tool calls refused");
     console.log(md.split("\n").slice(0, 4).join("\n"));
 
     // the same prompt with the good model: no regressions, fixes stay

@@ -165,6 +165,15 @@ describe("OTLP mapper", () => {
     expect(steps[0]!.input).toEqual({ email: "a@b.c" });
   });
 
+  it("spans that start in the same microsecond keep their order", () => {
+    const trace = genAiTrace();
+    for (const s of trace.resourceSpans![0]!.scopeSpans![0]!.spans!) s.startTimeUnixNano = ns(5);
+    const { steps } = mapOtlpTraces(trace);
+    const seqs = steps.map((st) => st.seq);
+    expect(new Set(seqs).size).toBe(seqs.length);
+    expect(steps.map((st) => st.name)).toEqual(["lookup_customer", "chat", "set_priority"]);
+  });
+
   it("marks errored root spans as failed; a batch without the root emits steps but no run", () => {
     const t = genAiTrace();
     t.resourceSpans![0]!.scopeSpans![0]!.spans![0]!.status = { code: "STATUS_CODE_ERROR", message: "boom" };

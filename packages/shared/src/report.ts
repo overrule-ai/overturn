@@ -11,6 +11,39 @@ function cell(v: unknown, max = 160): string {
   return fmt(v, max).replace(/\|/g, "\\|").replace(/`/g, "'");
 }
 
+/**
+ * The replay receipt: what was re-run, what was simulated, what was blocked and what a green
+ * result therefore does not prove. A CI check is only as useful as what "green" means.
+ */
+export function replayReceipt(report: ReplayReport): string[] {
+  const rows = [
+    ...report.regressions,
+    ...report.stillWrong,
+    ...report.fixed,
+    ...report.passed,
+    ...report.unreplayable,
+    ...report.errors,
+  ];
+  const job = report.job;
+  const refused = rows.reduce((n, r) => n + (r.refusedSideEffects?.length ?? 0), 0);
+  const simulated = rows.reduce((n, r) => n + (r.simulatedToolCalls ?? 0), 0);
+  const trajectory = job.mode === "trajectory";
+  const items = [
+    `**Replayed:** ${rows.length} case${rows.length === 1 ? "" : "s"} against \`${job.targetModel}\`${job.targetPromptVersion ? ` with prompt \`${job.targetPromptVersion}\`` : ""}, ${
+      trajectory
+        ? "whole trajectories through your agent code"
+        : "the corrected model call only, with each step's frozen input"
+    }.`,
+    trajectory
+      ? `**Simulated:** ${simulated} tool call${simulated === 1 ? "" : "s"} answered from the recordings; no tool executed.`
+      : "**Simulated:** nothing executed; tool calls, retrieval and earlier steps were not exercised.",
+    `**Blocked:** ${refused} side-effect tool call${refused === 1 ? "" : "s"} refused${refused > 0 ? " (the decision was scored, the effect never happened)" : ""}.`,
+    "**Not tested:** live APIs, databases and retrieval as they are today; anything the recordings did not capture (timestamps, feature flags, hidden state).",
+    "**Limits:** models are not deterministic, so a pass is one sample; scorers compare only what each case's scorer config says matters.",
+  ];
+  return ["### Replay receipt", "", ...items.map((i) => `- ${i}`), ""];
+}
+
 function pct(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
@@ -30,8 +63,12 @@ function section(title: string, rows: ReportRow[], emptyText: string): string[] 
   for (const r of rows) {
     const human =
       r.kind === "edit" ? r.expected : r.kind === "approve" ? "approved as-is" : (r.note ?? r.kind);
+    const refused = r.refusedSideEffects?.length
+      ? ` · refused side effects: ${r.refusedSideEffects.map((x) => x.toolName).join(", ")}`
+      : "";
+    const steps = r.stepCount !== undefined ? ` · ${r.stepCount} steps` : "";
     out.push(
-      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)} |`,
+      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)}${steps}${refused} |`,
     );
   }
   out.push("");
@@ -79,6 +116,7 @@ export function renderMarkdownReport(
     "</details>",
     "",
   );
+  lines.push(...replayReceipt(report));
   if (opts.link) lines.push(`[Open the full report](${opts.link})`, "");
   lines.push(
     `<sub>Job \`${job.id}\` · mode ${job.mode} · [Overturn](https://github.com/overrule-ai/overturn)</sub>`,

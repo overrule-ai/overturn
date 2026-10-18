@@ -33,7 +33,7 @@ class UnreplayableError(Exception):
             "the real tool was not executed"
         )
         self.tool_name = tool_name
-        self.args = args
+        self.tool_args = args
         self.fingerprint = fingerprint
 
 
@@ -41,7 +41,7 @@ class SideEffectRefusedError(Exception):
     def __init__(self, tool_name: str, args: Any) -> None:
         super().__init__(f'Tool "{tool_name}" is marked side_effect=True and is refused in replay mode')
         self.tool_name = tool_name
-        self.args = args
+        self.tool_args = args  # not `args`: that is BaseException's message tuple
 
 
 class MaxStepsExceededError(Exception):

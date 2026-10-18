@@ -2,7 +2,17 @@ import { writeFileSync } from "node:fs";
 import { type ReplayJob, type ReplayReport, renderMarkdownReport } from "@overturn-ai/shared";
 import type { Command } from "commander";
 import pc from "picocolors";
-import { ago, apiFor, type CliOptions, fail, parseSince, printJson, shortId, table } from "../context.js";
+import {
+  ago,
+  apiFor,
+  type CliOptions,
+  fail,
+  parseSince,
+  printJson,
+  resolveId,
+  shortId,
+  table,
+} from "../context.js";
 
 export interface ReplayOptions {
   model: string;
@@ -203,6 +213,7 @@ export function registerReplay(program: Command): void {
       async (jobId: string, opts: { format: "table" | "json" | "md"; output?: string }, cmd: Command) => {
         const global = cmd.optsWithGlobals<CliOptions>();
         const api = apiFor(global);
+        jobId = await resolveId(jobId, () => api.replays.list({ limit: 100 }), "replay");
         const job = await api.replays.get(jobId);
         const report = await api.replays.report(jobId);
         if (global.json) return printJson(report);

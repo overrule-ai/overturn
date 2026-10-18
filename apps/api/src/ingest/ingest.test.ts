@@ -188,6 +188,21 @@ describe("GET /v1/runs", () => {
     expect(none.body.items).toHaveLength(0);
   });
 
+  it("keeps list rows small: big input/output become size markers, detail keeps them", async () => {
+    const id = uuidv7();
+    const p = payload(id, [uuidv7(), uuidv7()]);
+    p.runs[0]!.agent = "big-agent";
+    p.runs[0]!.input = { blob: "x".repeat(20_000) };
+    p.runs[0]!.output = { small: true };
+    await api(ctx, "POST", "/v1/ingest", p);
+    const list = await api<Page<Run>>(ctx, "GET", "/v1/runs?agent=big-agent");
+    const row = list.body.items[0]!;
+    expect((row.input as { $truncated?: number }).$truncated).toBeGreaterThan(8 * 1024);
+    expect(row.output).toEqual({ small: true });
+    const detail = await api<RunWithSteps>(ctx, "GET", `/v1/runs/${id}`);
+    expect((detail.body.input as { blob: string }).blob).toHaveLength(20_000);
+  });
+
   it("GET /v1/me returns the project", async () => {
     const me = await api<{ project: { id: string }; keyPrefix: string }>(ctx, "GET", "/v1/me");
     expect(me.status).toBe(200);

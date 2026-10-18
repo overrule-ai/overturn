@@ -824,6 +824,7 @@ export class ReplayService {
       error: r.error,
       costUsd: r.costUsd,
       latencyMs: r.latencyMs,
+      ...trajectoryExtras(r.diff),
     });
     const all = rows.map(toRow).sort((a, b) => a.title.localeCompare(b.title));
     const summary: ReplaySummary = job.summary ?? {
@@ -849,4 +850,27 @@ export class ReplayService {
       errors: all.filter((x) => x.verdict === "error"),
     };
   }
+}
+
+/** Report columns that only exist for trajectory replays (see POST /v1/replays/:id/results). */
+function trajectoryExtras(
+  diff: unknown,
+): Pick<ReportRow, "refusedSideEffects" | "stepCount" | "simulatedToolCalls"> {
+  const d = diff as {
+    refusedSideEffects?: { toolName: string; args: unknown }[];
+    steps?: { kind?: string }[];
+  } | null;
+  if (!d || (!Array.isArray(d.refusedSideEffects) && !Array.isArray(d.steps))) return {};
+  return {
+    ...(Array.isArray(d.refusedSideEffects)
+      ? { refusedSideEffects: d.refusedSideEffects as ReportRow["refusedSideEffects"] }
+      : {}),
+    ...(Array.isArray(d.steps)
+      ? {
+          stepCount: d.steps.length,
+          simulatedToolCalls: d.steps.filter((s) => s && typeof s === "object" && s.kind === "tool_call")
+            .length,
+        }
+      : {}),
+  };
 }

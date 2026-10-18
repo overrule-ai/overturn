@@ -1,6 +1,15 @@
 import type { Command } from "commander";
 import pc from "picocolors";
-import { ago, apiFor, type CliOptions, parseSince, printJson, shortId, table } from "../context.js";
+import {
+  ago,
+  apiFor,
+  type CliOptions,
+  parseSince,
+  printJson,
+  resolveId,
+  shortId,
+  table,
+} from "../context.js";
 
 export function registerCases(program: Command): void {
   const cases = program.command("cases").description("Regression cases made from corrections");
@@ -63,7 +72,10 @@ export function registerCases(program: Command): void {
     .description("Show a case: frozen input, expected, tool recordings")
     .action(async (id: string, _opts: unknown, cmd: Command) => {
       const global = cmd.optsWithGlobals<CliOptions>();
-      const c = await apiFor(global).cases.get(id);
+      const api = apiFor(global);
+      const c = await api.cases.get(
+        await resolveId(id, async () => (await api.cases.list({ limit: 200 })).items, "case"),
+      );
       if (global.json) return printJson(c);
       console.log(
         `${pc.bold(c.title)}\n${pc.dim(c.id)}  ${c.kind}  scorer=${c.scorer}  model=${c.recordedModel ?? "?"}  tools=${Object.keys(c.toolRecordings).length}${c.truncated ? pc.yellow("  truncated") : ""}`,
@@ -77,7 +89,13 @@ export function registerCases(program: Command): void {
     .description("Archive a case")
     .action(async (id: string, _opts: unknown, cmd: Command) => {
       const global = cmd.optsWithGlobals<CliOptions>();
-      await apiFor(global).cases.patch(id, { status: "archived" });
+      const api = apiFor(global);
+      await api.cases.patch(
+        await resolveId(id, async () => (await api.cases.list({ limit: 200 })).items, "case"),
+        {
+          status: "archived",
+        },
+      );
       console.log(`${pc.green("✓")} archived ${id}`);
     });
 }

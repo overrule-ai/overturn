@@ -1,6 +1,15 @@
 import type { Command } from "commander";
 import pc from "picocolors";
-import { ago, apiFor, type CliOptions, parseSince, printJson, shortId, table } from "../context.js";
+import {
+  ago,
+  apiFor,
+  type CliOptions,
+  parseSince,
+  printJson,
+  resolveId,
+  shortId,
+  table,
+} from "../context.js";
 
 export function registerRuns(program: Command): void {
   const runs = program.command("runs").description("Recorded agent runs");
@@ -62,7 +71,10 @@ export function registerRuns(program: Command): void {
     .description("Show a run with its steps")
     .action(async (id: string, _opts: unknown, cmd: Command) => {
       const global = cmd.optsWithGlobals<CliOptions>();
-      const run = await apiFor(global).runs.get(id);
+      const api = apiFor(global);
+      const run = await api.runs.get(
+        await resolveId(id, async () => (await api.runs.list({ limit: 200 })).items, "run"),
+      );
       if (global.json) return printJson(run);
       console.log(`${pc.bold(run.agent)} ${run.agentVersion ?? ""} ${pc.dim(run.id)} ${run.status}`);
       for (const s of run.steps) {

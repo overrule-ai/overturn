@@ -72,6 +72,55 @@ describe("magic-link auth", () => {
     ).toBe(401);
   });
 
+  it("corrections made from the web app are attributed to the signed-in user", async () => {
+    const cookie = await signIn("reviewer@example.com");
+    const runId = "01a14100-0000-7000-8000-00000000a001";
+    const key = await fetch(`${ctx.baseUrl}/v1/api-keys`, {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ name: "seed" }),
+    });
+    const { key: plaintext } = (await key.json()) as { key: string };
+    const ingest = await fetch(`${ctx.baseUrl}/v1/ingest`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${plaintext}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        v: 1,
+        runs: [
+          {
+            id: runId,
+            agent: "ui-agent",
+            status: "completed",
+            output: { ok: 1 },
+            startedAt: new Date().toISOString(),
+          },
+        ],
+        steps: [
+          {
+            id: "01a14100-0000-7000-8000-00000000a002",
+            runId,
+            seq: 0,
+            kind: "llm_call",
+            name: "chat",
+            input: { messages: [] },
+            output: { message: { role: "assistant", content: "ok" } },
+            startedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    });
+    expect(ingest.status).toBe(202);
+    const corr = await fetch(`${ctx.baseUrl}/v1/corrections`, {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ runId, kind: "approve" }),
+    });
+    expect(corr.status).toBe(201);
+    const { correction } = (await corr.json()) as { correction: { actor: string | null; source: string } };
+    expect(correction.actor).toBe("reviewer@example.com");
+    expect(correction.source).toBe("ui");
+  });
+
   it("links are single-use and expire; logout revokes the session", async () => {
     const link = await fetch(`${ctx.baseUrl}/v1/auth/magic-link`, {
       method: "POST",

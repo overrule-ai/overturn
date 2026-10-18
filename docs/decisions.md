@@ -97,3 +97,14 @@ One line of reasoning each. Newest at the bottom.
 - **npm scope is `@overturn-ai` (`@overturn-ai/sdk`, `@overturn-ai/shared`); the CLI stays the unscoped `overturn`.** The npm name `overturn` is held by an existing user, so the `@overturn` scope cannot exist; the whole workspace moved to one scope rather than mixing two.
 - **The CLI package is `overturn-cli` on npm; the command is still `overturn`.** npm refused the name `overturn` as too similar to the existing `over-turn`. The release workflow skips versions already published so a partial release can be rerun.
 - **`overturn-cli` went through npm's new-name staging review within the hour; no scoped alias needed.** v0.1.1 is the first version installable from all registries.
+
+## 2026-10-17 (post-release test pass)
+
+- **Run lists cap embedded input/output at 8 KB; larger bodies become `{"$truncated": bytes}` and live on the detail endpoint.** A 5 MB run made the list page 5 MB.
+- **UI corrections are attributed to the signed-in user and marked `source: ui`.** Corrections made in the web app showed an empty "By".
+- **The CLI accepts the 8-character ids it prints.** `runs get`, `cases get/archive` and `report` resolve a suffix against the last 200 items.
+- **Every report ends with a replay receipt: replayed / simulated / blocked / not tested / limits.** A green check is only useful if engineers can see what green means (feedback the founder brought from a product review).
+- **The Python API client mirrors the TypeScript one (`ov.api.runs.list()` …) and returns plain dicts; replay errors expose `tool_args`, not `args`.** `docs/sdk.md` had overclaimed the Python surface; `args` shadowed `BaseException.args` and turned the message into a tuple.
+- **OTLP spans that start in the same microsecond get consecutive seqs.** Three steps shared one `seq` in the OTel sample.
+- **Versions come from package metadata everywhere (CLI, SDKs, API `/health`).**
+- **Logo: the founder's angular-flip mark with an Inter-outlined wordmark; favicon, app header and README use it.**
