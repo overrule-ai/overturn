@@ -165,13 +165,19 @@ describe("OTLP mapper", () => {
     expect(steps[0]!.input).toEqual({ email: "a@b.c" });
   });
 
-  it("spans that start in the same microsecond keep their order", () => {
+  it("spans that start in the same tick get distinct seqs in span-id order, whatever the batch order", () => {
     const trace = genAiTrace();
-    for (const s of trace.resourceSpans![0]!.scopeSpans![0]!.spans!) s.startTimeUnixNano = ns(5);
+    const spans = trace.resourceSpans![0]!.scopeSpans![0]!.spans!;
+    for (const s of spans) s.startTimeUnixNano = ns(5);
+    spans.reverse();
     const { steps } = mapOtlpTraces(trace);
     const seqs = steps.map((st) => st.seq);
     expect(new Set(seqs).size).toBe(seqs.length);
-    expect(steps.map((st) => st.name)).toEqual(["lookup_customer", "chat", "set_priority"]);
+    const ordered = [...steps].sort((a, b) => a.seq - b.seq).map((st) => st.name);
+    expect(ordered).toEqual(["lookup_customer", "chat", "set_priority"]);
+    // seq is the start time at 100ns resolution since 2020, so later batches interleave correctly
+    expect(Math.min(...seqs)).toBe(Number((T0 + 5_000_000n - 1_577_836_800_000_000_000n) / 100n));
+    expect(Math.max(...seqs)).toBeLessThan(Number.MAX_SAFE_INTEGER);
   });
 
   it("marks errored root spans as failed; a batch without the root emits steps but no run", () => {
