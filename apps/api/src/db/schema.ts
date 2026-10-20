@@ -145,6 +145,8 @@ export const runs = pgTable(
     stepCount: integer("step_count").notNull().default(0),
     correctionCount: integer("correction_count").notNull().default(0),
     costUsd: doublePrecision("cost_usd"),
+    /** Set once the completed run has been posted to the project's review webhook. */
+    notifiedAt: timestamp("notified_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
   },
   (t) => [

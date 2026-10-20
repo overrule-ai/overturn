@@ -82,6 +82,13 @@ const ROUTES: Route[] = [
   },
   {
     method: "post",
+    path: "/v1/project/webhook-test",
+    summary: "Post a sample message to the project's review webhook",
+    tag: "project",
+    response: z.object({ ok: z.boolean(), status: z.number().optional(), error: z.string().optional() }),
+  },
+  {
+    method: "post",
     path: "/v1/ingest",
     summary: "Record runs and steps (idempotent upsert, batched by the SDKs)",
     tag: "record",

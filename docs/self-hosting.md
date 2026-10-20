@@ -45,6 +45,7 @@ OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn-ai/web start
 
 - **Migrations** are plain SQL in `apps/api/drizzle/`, applied by `pnpm db:migrate` (or at container boot). Never auto-applied by the running API.
 - **Retention**: `retentionDays` in project settings is stored for v0.2's cleanup job; v0.1 keeps everything.
+- **Review webhook**: `reviewWebhookUrl` (Slack incoming-webhook format) gets every completed run once (`runs.notified_at`); a failed POST is logged, not retried.
 - **Cache**: model responses for replay live in `response_cache` (24h TTL, purged hourly).
 - **Backups**: it is one Postgres database; `pg_dump` is the whole story.
 - **Scaling**: the API is stateless apart from pg-boss, which coordinates through Postgres; run several replicas behind a load balancer if needed.

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KindBadge, StatusBadge } from "@/components/badges";
 import { CorrectDialog } from "@/components/correct-dialog";
 import { JsonView } from "@/components/json-view";
@@ -98,6 +98,17 @@ export default function RunPage() {
   const run = useQuery({ queryKey: ["run", id], queryFn: () => client.runs.get(id) });
   const corrections = useQuery({ queryKey: ["corrections", id], queryFn: () => client.corrections.list(id) });
   const [dialog, setDialog] = useState<{ step: Step | null } | null>(null);
+
+  // ?approve=1 (the Approve button in the Slack review message) opens the run-level
+  // approve dialog; the correction is only written when the human confirms.
+  useEffect(() => {
+    if (!run.data) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("approve") === "1") {
+      setDialog({ step: null });
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [run.data]);
 
   if (run.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (run.error || !run.data)

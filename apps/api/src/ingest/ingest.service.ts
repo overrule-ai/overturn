@@ -4,16 +4,21 @@ import { inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { runs, steps } from "../db/schema";
+import { NotifyService } from "../notify/notify.service";
 
 @Injectable()
 export class IngestService {
   private readonly logger = new Logger(IngestService.name);
 
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(DB) private readonly db: Db,
+    private readonly notify: NotifyService,
+  ) {}
 
   async ingest(projectId: string, payload: IngestPayload): Promise<IngestResponse> {
     const runIds = new Set<string>(payload.runs.map((r) => r.id));
     const stepRunIds = new Set<string>(payload.steps.map((s) => s.runId));
+    const finished = payload.runs.filter((r) => r.status !== "running").map((r) => r.id);
 
     await this.db.transaction(async (tx) => {
       if (payload.runs.length > 0) {
@@ -113,6 +118,12 @@ export class IngestService {
     });
 
     this.logger.debug(`ingested ${payload.runs.length} runs, ${payload.steps.length} steps for ${projectId}`);
+    if (finished.length > 0) {
+      // off the request path; a run is posted at most once (notified_at claim)
+      void this.notify
+        .notifyCompletedRuns(projectId, finished)
+        .catch((err: unknown) => this.logger.warn(`review webhook: ${String(err)}`));
+    }
     return { runs: payload.runs.length, steps: payload.steps.length };
   }
 }

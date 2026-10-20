@@ -52,6 +52,7 @@ export default function SettingsPage() {
     mutationFn: (id: string) => client.members.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["members"] }),
   });
+  const webhookTest = useMutation({ mutationFn: () => client.project.webhookTest() });
   const save = useMutation({
     mutationFn: () =>
       client.project.patch({
@@ -62,6 +63,7 @@ export default function SettingsPage() {
           embeddingModel: form!.embeddingModel,
           implicitApproveAfterDays: Number(form!.implicitApproveAfterDays),
           retentionDays: Number(form!.retentionDays),
+          reviewWebhookUrl: (form!.reviewWebhookUrl ?? "").trim() || null,
         },
       }),
     onSuccess: () => {
@@ -81,6 +83,7 @@ export default function SettingsPage() {
           embeddingModel: p.settings.embeddingModel,
           implicitApproveAfterDays: String(p.settings.implicitApproveAfterDays),
           retentionDays: String(p.settings.retentionDays),
+          reviewWebhookUrl: p.settings.reviewWebhookUrl ?? "",
         }
       : null);
 
@@ -155,7 +158,9 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Project</CardTitle>
-          <CardDescription>Default scorer, judge model, implicit approval and retention.</CardDescription>
+          <CardDescription>
+            Default scorer, judge model, implicit approval, retention and the Slack review webhook.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {f && (
@@ -213,6 +218,35 @@ export default function SettingsPage() {
                   value={f.retentionDays}
                   onChange={(e) => setForm({ ...f, retentionDays: e.target.value })}
                 />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label>Review webhook (Slack incoming webhook URL)</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    className="min-w-0 flex-1"
+                    placeholder="https://hooks.slack.com/services/…"
+                    value={f.reviewWebhookUrl}
+                    onChange={(e) => setForm({ ...f, reviewWebhookUrl: e.target.value })}
+                    data-testid="review-webhook"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!p?.settings.reviewWebhookUrl || !!form || webhookTest.isPending}
+                    onClick={() => webhookTest.mutate()}
+                    data-testid="webhook-test"
+                  >
+                    Send test
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Every completed run is posted there with Review and Approve buttons. Save before sending a
+                  test.
+                  {webhookTest.data &&
+                    (webhookTest.data.ok
+                      ? " Test message sent."
+                      : ` Test failed: ${webhookTest.data.error ?? `HTTP ${webhookTest.data.status}`}`)}
+                </p>
               </div>
               <div className="sm:col-span-2">
                 <Button type="submit" disabled={!form || save.isPending}>

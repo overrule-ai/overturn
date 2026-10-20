@@ -12,6 +12,7 @@ import { IngestController } from "./ingest/ingest.controller";
 import { IngestService } from "./ingest/ingest.service";
 import { JobsService } from "./jobs/jobs.service";
 import { MeController } from "./me/me.controller";
+import { NotifyService } from "./notify/notify.service";
 import { OtlpController } from "./otlp/otlp.controller";
 import { ProjectsController } from "./projects/projects.controller";
 import { PromptsService } from "./replay/prompts.service";
@@ -40,6 +41,7 @@ export class AppModule {
       ],
       providers: [
         { provide: APP_CONFIG, useValue: config },
+        NotifyService,
         IngestService,
         RunsService,
         CasesService,
