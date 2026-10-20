@@ -280,6 +280,8 @@ export const replayJobs = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     targetModel: text("target_model").notNull(),
     targetPromptVersion: text("target_prompt_version"),
+    /** Jobs created together (one replay, several models) share a group. */
+    groupId: uuid("group_id"),
     mode: replayMode("mode").notNull().default("step"),
     caseFilter: jsonb("case_filter").notNull().default(sql`'{}'::jsonb`),
     status: replayStatus("status").notNull().default("pending"),
@@ -294,7 +296,10 @@ export const replayJobs = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
   },
-  (t) => [index("replay_jobs_project_created").on(t.projectId, t.createdAt)],
+  (t) => [
+    index("replay_jobs_project_created").on(t.projectId, t.createdAt),
+    index("replay_jobs_group").on(t.groupId),
+  ],
 );
 
 export const replayResults = pgTable(

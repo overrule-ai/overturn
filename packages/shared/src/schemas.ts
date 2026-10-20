@@ -385,9 +385,13 @@ export type ReplayMode = z.infer<typeof replayModeSchema>;
 export const replayStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled"]);
 export type ReplayStatus = z.infer<typeof replayStatusSchema>;
 
+const modelIdSchema = z.string().regex(/^[a-z0-9_-]+\/.+$/i, "model must be provider/model");
+
 export const replayCreateSchema = z.object({
   /** provider/model, e.g. openai/gpt-4.1-mini, anthropic/claude-sonnet-4-5, fake/fake-triage-weak */
-  model: z.string().regex(/^[a-z0-9_-]+\/.+$/i, "model must be provider/model"),
+  model: modelIdSchema,
+  /** More models to replay the same cases against, as one group (a case × model matrix). */
+  models: z.array(modelIdSchema).max(8).optional(),
   mode: replayModeSchema.default("step"),
   /** name@version of a registered prompt; replaces the system prompt in step mode */
   promptVersion: z.string().max(200).nullish(),
@@ -428,6 +432,8 @@ export const replayJobSchema = z.object({
   projectId: uuidSchema,
   targetModel: z.string(),
   targetPromptVersion: z.string().nullable(),
+  /** Set when several models were replayed together; GET /v1/replays/groups/{groupId} is the matrix. */
+  groupId: uuidSchema.nullable(),
   mode: replayModeSchema,
   caseFilter: jsonValueSchema,
   status: replayStatusSchema,
@@ -443,6 +449,30 @@ export const replayJobSchema = z.object({
   createdAt: isoDateSchema,
 });
 export type ReplayJob = z.infer<typeof replayJobSchema>;
+
+export const replayMatrixCellSchema = z.object({
+  verdict: verdictSchema.nullable(),
+  passed: z.boolean().nullable(),
+  score: z.number().nullable(),
+  reason: z.string().nullable(),
+});
+/** One replay across several models: cases as rows, jobs (models) as columns. */
+export const replayMatrixSchema = z.object({
+  groupId: uuidSchema,
+  jobs: z.array(replayJobSchema),
+  cases: z.array(
+    z.object({
+      caseId: uuidSchema,
+      title: z.string(),
+      kind: correctionKindSchema,
+      agent: z.string(),
+      /** keyed by job id */
+      cells: z.record(z.string(), replayMatrixCellSchema),
+    }),
+  ),
+});
+export type ReplayMatrix = z.infer<typeof replayMatrixSchema>;
+export type ReplayMatrixCell = z.infer<typeof replayMatrixCellSchema>;
 
 export const replayResultSchema = z.object({
   id: uuidSchema,

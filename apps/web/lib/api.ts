@@ -13,6 +13,7 @@ import type {
   ReplayCreate,
   ReplayEstimate,
   ReplayJob,
+  ReplayMatrix,
   ReplayReport,
   ReplayResult,
   Run,
@@ -130,7 +131,8 @@ export const client = {
     estimate: (body: { model: string; filter: Record<string, unknown> }) =>
       api<ReplayEstimate>("POST", "/v1/replays/estimate", body),
     create: (body: Partial<ReplayCreate> & { model: string }) =>
-      api<{ job: ReplayJob; estimate: ReplayEstimate }>("POST", "/v1/replays", body),
+      api<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate }>("POST", "/v1/replays", body),
+    matrix: (groupId: string) => api<ReplayMatrix>("GET", `/v1/replays/groups/${groupId}`),
     cancel: (id: string) => api<ReplayJob>("POST", `/v1/replays/${id}/cancel`),
     results: (id: string) => api<ReplayResult[]>("GET", `/v1/replays/${id}/results`),
     report: (id: string) => api<ReplayReport>("GET", `/v1/replays/${id}/report`),

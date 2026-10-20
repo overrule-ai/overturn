@@ -37,23 +37,31 @@ export default function NewReplayPage() {
     set: set || undefined,
     since: since ? new Date(Date.now() - Number(since) * 86_400_000).toISOString() : undefined,
   };
-  const estimate = useMutation({ mutationFn: () => client.replays.estimate({ model, filter }) });
+  // "a/b, c/d" replays the same cases against several models and lands on the matrix
+  const models = model
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const first = models[0] ?? "";
+  const estimate = useMutation({ mutationFn: () => client.replays.estimate({ model: first, filter }) });
   // biome-ignore lint/correctness/useExhaustiveDependencies: estimate is a stable mutation handle
   useEffect(() => {
-    if (model.includes("/")) estimate.mutate();
-  }, [model, agent, tag, set, since]);
+    if (first.includes("/")) estimate.mutate();
+  }, [first, agent, tag, set, since]);
 
   const create = useMutation({
     mutationFn: () =>
       client.replays.create({
-        model,
+        model: first,
+        ...(models.length > 1 ? { models: models.slice(1) } : {}),
         mode,
         filter,
         promptVersion: prompt || null,
         maxCostUsd: maxCost ? Number(maxCost) : null,
         start: mode === "step",
       }),
-    onSuccess: ({ job }) => router.push(`/replays/${job.id}`),
+    onSuccess: ({ job, jobs }) =>
+      router.push(jobs.length > 1 && job.groupId ? `/replays/groups/${job.groupId}` : `/replays/${job.id}`),
   });
 
   return (
@@ -66,7 +74,7 @@ export default function NewReplayPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
-            <Label>Model (provider/model)</Label>
+            <Label>Model (provider/model) — comma-separate several to compare them</Label>
             <Input
               list="models"
               value={model}
@@ -160,6 +168,7 @@ export default function NewReplayPage() {
               {estimate.data.priced ? money(estimate.data.estimatedCostUsd) : "cost unknown for this model"} (
               {estimate.data.estimatedInputTokens.toLocaleString()} in /{" "}
               {estimate.data.estimatedOutputTokens.toLocaleString()} out tokens)
+              {models.length > 1 ? ` · ×${models.length} models` : ""}
             </>
           ) : estimate.error ? (
             <span className="text-destructive">{estimate.error.message}</span>

@@ -6,6 +6,7 @@ import {
   type ReplayCreate,
   type ReplayEstimate,
   type ReplayJob,
+  type ReplayMatrix,
   type ReplayModelCallRequest,
   type ReplayModelCallResponse,
   type ReplayReport,
@@ -49,10 +50,15 @@ export class ReplayController {
   async create(
     @Auth() auth: AuthContext,
     @Body(zod(replayCreateSchema)) body: ReplayCreate,
-  ): Promise<{ job: ReplayJob; estimate: ReplayEstimate; caseIds: string[] }> {
+  ): Promise<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate; caseIds: string[] }> {
     const created = await this.replay.create(auth.projectId, body);
-    if (body.start && body.mode === "step") await this.jobs.enqueueReplay(created.job.id);
+    if (body.start && body.mode === "step") for (const j of created.jobs) await this.jobs.enqueueReplay(j.id);
     return created;
+  }
+
+  @Get("replays/groups/:groupId")
+  matrix(@Auth() auth: AuthContext, @Param("groupId", zod(z.uuid())) groupId: string): Promise<ReplayMatrix> {
+    return this.replay.matrix(auth.projectId, groupId);
   }
 
   @Get("replays")

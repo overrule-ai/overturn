@@ -81,7 +81,7 @@ Every correction is a case: `npx overturn cases list`.
 npx overturn replay --model fake/fake-triage-weak --prompt ticket-triage@v2 --format md
 ```
 
-Regressions first (approved cases that now fail), then still-wrong, then fixed, each with baseline, target and the human correction side by side. With keys on the server: `--model openai/gpt-4.1-mini`, `--model anthropic/claude-haiku-4-5`, `--model google/gemini-2.5-flash`, `--model openrouter/<model>`.
+Regressions first (approved cases that now fail), then still-wrong, then fixed, each with baseline, target and the human correction side by side. Compare models in one go with `--model fake/fake-triage-v1,fake/fake-triage-weak` (a case × model matrix). With keys on the server: `--model openai/gpt-4.1-mini`, `--model anthropic/claude-haiku-4-5`, `--model google/gemini-2.5-flash`, `--model openrouter/<model>`.
 
 Whole trajectories through your agent, tools answered from the recording: `npx overturn init` (writes `overturn.config.ts`), implement `agent()`, then `npx overturn replay --mode trajectory --model …`.
 
