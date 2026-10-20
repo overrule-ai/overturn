@@ -26,6 +26,12 @@ export { type AnthropicLike, assembleMessageStream, splitMessageParams, wrapAnth
 export { OverturnApi, OverturnApiError } from "./api.js";
 export { Overturn, type OverturnOptions } from "./client.js";
 export { currentRun } from "./context.js";
+export {
+  type CorrectionHandlerOptions,
+  type CorrectionRequest,
+  correctionRequestSchema,
+  createCorrectionHandler,
+} from "./correction-handler.js";
 export { assembleChatStream, type OpenAILike, splitChatParams, wrapOpenAI } from "./openai.js";
 export {
   getGlobalReplay,

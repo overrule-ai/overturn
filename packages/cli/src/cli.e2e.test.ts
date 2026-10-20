@@ -96,6 +96,32 @@ describe("overturn CLI", () => {
     const shortCase = await run(["cases", "get", caseId.slice(-8)]);
     expect(shortCase).toContain("approve");
   });
+
+  it("ov.correctionHandler() turns a browser correction into a case (what <CorrectButton> posts)", async () => {
+    const { Overturn } = await import("@overturn-ai/sdk");
+    const ov = new Overturn({ apiKey: ctx.apiKey, baseUrl: ctx.baseUrl });
+    const handler = ov.correctionHandler({ actor: (req) => req.headers.get("x-user") });
+    const res = await handler(
+      new Request("http://app/api/overturn/correct", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-user": "sam@x.io" },
+        body: JSON.stringify({
+          runId: "01a14000-0000-7000-8000-000000000001",
+          kind: "edit",
+          correctedOutput: { message: { role: "assistant", content: "better" } },
+          note: "from the product UI",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      correction: { actor: string; source: string };
+      case: { id: string };
+    };
+    expect(body.correction.actor).toBe("sam@x.io");
+    expect(body.correction.source).toBe("sdk");
+    expect(await run(["cases", "get", body.case.id.slice(-8)])).toContain("edit");
+  });
 });
 
 describe("overturn replay / report", () => {

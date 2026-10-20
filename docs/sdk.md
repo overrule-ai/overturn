@@ -85,6 +85,20 @@ Sent immediately (not batched). `stepId` omitted = run-level correction (attache
 
 **One-offs.** A correction made for an unusual reason is evidence, not a rule. Tick **One-off** in the dialog (or `cases.patch(id, { status: "archived" })`): the correction and case are kept, but archived cases are left out of replays until restored.
 
+**Corrections from your own UI.** The project key stays on the server: mount `ov.correctionHandler()` on a route and drop `<CorrectButton>` (from `@overturn-ai/sdk/react`, React ≥ 18, no other deps) next to the agent's answer.
+
+```ts
+// app/api/overturn/correct/route.ts (Next.js; any Request/Response runtime works)
+export const POST = ov.correctionHandler({ actor: async (req) => (await getSession(req))?.email ?? null });
+```
+
+```tsx
+import { CorrectButton } from "@overturn-ai/sdk/react";
+<CorrectButton endpoint="/api/overturn/correct" runId={run.id} original={run.output} onDone={refresh} />
+```
+
+The button opens Approve / Edit / Reject / Escalate with a note; the handler validates the body, resolves the actor from your session (return a `Response` to refuse), and calls `ov.correct()`. Unstyled beyond sensible defaults; pass `className`/`style` or `kinds` to narrow the choices.
+
 **Reviewing from Slack.** Set a Slack incoming-webhook URL in Settings → Project (`settings.reviewWebhookUrl`). Every completed run is posted once, with the input/output excerpt and two buttons: **Review** opens the run, **Approve** opens it with the approve dialog ready (the correction is written only when the human confirms). "Send test" posts a hello message; `POST /v1/project/webhook-test` does the same.
 
 **Replay readiness.** The run page says what the recording can prove: *replay-ready* (every tool call recorded or a refused side effect), *partially replayable* (some tool calls have no recorded output: trajectory replay stops at the first one; step replay still works) or *not replayable* (no model step with its prompt). OpenTelemetry traces that only carry tool names and arguments land in the second bucket; add the tool result on the span (`gen_ai.tool.call.result`, `output.value` or `traceloop.entity.output`) to make them full recordings.
