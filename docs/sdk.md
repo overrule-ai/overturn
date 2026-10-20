@@ -83,6 +83,8 @@ Sent immediately (not batched). `stepId` omitted = run-level correction (attache
 
 **How the case is scored.** The scorer is picked from the shape of the expected answer: `tool_choice` for tool decisions, `json_match` for objects, `equals` (semantic fallback) for short text, `judge` for long text, `not_equals` / `should_escalate` for rejects and escalations. When an object mixes decision fields (short strings, numbers, booleans, lists of those) with prose, only the decision fields are scored (`scorerConfig.fields`, marked `auto: true`): a different model's phrasing is not a regression. Override per correction with `scorer` / `scorerConfig`, or later with `cases.patch`.
 
+**One-offs.** A correction made for an unusual reason is evidence, not a rule. Tick **One-off** in the dialog (or `cases.patch(id, { status: "archived" })`): the correction and case are kept, but archived cases are left out of replays until restored.
+
 **Reviewing from Slack.** Set a Slack incoming-webhook URL in Settings → Project (`settings.reviewWebhookUrl`). Every completed run is posted once, with the input/output excerpt and two buttons: **Review** opens the run, **Approve** opens it with the approve dialog ready (the correction is written only when the human confirms). "Send test" posts a hello message; `POST /v1/project/webhook-test` does the same.
 
 ## Replay mode
