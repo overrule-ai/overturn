@@ -17,7 +17,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
 from .api import OverturnApi, OverturnApiError
-from .client import Overturn
+from .client import CorrectionRequestError, Overturn
 from .context import current_run
 from .fingerprint import FINGERPRINT_VERSION, canonical_json, fingerprint, hash_json, tool_fingerprint
 from .pricing import estimate_cost_usd
@@ -42,6 +42,7 @@ except PackageNotFoundError:  # running from source
     __version__ = "dev"
 
 __all__ = [
+    "CorrectionRequestError",
     "FINGERPRINT_VERSION",
     "IngestPayload",
     "MaxStepsExceededError",

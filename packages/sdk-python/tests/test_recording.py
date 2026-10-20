@@ -244,3 +244,53 @@ def test_correct_posts_immediately() -> None:
         "note": "n",
         "actor": "a",
     }
+
+
+def test_handle_correction_validates_and_uses_the_sessions_actor() -> None:
+    import json
+
+    import httpx
+
+    from overturn import CorrectionRequestError, Overturn
+
+    seen: list[dict[str, Any]] = []
+
+    def app(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content))
+        return httpx.Response(201, json={"correction": {"id": "c1"}, "case": {"id": "k1"}})
+
+    ov = Overturn(
+        api_key="k",
+        base_url="http://x",
+        http_client=httpx.Client(transport=httpx.MockTransport(app)),
+        background=False,
+    )
+    run_id = "01a14c81-adc1-749a-a32c-3d5c8017bd53"
+    out = ov.handle_correction(
+        {
+            "runId": run_id,
+            "kind": "edit",
+            "correctedOutput": {"priority": "P0"},
+            "note": "outage",
+            "actor": "spoof",
+        },
+        actor="sam@x.io",
+    )
+    assert out["case"]["id"] == "k1"
+    assert seen[0] == {
+        "runId": run_id,
+        "kind": "edit",
+        "source": "sdk",
+        "correctedOutput": {"priority": "P0"},
+        "note": "outage",
+        "actor": "sam@x.io",
+    }
+    for bad in (
+        {"runId": "nope", "kind": "approve"},
+        {"runId": run_id, "kind": "undo"},
+        [],
+        {"runId": run_id, "kind": "approve", "stepId": 1},
+    ):
+        with pytest.raises(CorrectionRequestError):
+            ov.handle_correction(bad)
+    assert len(seen) == 1

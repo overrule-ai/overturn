@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpException,
   Inject,
   Param,
   Post,
@@ -19,6 +20,11 @@ import { APP_CONFIG, type AppConfig } from "../config";
 import { ApiKeyGuard, Auth, type AuthedRequest } from "./api-key.guard";
 import { ApiKeysService, type AuthContext } from "./api-keys.service";
 import { AuthService, SESSION_COOKIE } from "./auth.service";
+import { RateLimiter } from "./rate-limit";
+
+// magic links send email: 5 per address and 30 per client IP, per 10 minutes
+const byEmail = new RateLimiter(5, 10 * 60_000);
+const byIp = new RateLimiter(30, 10 * 60_000);
 
 const emailSchema = z.object({ email: z.string().min(3).max(320) });
 const keyCreateSchema = z.object({ name: z.string().min(1).max(100).default("default") });
@@ -50,7 +56,14 @@ export class AuthController {
   @HttpCode(200)
   async magicLink(
     @Body(zod(emailSchema)) body: z.infer<typeof emailSchema>,
+    @Req() req: FastifyRequest,
   ): Promise<{ sent: boolean; devUrl: string | null }> {
+    if (!byIp.allow(req.ip) || !byEmail.allow(body.email.toLowerCase())) {
+      throw new HttpException(
+        { message: "Too many sign-in links requested; try again in a few minutes." },
+        429,
+      );
+    }
     const r = await this.auth.requestMagicLink(body.email);
     return { sent: r.sent, devUrl: r.url };
   }
