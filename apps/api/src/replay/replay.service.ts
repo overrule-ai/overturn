@@ -40,7 +40,7 @@ import {
   responseCache,
 } from "../db/schema";
 import { fakeEmbedding, ModelRegistry, PROVIDER_CONCURRENCY, parseModel } from "../models/registry";
-import { parseSettings } from "../projects/projects.controller";
+import { parseSettings } from "../projects/settings";
 import { callModel } from "./model-call";
 import { PromptsService } from "./prompts.service";
 

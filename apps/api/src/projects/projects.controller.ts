@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Inject, NotFoundException, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, NotFoundException, Patch, Post, UseGuards } from "@nestjs/common";
 import {
   type Project,
   type ProjectPatch,
-  type ProjectSettings,
   projectPatchSchema,
   projectSettingsSchema,
 } from "@overturn-ai/shared";
@@ -13,11 +12,8 @@ import { zod } from "../common/zod.pipe";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { type ProjectRow, projects } from "../db/schema";
-
-export function parseSettings(raw: unknown): ProjectSettings {
-  const parsed = projectSettingsSchema.safeParse(raw ?? {});
-  return parsed.success ? parsed.data : projectSettingsSchema.parse({});
-}
+import { NotifyService } from "../notify/notify.service";
+import { parseSettings } from "./settings";
 
 export function serializeProject(p: ProjectRow): Project {
   return {
@@ -32,7 +28,16 @@ export function serializeProject(p: ProjectRow): Project {
 @Controller("v1/project")
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(DB) private readonly db: Db,
+    private readonly notify: NotifyService,
+  ) {}
+
+  /** Posts a sample message to the configured review webhook. */
+  @Post("webhook-test")
+  async webhookTest(@Auth() auth: AuthContext): Promise<{ ok: boolean; status?: number; error?: string }> {
+    return this.notify.sendTest(auth.projectId);
+  }
 
   @Get()
   async get(@Auth() auth: AuthContext): Promise<Project> {

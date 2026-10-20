@@ -211,6 +211,8 @@ export const projectSettingsSchema = z.object({
   embeddingModel: z.string().default("openai/text-embedding-3-small"),
   implicitApproveAfterDays: z.number().int().min(0).max(365).default(0),
   retentionDays: z.number().int().min(1).max(3650).default(90),
+  /** Slack incoming-webhook URL; every completed run is posted there with Review / Approve buttons. */
+  reviewWebhookUrl: z.string().url().max(2000).nullable().default(null),
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 

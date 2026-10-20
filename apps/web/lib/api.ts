@@ -146,6 +146,8 @@ export const client = {
   project: {
     get: () => api<Project>("GET", "/v1/project"),
     patch: (body: ProjectPatch) => api<Project>("PATCH", "/v1/project", body),
+    webhookTest: () =>
+      api<{ ok: boolean; status?: number; error?: string }>("POST", "/v1/project/webhook-test"),
   },
   keys: {
     list: () =>
