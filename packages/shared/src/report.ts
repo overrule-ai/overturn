@@ -1,4 +1,4 @@
-import type { ReplayReport, ReportRow } from "./schemas.js";
+import type { ReplayMatrix, ReplayReport, ReportRow } from "./schemas.js";
 
 function fmt(v: unknown, max = 400): string {
   if (v === null || v === undefined) return "—";
@@ -121,5 +121,45 @@ export function renderMarkdownReport(
   lines.push(
     `<sub>Job \`${job.id}\` · mode ${job.mode} · [Overturn](https://github.com/overrule-ai/overturn)</sub>`,
   );
+  return lines.join("\n");
+}
+
+const VERDICT_MARK: Record<string, string> = {
+  pass: "✅",
+  fixed: "✅ fixed",
+  fail: "❌",
+  regression: "🔴 regression",
+  unreplayable: "⚠️ unreplayable",
+  error: "⚠️ error",
+};
+
+/** Case × model matrix as markdown: one row per case, one column per model. */
+export function renderMatrixMarkdown(m: ReplayMatrix): string {
+  const cols = m.jobs.map((j) => j.targetModel);
+  const lines = [
+    `## Overturn replay matrix: ${m.cases.length} cases × ${m.jobs.length} models`,
+    "",
+    `| Model | Pass rate | Regressions | Fixed | Cost |`,
+    `|---|---|---|---|---|`,
+  ];
+  for (const j of m.jobs) {
+    const s = j.summary;
+    lines.push(
+      `| \`${j.targetModel}\` | ${s ? pct(s.passRate) : j.status} | ${s?.verdicts.regression ?? 0} | ${s?.verdicts.fixed ?? 0} | ${money(j.costUsd)} |`,
+    );
+  }
+  lines.push(
+    "",
+    `| Case | ${cols.map((c) => `\`${c}\``).join(" | ")} |`,
+    `|---|${cols.map(() => "---").join("|")}|`,
+  );
+  for (const c of m.cases) {
+    const cells = m.jobs.map((j) => {
+      const cell = c.cells[j.id];
+      return cell?.verdict ? (VERDICT_MARK[cell.verdict] ?? cell.verdict) : "…";
+    });
+    lines.push(`| ${cell(c.title, 60)} | ${cells.join(" | ")} |`);
+  }
+  lines.push("");
   return lines.join("\n");
 }

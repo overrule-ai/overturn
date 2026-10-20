@@ -15,6 +15,13 @@
       "when": 1792078668380,
       "tag": "0001_step_seq_bigint",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792900000000,
+      "tag": "0002_replay_groups",
+      "breakpoints": true
     }
   ]
 }

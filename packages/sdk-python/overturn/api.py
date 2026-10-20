@@ -89,6 +89,9 @@ class OverturnApi:
     def replay_report(self, job_id: str) -> dict[str, Any]:
         return self.request("GET", f"/v1/replays/{job_id}/report")
 
+    def replay_matrix(self, group_id: str) -> dict[str, Any]:
+        return self.request("GET", f"/v1/replays/groups/{group_id}")
+
     def post_replay_results(self, job_id: str, body: dict[str, Any]) -> dict[str, Any]:
         return self.request("POST", f"/v1/replays/{job_id}/results", body=body)
 
@@ -190,6 +193,9 @@ class _Replays:
 
     def report(self, job_id: str) -> dict[str, Any]:
         return self._api.replay_report(job_id)
+
+    def matrix(self, group_id: str) -> dict[str, Any]:
+        return self._api.replay_matrix(group_id)
 
     def post_results(self, job_id: str, body: dict[str, Any]) -> dict[str, Any]:
         return self._api.post_replay_results(job_id, body)

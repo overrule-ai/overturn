@@ -1,5 +1,10 @@
 import { writeFileSync } from "node:fs";
-import { type ReplayJob, type ReplayReport, renderMarkdownReport } from "@overturn-ai/shared";
+import {
+  type ReplayJob,
+  type ReplayReport,
+  renderMarkdownReport,
+  renderMatrixMarkdown,
+} from "@overturn-ai/shared";
 import type { Command } from "commander";
 import pc from "picocolors";
 import {
@@ -124,7 +129,7 @@ export function registerReplay(program: Command): void {
     )
     .requiredOption(
       "--model <provider/model>",
-      "e.g. openai/gpt-4.1-mini, anthropic/claude-sonnet-4-5, fake/fake-triage-weak",
+      "e.g. openai/gpt-4.1-mini, anthropic/claude-sonnet-4-5, fake/fake-triage-weak; comma-separate several for a case × model matrix",
     )
     .option("--mode <mode>", "step | trajectory", "step")
     .option("--since <when>", "Cases created since: 30d, 12h, or an ISO date")
@@ -182,13 +187,55 @@ export function registerReplay(program: Command): void {
         return finish(api, job, opts, global);
       }
 
+      const models = opts.model
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean);
       const created = await api.replays.create({
-        model: opts.model,
+        model: models[0]!,
+        ...(models.length > 1 ? { models: models.slice(1) } : {}),
         mode: "step",
         filter,
         maxCostUsd,
         promptVersion: opts.prompt ?? null,
       });
+      if (created.jobs.length > 1) {
+        if (!opts.wait) {
+          if (global.json) return printJson(created.jobs);
+          console.log(
+            `${pc.green("✓")} ${created.jobs.length} replays started (group ${created.job.groupId})`,
+          );
+          return;
+        }
+        for (const j of created.jobs) {
+          await waitForJob(api, j.id, (x) => {
+            if (!global.json && opts.format !== "json")
+              process.stderr.write(`\r${x.targetModel}: ${x.completedCount}/${x.caseCount} cases…`);
+          });
+          if (!global.json && opts.format !== "json") process.stderr.write("\n");
+        }
+        const matrix = await api.replays.matrix(created.job.groupId!);
+        if (global.json || opts.format === "json") {
+          const text = JSON.stringify(matrix, null, 2);
+          if (opts.output) writeFileSync(opts.output, text);
+          else console.log(text);
+        } else {
+          const md = renderMatrixMarkdown(matrix);
+          if (opts.output) {
+            writeFileSync(opts.output, md);
+            console.log(`${pc.green("✓")} wrote ${opts.output}`);
+          } else console.log(md);
+        }
+        if (opts.failOnRegression !== undefined) {
+          const limit = Number(opts.failOnRegression);
+          const n = Math.max(...matrix.jobs.map((j) => j.summary?.verdicts.regression ?? 0));
+          if (n > limit) {
+            console.error(pc.red(`${n} regression${n === 1 ? "" : "s"} on the worst model (limit ${limit})`));
+            process.exit(1);
+          }
+        }
+        return;
+      }
       if (!opts.wait) {
         if (global.json) return printJson(created.job);
         console.log(

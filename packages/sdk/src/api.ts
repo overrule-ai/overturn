@@ -18,6 +18,7 @@ import type {
   ReplayCreate,
   ReplayEstimate,
   ReplayJob,
+  ReplayMatrix,
   ReplayReport,
   ReplayResult,
   ReplayResultsPost,
@@ -118,8 +119,10 @@ export class OverturnApi {
       this.request("POST", "/v1/replays/estimate", body),
     create: (
       body: Partial<ReplayCreate> & { model: string },
-    ): Promise<{ job: ReplayJob; estimate: ReplayEstimate; caseIds: string[] }> =>
+    ): Promise<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate; caseIds: string[] }> =>
       this.request("POST", "/v1/replays", body),
+    /** Case × model matrix for jobs created with `models`. */
+    matrix: (groupId: string): Promise<ReplayMatrix> => this.request("GET", `/v1/replays/groups/${groupId}`),
     list: (q: { limit?: number; status?: ReplayJob["status"] } = {}): Promise<ReplayJob[]> =>
       this.request("GET", "/v1/replays", undefined, q),
     get: (id: string): Promise<ReplayJob> => this.request("GET", `/v1/replays/${id}`),

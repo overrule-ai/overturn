@@ -121,9 +121,14 @@ Return `null` to drop a step entirely. Applied before the step leaves the proces
 overturn init                                  # writes .env + overturn.config.ts, verifies the key
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
 overturn cases list [--agent --kind --tag --set --status --since]    | cases get <id> | cases archive <id>
-overturn replay --model provider/model [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--format table|json|md] [--output file]
+overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--format table|json|md] [--output file]
 overturn report <jobId> [--format md]
 overturn replays list
 overturn prompts register name@version <file> | prompts list
 --json on any command prints JSON; --api-key / --base-url override the environment.
+```
+
+Several models at once (`--model a/x,b/y`) replay the same cases as one group and print a case × model matrix; `GET /v1/replays/groups/{groupId}` (`ov.api.replays.matrix(groupId)`) returns it, and the web app shows it at `/replays/groups/{groupId}`.
+
+```
 ```

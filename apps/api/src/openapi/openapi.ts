@@ -25,6 +25,7 @@ import {
   replayEstimateSchema,
   replayJobSchema,
   replayListQuerySchema,
+  replayMatrixSchema,
   replayModelCallResponseSchema,
   replayModelCallSchema,
   replayReportSchema,
@@ -190,6 +191,7 @@ const ROUTES: Route[] = [
     body: replayCreateSchema,
     response: z.object({
       job: replayJobSchema,
+      jobs: z.array(replayJobSchema),
       estimate: replayEstimateSchema,
       caseIds: z.array(z.string()),
     }),
@@ -202,6 +204,13 @@ const ROUTES: Route[] = [
     tag: "replay",
     query: replayListQuerySchema,
     response: z.array(replayJobSchema),
+  },
+  {
+    method: "get",
+    path: "/v1/replays/groups/{groupId}",
+    summary: "Case × model matrix for jobs created together (POST /v1/replays with `models`)",
+    tag: "replay",
+    response: replayMatrixSchema,
   },
   {
     method: "get",
@@ -333,6 +342,7 @@ export function buildOpenApi(serverUrl?: string): Record<string, unknown> {
     };
     const params: unknown[] = [];
     if (r.path.includes("{id}")) params.push(uuidParam);
+    if (r.path.includes("{groupId}")) params.push({ ...uuidParam, name: "groupId" });
     if (r.query) params.push(...queryParams(r.query));
     if (params.length) op.parameters = params;
     if (r.body)

@@ -3,11 +3,12 @@ import type {
   IngestPayload,
   ReplayEstimate,
   ReplayJob,
+  ReplayMatrix,
   ReplayReport,
   ReplayResult,
   RunWithSteps,
 } from "@overturn-ai/shared";
-import { renderMarkdownReport, toolFingerprint } from "@overturn-ai/shared";
+import { renderMarkdownReport, renderMatrixMarkdown, toolFingerprint } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { echoModel, startFakeOpenAI } from "../test/fake-openai";
@@ -457,6 +458,40 @@ describe("replay jobs (step mode)", () => {
       headers: { authorization: `Bearer ${ctx.apiKey}` },
     }).then((r) => r.text());
     expect(md).toContain("refused side effects: set_priority");
+  });
+
+  it("replays the same cases against several models as a group and builds the matrix", async () => {
+    const good = echoModel({ priority: "P1" });
+    const bad = echoModel({ priority: "P3" });
+    const created = await api<{ job: ReplayJob; jobs: ReplayJob[] }>(ctx, "POST", "/v1/replays", {
+      model: good,
+      models: [bad],
+      filter: { agent: "replay-agent" },
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.jobs).toHaveLength(2);
+    const groupId = created.body.job.groupId!;
+    expect(groupId).toBeTruthy();
+    expect(created.body.jobs.every((j) => j.groupId === groupId)).toBe(true);
+    for (const j of created.body.jobs) expect((await waitForJob(j.id)).status).toBe("completed");
+    const m = await api<ReplayMatrix>(ctx, "GET", `/v1/replays/groups/${groupId}`);
+    expect(m.status).toBe(200);
+    expect(m.body.jobs.map((j) => j.targetModel)).toEqual([good, bad]);
+    expect(m.body.cases).toHaveLength(3);
+    const approveRow = m.body.cases.find((c) => c.kind === "approve")!;
+    expect(approveRow.cells[created.body.jobs[0]!.id]!.verdict).toBe("pass");
+    expect(approveRow.cells[created.body.jobs[1]!.id]!.verdict).toBe("regression");
+    const md = renderMatrixMarkdown(m.body);
+    expect(md).toContain("3 cases × 2 models");
+    expect(md).toContain("🔴 regression");
+    // a single-model replay has no group
+    const single = await api<{ job: ReplayJob; jobs: ReplayJob[] }>(ctx, "POST", "/v1/replays", {
+      model: good,
+      filter: { agent: "replay-agent" },
+      start: false,
+    });
+    expect(single.body.jobs).toHaveLength(1);
+    expect(single.body.job.groupId).toBeNull();
   });
 
   it("run detail still works after replays", async () => {

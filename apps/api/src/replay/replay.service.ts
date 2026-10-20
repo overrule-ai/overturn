@@ -11,6 +11,7 @@ import {
   type ReplayCreate,
   type ReplayEstimate,
   type ReplayJob,
+  type ReplayMatrix,
   type ReplayModelCallRequest,
   type ReplayModelCallResponse,
   type ReplayReport,
@@ -52,6 +53,7 @@ export function serializeJob(j: ReplayJobRow): ReplayJob {
     projectId: j.projectId,
     targetModel: j.targetModel,
     targetPromptVersion: j.targetPromptVersion,
+    groupId: j.groupId ?? null,
     mode: j.mode,
     caseFilter: j.caseFilter,
     status: j.status,
@@ -167,37 +169,101 @@ export class ReplayService {
 
   // ---------- jobs ----------
 
+  /**
+   * Creates one job per target model. `job`/`estimate` describe the first model (the classic
+   * single-model shape); `jobs` has all of them, sharing `groupId` when there is more than one.
+   */
   async create(
     projectId: string,
     input: ReplayCreate,
-  ): Promise<{ job: ReplayJob; estimate: ReplayEstimate; caseIds: string[] }> {
-    const { provider } = parseModel(input.model);
-    if (!this.registry.isConfigured(provider) && input.mode === "step") {
-      throw new BadRequestException(
-        `Provider "${provider}" is not configured on this server (missing API key)`,
-      );
+  ): Promise<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate; caseIds: string[] }> {
+    const models = [input.model, ...(input.models ?? []).filter((m) => m !== input.model)];
+    for (const model of models) {
+      const { provider } = parseModel(model);
+      if (!this.registry.isConfigured(provider) && input.mode === "step") {
+        throw new BadRequestException(
+          `Provider "${provider}" is not configured on this server (missing API key)`,
+        );
+      }
     }
     if (input.promptVersion) await this.prompts.resolve(projectId, input.promptVersion); // validates
     const filter: CaseFilter = { status: "active", ...input.filter };
     const list = await this.casesService.findAll(projectId, filter);
     if (list.length === 0) throw new BadRequestException("No active cases match the filter");
-    const estimate = this.estimateFor(input.model, list);
-    const [row] = await this.db
-      .insert(replayJobs)
-      .values({
-        id: uuidv7(),
-        projectId,
-        targetModel: input.model,
-        targetPromptVersion: input.promptVersion ?? null,
-        mode: input.mode,
-        caseFilter: { ...filter, ids: list.map((c) => c.id) },
-        status: "pending",
-        estimatedCostUsd: estimate.estimatedCostUsd,
-        maxCostUsd: input.maxCostUsd ?? null,
-        caseCount: list.length,
-      })
-      .returning();
-    return { job: serializeJob(row!), estimate, caseIds: list.map((c) => c.id) };
+    const groupId = models.length > 1 ? uuidv7() : null;
+    const jobs: ReplayJob[] = [];
+    let estimate: ReplayEstimate | null = null;
+    for (const model of models) {
+      const est = this.estimateFor(model, list);
+      estimate ??= est;
+      const [row] = await this.db
+        .insert(replayJobs)
+        .values({
+          id: uuidv7(),
+          projectId,
+          targetModel: model,
+          targetPromptVersion: input.promptVersion ?? null,
+          groupId,
+          mode: input.mode,
+          caseFilter: { ...filter, ids: list.map((c) => c.id) },
+          status: "pending",
+          estimatedCostUsd: est.estimatedCostUsd,
+          maxCostUsd: input.maxCostUsd ?? null,
+          caseCount: list.length,
+        })
+        .returning();
+      jobs.push(serializeJob(row!));
+    }
+    return { job: jobs[0]!, jobs, estimate: estimate!, caseIds: list.map((c) => c.id) };
+  }
+
+  /** Case × model matrix for jobs created together. */
+  async matrix(projectId: string, groupId: string): Promise<ReplayMatrix> {
+    const jobRows = await this.db
+      .select()
+      .from(replayJobs)
+      .where(and(eq(replayJobs.projectId, projectId), eq(replayJobs.groupId, groupId)))
+      .orderBy(replayJobs.createdAt);
+    if (jobRows.length === 0) throw new NotFoundException(`Replay group ${groupId} not found`);
+    const jobs = jobRows.map(serializeJob);
+    const ids = (jobRows[0]!.caseFilter as { ids?: string[] }).ids ?? [];
+    const caseRows = ids.length
+      ? await this.db
+          .select({ id: cases.id, title: cases.title, kind: cases.kind, agent: cases.agent })
+          .from(cases)
+          .where(and(eq(cases.projectId, projectId), inArray(cases.id, ids)))
+      : [];
+    const results = await this.db
+      .select()
+      .from(replayResults)
+      .where(
+        inArray(
+          replayResults.jobId,
+          jobs.map((j) => j.id),
+        ),
+      );
+    const byCaseJob = new Map<string, ReplayResultRow>();
+    for (const r of results) byCaseJob.set(`${r.caseId}:${r.jobId}`, r);
+    const rows = caseRows
+      .map((c) => ({
+        caseId: c.id,
+        title: c.title,
+        kind: c.kind,
+        agent: c.agent,
+        cells: Object.fromEntries(
+          jobs.map((j) => {
+            const r = byCaseJob.get(`${c.id}:${j.id}`);
+            return [
+              j.id,
+              r
+                ? { verdict: r.verdict, passed: r.passed, score: r.score, reason: r.reason }
+                : { verdict: null, passed: null, score: null, reason: null },
+            ];
+          }),
+        ),
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+    return { groupId, jobs, cases: rows };
   }
 
   async get(projectId: string, id: string): Promise<ReplayJob> {

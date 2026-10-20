@@ -151,6 +151,17 @@ describe("overturn replay / report", () => {
       expect(report).toContain("regression");
       const asJson = JSON.parse(await run(["--json", "report", jobs[0]!.id])) as { regressions: unknown[] };
       expect(asJson.regressions).toHaveLength(1);
+      // several models at once: a case × model matrix
+      const matrix = await run([
+        "replay",
+        "--model",
+        `${echoModel({ priority: "P1" })},${echoModel({ priority: "P2" })}`,
+        "--agent",
+        "replay-cli",
+        "-y",
+      ]);
+      expect(matrix).toContain("1 cases × 2 models");
+      expect(matrix).toContain("🔴 regression");
     } finally {
       await fake.close();
     }

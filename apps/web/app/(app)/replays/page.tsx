@@ -44,6 +44,14 @@ export default function ReplaysPage() {
                 <Link className="font-medium underline-offset-2 hover:underline" href={`/replays/${j.id}`}>
                   {j.targetModel}
                 </Link>
+                {j.groupId && (
+                  <Link
+                    className="ml-2 text-xs text-muted-foreground underline"
+                    href={`/replays/groups/${j.groupId}`}
+                  >
+                    matrix
+                  </Link>
+                )}
               </TD>
               <TD className="font-mono text-xs">{j.targetPromptVersion ?? ""}</TD>
               <TD>{j.mode}</TD>
