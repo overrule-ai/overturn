@@ -82,7 +82,7 @@ export class NotifyService {
     const status = run.status === "failed" ? "failed" : "completed";
     const title = `${run.agent}${run.agentVersion ? ` ${run.agentVersion}` : ""} ${status} · ${run.stepCount} steps`;
     const blocks: ReviewMessage["blocks"] = [
-      { type: "section", text: { type: "mrkdwn", text: `*<${runUrl}|${escape(title)}>*` } },
+      { type: "section", text: { type: "mrkdwn", text: `*<${runUrl}|${mrkdwn(title)}>*` } },
     ];
     const input = excerpt(run.input);
     const output = excerpt(run.error ? { error: run.error } : run.output);
@@ -90,8 +90,8 @@ export class NotifyService {
       blocks.push({
         type: "section",
         fields: [
-          { type: "mrkdwn", text: `*Input*\n${escape(input || "—")}` },
-          { type: "mrkdwn", text: `*Output*\n${escape(output || "—")}` },
+          { type: "mrkdwn", text: `*Input*\n${mrkdwn(input || "—")}` },
+          { type: "mrkdwn", text: `*Output*\n${mrkdwn(output || "—")}` },
         ],
       });
     }
@@ -158,6 +158,6 @@ function excerpt(value: unknown): string {
   return s.length > EXCERPT ? `${s.slice(0, EXCERPT)}…` : s;
 }
 
-function escape(s: string): string {
+function mrkdwn(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
