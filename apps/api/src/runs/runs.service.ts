@@ -136,4 +136,27 @@ export class RunsService {
     const corrected = row?.corrected ?? 0;
     return { runs7d: total, corrected7d: corrected, correctedRate7d: total === 0 ? 0 : corrected / total };
   }
+
+  /**
+   * Retention: deletes runs older than `days` that back no case (cases freeze what they
+   * need, but a run with a case is the evidence behind it and is kept). Steps and
+   * corrections go with the run via FK cascade. Batched so a big backlog never holds one
+   * long transaction. Returns runs deleted.
+   */
+  async purgeExpired(projectId: string, days: number): Promise<number> {
+    let total = 0;
+    for (;;) {
+      const rows = await this.db.execute<{ id: string }>(sql`
+        delete from runs where id in (
+          select id from runs
+          where project_id = ${projectId}
+            and started_at < now() - make_interval(days => ${days})
+            and not exists (select 1 from cases c where c.run_id = runs.id)
+          limit 1000
+        ) returning id
+      `);
+      total += rows.length;
+      if (rows.length < 1000) return total;
+    }
+  }
 }

@@ -7,10 +7,12 @@ import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { projects } from "../db/schema";
 import { ReplayService } from "../replay/replay.service";
+import { RunsService } from "../runs/runs.service";
 
 export const IMPLICIT_APPROVE_JOB = "implicit-approve";
 export const REPLAY_JOB = "replay";
 export const CACHE_PURGE_JOB = "cache-purge";
+export const RETENTION_JOB = "retention";
 
 /**
  * Background jobs on pg-boss (same Postgres, schema "pgboss"). Started unless
@@ -27,6 +29,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     @Inject(DB) private readonly db: Db,
     private readonly corrections: CorrectionsService,
     private readonly replay: ReplayService,
+    private readonly runs: RunsService,
   ) {
     this.boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: "pgboss", max: 4 });
     this.boss.on("error", (err) => this.logger.error(err.message));
@@ -42,7 +45,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     await this.boss.start();
     this.started = true;
     // pg-boss 10 requires queues to exist before work()/schedule(); createQueue is idempotent
-    for (const name of [IMPLICIT_APPROVE_JOB, CACHE_PURGE_JOB, REPLAY_JOB]) await this.boss.createQueue(name);
+    for (const name of [IMPLICIT_APPROVE_JOB, CACHE_PURGE_JOB, RETENTION_JOB, REPLAY_JOB]) {
+      await this.boss.createQueue(name);
+    }
     await this.boss.work(IMPLICIT_APPROVE_JOB, async () => {
       await this.runImplicitApprovals();
     });
@@ -51,6 +56,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       await this.replay.purgeExpiredCache();
     });
     await this.boss.schedule(CACHE_PURGE_JOB, "41 * * * *", undefined, { tz: "UTC" });
+    await this.boss.work(RETENTION_JOB, async () => {
+      await this.runRetention();
+    });
+    await this.boss.schedule(RETENTION_JOB, "23 3 * * *", undefined, { tz: "UTC" });
     await this.boss.work<{ jobId: string }>(REPLAY_JOB, { batchSize: 1 }, async ([job]) => {
       if (!job) return;
       this.logger.log(`replay ${job.data.jobId} started`);
@@ -80,6 +89,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       { jobId },
       { retryLimit: 1, expireInSeconds: 6 * 3600, singletonKey: jobId },
     );
+  }
+
+  /** Deletes case-less runs past each project's retentionDays. Returns runs deleted. */
+  async runRetention(): Promise<number> {
+    const rows = await this.db.select({ id: projects.id, settings: projects.settings }).from(projects);
+    let total = 0;
+    for (const p of rows) {
+      const parsed = projectSettingsSchema.safeParse(p.settings ?? {});
+      const days = parsed.success ? parsed.data.retentionDays : 90;
+      total += await this.runs.purgeExpired(p.id, days);
+    }
+    if (total > 0) this.logger.log(`retention deleted ${total} runs`);
+    return total;
   }
 
   /** Sweeps every project with implicitApproveAfterDays > 0. Returns corrections created. */

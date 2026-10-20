@@ -211,7 +211,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Retention (days)</Label>
+                <Label>Retention (days; runs without a case are deleted after this)</Label>
                 <Input
                   type="number"
                   min="1"

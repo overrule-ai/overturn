@@ -24,13 +24,20 @@ afterAll(async () => {
 
 /** A recorded triage run: lookup -> llm (JSON decision) -> set_priority. */
 async function recordRun(
-  opts: { agent?: string; externalId?: string; tags?: string[]; priority?: string; endedAt?: string } = {},
+  opts: {
+    agent?: string;
+    externalId?: string;
+    tags?: string[];
+    priority?: string;
+    startedAt?: string;
+    endedAt?: string;
+  } = {},
 ) {
   const runId = uuidv7();
   const lookupId = uuidv7();
   const llmId = uuidv7();
   const setId = uuidv7();
-  const t0 = "2026-10-15T10:00:00.000Z";
+  const t0 = opts.startedAt ?? "2026-10-15T10:00:00.000Z";
   const decision = { priority: opts.priority ?? "P2", team: "billing", reply: "Hi" };
   const payload: IngestPayload = {
     v: 1,
@@ -333,12 +340,39 @@ describe("project settings + implicit approval", () => {
     expect(again).toBeLessThanOrEqual(n);
   });
 
+  it("retention deletes old runs without cases and keeps the ones behind a case", async () => {
+    const { JobsService } = await import("../jobs/jobs.service");
+    const jobs = ctx.app.get(JobsService);
+    await api(ctx, "PATCH", "/v1/project", { settings: { retentionDays: 30, implicitApproveAfterDays: 0 } });
+    const old = await recordRun({
+      agent: "keep",
+      externalId: "R-old",
+      startedAt: "2026-01-01T00:00:00.000Z",
+    });
+    const oldCased = await recordRun({
+      agent: "keep",
+      externalId: "R-cased",
+      startedAt: "2026-01-01T00:00:00.000Z",
+    });
+    const fresh = await recordRun({
+      agent: "keep",
+      externalId: "R-new",
+      startedAt: new Date().toISOString(),
+    });
+    await api(ctx, "POST", "/v1/corrections", { runId: oldCased.runId, kind: "approve" });
+    const deleted = await jobs.runRetention();
+    expect(deleted).toBeGreaterThanOrEqual(1);
+    expect((await api(ctx, "GET", `/v1/runs/${old.runId}`)).status).toBe(404);
+    expect((await api(ctx, "GET", `/v1/runs/${oldCased.runId}`)).status).toBe(200);
+    expect((await api(ctx, "GET", `/v1/runs/${fresh.runId}`)).status).toBe(200);
+  });
+
   it("pg-boss starts with its queues and schedules (what boots in production)", async () => {
     const { JobsService } = await import("../jobs/jobs.service");
     const jobs = ctx.app.get(JobsService);
     await jobs.start();
     const schedules = await jobs.boss.getSchedules();
-    expect(schedules.map((s) => s.name).sort()).toEqual(["cache-purge", "implicit-approve"]);
+    expect(schedules.map((s) => s.name).sort()).toEqual(["cache-purge", "implicit-approve", "retention"]);
     expect(await jobs.boss.getQueue("replay")).not.toBeNull();
     await jobs.boss.stop({ graceful: false, timeout: 1000 });
   }, 30_000);
