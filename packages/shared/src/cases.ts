@@ -1,4 +1,4 @@
-import type { CorrectionKind, ScorerName } from "./schemas.js";
+import type { CorrectionKind, ScorerName, Step } from "./schemas.js";
 
 /**
  * The "answer" an llm_call step produced, in the shape humans correct:
@@ -142,4 +142,59 @@ export function defaultScorer(
     return { scorer: "judge", config: {} };
   }
   return { scorer: "equals", config: {} };
+}
+
+export interface ReplayReadiness {
+  level: "ready" | "partial" | "none";
+  /** Model steps with the full prompt recorded (step-mode replay needs at least one). */
+  modelSteps: number;
+  /** Tool calls with a fingerprint and a recorded output (answered from the recording). */
+  recordedTools: number;
+  /** Side-effect tools; refused in replay, never executed. */
+  sideEffects: number;
+  /** Tool calls that cannot be answered in replay: no fingerprint or no recorded output. */
+  gaps: string[];
+  summary: string;
+}
+
+type ReadinessStep = Pick<Step, "kind" | "name" | "input" | "output" | "sideEffect" | "fingerprint">;
+
+/**
+ * What a recorded run can and cannot prove in replay. Shown on the run page so a trace
+ * that arrived through OpenTelemetry without tool outputs is not mistaken for a full recording.
+ */
+export function replayReadiness(steps: ReadinessStep[]): ReplayReadiness {
+  const modelSteps = steps.filter((s) => s.kind === "llm_call" && s.input != null).length;
+  const tools = steps.filter((s) => s.kind === "tool_call");
+  const sideEffects = tools.filter((s) => s.sideEffect).length;
+  const gaps = tools
+    .filter((s) => !s.sideEffect && (s.fingerprint == null || s.output == null))
+    .map((s) => s.name);
+  const recordedTools = tools.length - sideEffects - gaps.length;
+  if (modelSteps === 0) {
+    return {
+      level: "none",
+      modelSteps,
+      recordedTools,
+      sideEffects,
+      gaps,
+      summary: "not replayable: no model step with its prompt recorded",
+    };
+  }
+  const parts = [`${modelSteps} model step${modelSteps === 1 ? "" : "s"}`];
+  if (recordedTools > 0) parts.push(`${recordedTools} tool recording${recordedTools === 1 ? "" : "s"}`);
+  if (sideEffects > 0)
+    parts.push(`${sideEffects} side effect${sideEffects === 1 ? "" : "s"} refused in replay`);
+  if (gaps.length > 0) {
+    const unique = [...new Set(gaps)];
+    return {
+      level: "partial",
+      modelSteps,
+      recordedTools,
+      sideEffects,
+      gaps,
+      summary: `${parts.join(" · ")} · ${gaps.length} tool call${gaps.length === 1 ? "" : "s"} without a recorded output (${unique.join(", ")}): trajectory replay stops there`,
+    };
+  }
+  return { level: "ready", modelSteps, recordedTools, sideEffects, gaps, summary: parts.join(" · ") };
 }

@@ -99,6 +99,9 @@ describe("web UI", () => {
     await page.waitForURL(/\/runs\/[0-9a-f-]+$/);
     await page.getByText("Trajectory").waitFor();
     await page.getByTestId("step-2").waitFor();
+    expect(await page.getByTestId("replay-readiness").textContent()).toMatch(
+      /replay-ready.*model step.*tool recordings/,
+    );
     expect(await page.locator("li").filter({ hasText: "lookup_customer" }).count()).toBeGreaterThan(0);
     await page.getByTestId("step-2").getByRole("button", { name: "Correct" }).click();
     await page.getByText("Correct step 2: chat.completions").waitFor();
