@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decisionFields, defaultScorer, expectedFor, extractAnswer } from "./cases.js";
+import { decisionFields, defaultScorer, expectedFor, extractAnswer, replayReadiness } from "./cases.js";
 
 describe("extractAnswer", () => {
   it("parses JSON text from an OpenAI message", () => {
@@ -92,5 +92,45 @@ describe("expectedFor + defaultScorer", () => {
     expect(defaultScorer("approve", { tool_calls: [{ name: "t", args: {} }] }, null).scorer).toBe(
       "tool_choice",
     );
+  });
+});
+
+describe("replayReadiness", () => {
+  const llm = {
+    kind: "llm_call" as const,
+    name: "chat",
+    input: { messages: [] },
+    output: {},
+    sideEffect: false,
+    fingerprint: null,
+  };
+  const tool = (
+    name: string,
+    extra: Partial<{ output: unknown; sideEffect: boolean; fingerprint: string | null }> = {},
+  ) => ({
+    kind: "tool_call" as const,
+    name,
+    input: {},
+    output: { ok: true },
+    sideEffect: false,
+    fingerprint: "f".repeat(64),
+    ...extra,
+  });
+
+  it("is ready when every tool call is recorded or a refused side effect", () => {
+    const r = replayReadiness([tool("lookup"), llm, tool("send_email", { sideEffect: true, output: null })]);
+    expect(r.level).toBe("ready");
+    expect(r.summary).toBe("1 model step · 1 tool recording · 1 side effect refused in replay");
+  });
+
+  it("is partial when a tool call has no recorded output or fingerprint (OTel without outputs)", () => {
+    const r = replayReadiness([tool("lookup", { output: null }), llm, tool("search", { fingerprint: null })]);
+    expect(r.level).toBe("partial");
+    expect(r.gaps).toEqual(["lookup", "search"]);
+    expect(r.summary).toContain("2 tool calls without a recorded output (lookup, search)");
+  });
+
+  it("is none without a model step prompt", () => {
+    expect(replayReadiness([tool("lookup"), { ...llm, input: null }]).level).toBe("none");
   });
 });

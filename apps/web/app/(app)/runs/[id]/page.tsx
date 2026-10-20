@@ -1,6 +1,6 @@
 "use client";
 
-import type { Step } from "@overturn-ai/shared";
+import { replayReadiness, type Step } from "@overturn-ai/shared";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -114,6 +114,7 @@ export default function RunPage() {
   if (run.error || !run.data)
     return <p className="text-sm text-destructive">{run.error?.message ?? "Not found"}</p>;
   const r = run.data;
+  const readiness = replayReadiness(r.steps);
 
   return (
     <div className="space-y-6">
@@ -128,6 +129,23 @@ export default function RunPage() {
             {r.externalId ? `${r.externalId} · ` : ""}
             {r.id} · started {ago(r.startedAt)} · {r.stepCount} steps · {money(r.costUsd)}
             {r.tags.length > 0 && ` · ${r.tags.join(", ")}`}
+          </p>
+          <p
+            className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+            data-testid="replay-readiness"
+          >
+            <Badge
+              variant={
+                readiness.level === "ready" ? "success" : readiness.level === "partial" ? "warning" : "muted"
+              }
+            >
+              {readiness.level === "ready"
+                ? "replay-ready"
+                : readiness.level === "partial"
+                  ? "partially replayable"
+                  : "not replayable"}
+            </Badge>
+            <span>{readiness.summary}</span>
           </p>
         </div>
         <div className="ml-auto flex gap-2">

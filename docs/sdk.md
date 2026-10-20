@@ -87,6 +87,8 @@ Sent immediately (not batched). `stepId` omitted = run-level correction (attache
 
 **Reviewing from Slack.** Set a Slack incoming-webhook URL in Settings → Project (`settings.reviewWebhookUrl`). Every completed run is posted once, with the input/output excerpt and two buttons: **Review** opens the run, **Approve** opens it with the approve dialog ready (the correction is written only when the human confirms). "Send test" posts a hello message; `POST /v1/project/webhook-test` does the same.
 
+**Replay readiness.** The run page says what the recording can prove: *replay-ready* (every tool call recorded or a refused side effect), *partially replayable* (some tool calls have no recorded output: trajectory replay stops at the first one; step replay still works) or *not replayable* (no model step with its prompt). OpenTelemetry traces that only carry tool names and arguments land in the second bucket; add the tool result on the span (`gen_ai.tool.call.result`, `output.value` or `traceloop.entity.output`) to make them full recordings.
+
 ## Replay mode
 
 ```ts
