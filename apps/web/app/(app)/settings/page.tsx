@@ -100,11 +100,14 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {newKey && (
-            <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm">
+            <div className="rounded-md border border-success/30 bg-success/10 p-3 text-sm">
               <div className="mb-1 font-medium">
                 New key “{newKey.name}” — copy it now, it will not be shown again
               </div>
-              <code className="block break-all rounded bg-white p-2 text-xs" data-testid="new-key">
+              <code
+                className="block break-all rounded border bg-background p-2 text-xs"
+                data-testid="new-key"
+              >
                 OVERTURN_API_KEY={newKey.key}
               </code>
             </div>

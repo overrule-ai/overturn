@@ -42,7 +42,9 @@ export default function RunsPage() {
         <Card>
           <CardHeader>
             <CardDescription>Human-corrected rate, last 7 days</CardDescription>
-            <CardTitle className="text-3xl">{stats.data ? pct(stats.data.correctedRate7d) : "—"}</CardTitle>
+            <CardTitle className="font-mono text-3xl font-normal tabular-nums">
+              {stats.data ? pct(stats.data.correctedRate7d) : "—"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {stats.data ? `${stats.data.corrected7d} of ${stats.data.runs7d} runs corrected` : ""}
@@ -51,7 +53,9 @@ export default function RunsPage() {
         <Card>
           <CardHeader>
             <CardDescription>Pass rate of the last replay</CardDescription>
-            <CardTitle className="text-3xl">{last?.summary ? pct(last.summary.passRate) : "—"}</CardTitle>
+            <CardTitle className="font-mono text-3xl font-normal tabular-nums">
+              {last?.summary ? pct(last.summary.passRate) : "—"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {last ? (

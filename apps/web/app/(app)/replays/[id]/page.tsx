@@ -22,11 +22,11 @@ function Section({
 }) {
   const color =
     tone === "danger"
-      ? "text-red-700"
+      ? "text-danger"
       : tone === "warning"
-        ? "text-amber-700"
+        ? "text-warning"
         : tone === "success"
-          ? "text-emerald-700"
+          ? "text-success"
           : "text-muted-foreground";
   return (
     <section className="space-y-2">
@@ -147,14 +147,16 @@ export default function ReplayPage() {
           )}
         </div>
       )}
-      {j.error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-800">{j.error}</p>}
+      {j.error && (
+        <p className="rounded-md border border-danger/25 bg-danger/10 p-3 text-sm text-danger">{j.error}</p>
+      )}
 
       {s && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader>
               <CardDescription>Pass rate</CardDescription>
-              <CardTitle className="text-2xl">{pct(s.passRate)}</CardTitle>
+              <CardTitle className="font-mono text-2xl font-normal tabular-nums">{pct(s.passRate)}</CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">
               {s.passed} passed · {s.failed} failed · {s.completed}/{s.cases} run
@@ -163,21 +165,27 @@ export default function ReplayPage() {
           <Card>
             <CardHeader>
               <CardDescription>Regressions</CardDescription>
-              <CardTitle className="text-2xl text-red-700">{s.verdicts.regression ?? 0}</CardTitle>
+              <CardTitle className="font-mono text-2xl font-normal tabular-nums text-danger">
+                {s.verdicts.regression ?? 0}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">approved cases that now fail</CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardDescription>Fixed</CardDescription>
-              <CardTitle className="text-2xl text-emerald-700">{s.verdicts.fixed ?? 0}</CardTitle>
+              <CardTitle className="font-mono text-2xl font-normal tabular-nums text-success">
+                {s.verdicts.fixed ?? 0}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">corrected cases that now pass</CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardDescription>Cost · duration</CardDescription>
-              <CardTitle className="text-2xl">{money(s.costUsd)}</CardTitle>
+              <CardTitle className="font-mono text-2xl font-normal tabular-nums">
+                {money(s.costUsd)}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">
               {s.durationMs != null ? `${(s.durationMs / 1000).toFixed(1)}s` : "—"} · baseline:{" "}

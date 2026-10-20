@@ -43,12 +43,12 @@ export default function ReplayMatrixPage() {
                   {j.targetModel}
                 </Link>
               </CardDescription>
-              <CardTitle className="text-2xl">
+              <CardTitle className="font-mono text-2xl font-normal tabular-nums">
                 {j.summary ? pct(j.summary.passRate) : <StatusBadge status={j.status} />}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">
-              <span className={regressions(j.id) ? "font-medium text-red-700" : ""}>
+              <span className={regressions(j.id) ? "font-medium text-danger" : ""}>
                 {regressions(j.id)} regressions
               </span>{" "}
               · {j.summary?.verdicts.fixed ?? 0} fixed · {money(j.costUsd)}

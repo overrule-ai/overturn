@@ -54,7 +54,11 @@ export default function CasePage() {
             · {ago(k.createdAt)}
             {k.actor && ` · by ${k.actor}`}
           </p>
-          {k.note && <p className="mt-2 rounded-md bg-amber-50 p-2 text-sm text-amber-900">“{k.note}”</p>}
+          {k.note && (
+            <p className="mt-2 rounded-md border border-warning/25 bg-warning/10 p-2 text-sm text-warning">
+              “{k.note}”
+            </p>
+          )}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {Array.isArray(k.scorerConfig.fields) && (

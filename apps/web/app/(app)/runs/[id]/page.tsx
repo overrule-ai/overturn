@@ -29,7 +29,7 @@ function StepRow({ step, onCorrect }: { step: Step; onCorrect: () => void }) {
       <span
         className={cn(
           "absolute left-2 top-3 h-3 w-3 rounded-full border-2 border-background",
-          step.error ? "bg-red-500" : step.kind === "llm_call" ? "bg-sky-500" : "bg-neutral-400",
+          step.error ? "bg-danger" : step.kind === "llm_call" ? "bg-foreground" : "bg-muted-foreground/60",
         )}
       />
       <div className="rounded-lg border">
@@ -193,6 +193,12 @@ export default function RunPage() {
           {r.steps.map((s) => (
             <StepRow key={s.id} step={s} onCorrect={() => setDialog({ step: s })} />
           ))}
+          {r.steps.length === 0 && (
+            <li className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+              No steps recorded. Wrap the model client (<code className="text-xs">ov.openai(...)</code>) or
+              send OpenTelemetry spans and the trajectory shows up here.
+            </li>
+          )}
         </ol>
       </div>
 
