@@ -3,6 +3,7 @@ import { aiMiddleware } from "./ai-sdk.js";
 import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { OverturnApi } from "./api.js";
 import { currentRun } from "./context.js";
+import { type CorrectionHandlerOptions, createCorrectionHandler } from "./correction-handler.js";
 import { type OpenAILike, wrapOpenAI } from "./openai.js";
 import {
   getGlobalReplay,
@@ -126,6 +127,15 @@ export class Overturn implements RunSink {
     actor?: string | null;
   }): Promise<CorrectionResult> {
     return this.api.corrections.create({ ...input, source: "sdk" });
+  }
+
+  /**
+   * A `(Request) => Response` handler for corrections posted by `<CorrectButton>`
+   * (from `@overturn-ai/sdk/react`). Mount it on a route of your app; the project
+   * API key stays on the server.
+   */
+  correctionHandler(options: CorrectionHandlerOptions = {}): (request: Request) => Promise<Response> {
+    return createCorrectionHandler(this, options);
   }
 
   /** Puts every ov.tool() into replay: answered from recordings, never executed. */

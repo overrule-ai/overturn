@@ -30,6 +30,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
     }
   },
   "files": [
@@ -43,12 +48,14 @@
   },
   "dependencies": {
     "@overturn-ai/shared": "workspace:*",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.30.0",
     "ai": ">=5.0.0",
-    "openai": ">=4.0.0"
+    "openai": ">=4.0.0",
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
@@ -59,14 +66,22 @@
     },
     "openai": {
       "optional": true
+    },
+    "react": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@ai-sdk/provider": "^2.0.5",
     "@anthropic-ai/sdk": "^0.134.0",
     "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "ai": "^5.0.277",
+    "jsdom": "^26.1.0",
     "openai": "^5.23.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
