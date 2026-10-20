@@ -119,7 +119,11 @@ export class RunsService {
       .where(and(eq(runs.projectId, projectId), eq(runs.id, id)))
       .limit(1);
     if (!run) throw new NotFoundException(`Run ${id} not found`);
-    const stepRows = await this.db.select().from(steps).where(eq(steps.runId, id)).orderBy(asc(steps.seq), asc(steps.startedAt), asc(steps.id));
+    const stepRows = await this.db
+      .select()
+      .from(steps)
+      .where(eq(steps.runId, id))
+      .orderBy(asc(steps.seq), asc(steps.startedAt), asc(steps.id));
     return { ...serializeRun(run), steps: stepRows.map(serializeStep) };
   }
 
