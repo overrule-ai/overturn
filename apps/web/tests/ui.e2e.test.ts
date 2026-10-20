@@ -125,6 +125,19 @@ describe("web UI", () => {
     await page.goto("/cases");
     await page.getByText("edit: ticket-triage").waitFor();
 
+    // --- a one-off correction from the Slack "Approve" deep link: case kept but archived ---
+    await page.goto("/runs");
+    await page.getByRole("link", { name: "ticket-triage" }).nth(1).click();
+    await page.waitForURL(/\/runs\/[0-9a-f-]+$/);
+    await page.goto(`${page.url()}?approve=1`);
+    await page.getByText("Correct this run").waitFor();
+    await page.getByTestId("one-off").check();
+    await page.getByRole("button", { name: "Save approve" }).click();
+    await page.waitForURL(/\/cases\/[0-9a-f-]+$/, { timeout: 15_000 });
+    await page.getByText("archived").first().waitFor();
+    await page.goto("/cases");
+    expect(await page.getByText("approve: ticket-triage").count()).toBe(0); // active filter hides it
+
     // --- new replay against the fake model ---
     await page.goto("/replays/new");
     await page.getByTestId("model").fill("fake/fake-triage-weak");

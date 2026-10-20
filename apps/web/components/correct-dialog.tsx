@@ -41,6 +41,8 @@ export function CorrectDialog({
   const [note, setNote] = useState("");
   const [actor, setActor] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
+  // A correction made for an unusual reason is evidence, not a rule: keep it, but out of replays.
+  const [oneOff, setOneOff] = useState(false);
 
   // What the case will be scored on: the decision fields of the answer, not its prose.
   // Shown so the reviewer says what matters while they still remember why.
@@ -75,7 +77,7 @@ export function CorrectDialog({
           }
         } else correctedOutput = t;
       }
-      return client.corrections.create({
+      const r = await client.corrections.create({
         runId,
         stepId: step?.id ?? null,
         kind,
@@ -84,6 +86,8 @@ export function CorrectDialog({
         actor: actor || null,
         ...(showFields && fields.length > 0 ? { scorer: "json_match", scorerConfig: { fields } } : {}),
       });
+      if (oneOff && r.case) await client.cases.patch(r.case.id, { status: "archived" });
+      return r;
     },
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["run", runId] });
@@ -161,6 +165,22 @@ export function CorrectDialog({
             onChange={(e) => setActor(e.target.value)}
           />
         </div>
+        <label className="mt-3 flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={oneOff}
+            onChange={(e) => setOneOff(e.target.checked)}
+            data-testid="one-off"
+          />
+          <span>
+            One-off
+            <span className="block text-xs text-muted-foreground">
+              Unusual reason, not a rule. The correction is kept but the case is archived and left out of
+              replays. You can restore it from the case page.
+            </span>
+          </span>
+        </label>
         {parseError && <p className="mt-2 text-sm text-destructive">{parseError}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
