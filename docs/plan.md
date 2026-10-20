@@ -34,6 +34,7 @@ Day 1 is 2026-10-15.
 - [x] Auto-case: freeze step input, run tool recordings, original output, `expected` by kind; size cap + truncation flag
 - [x] Default scorer selection from the shape of `expected`
 - [x] `implicitApproveAfterDays` sweeper (pg-boss scheduled job, hourly)
+- [x] retention job (daily): case-less runs past `retentionDays` deleted
 - [x] `GET /v1/cases`, `GET /v1/cases/:id`, `PATCH /v1/cases/:id` (archive, retag, scorer, expected), case sets, `GET/PATCH /v1/project`
 - [x] CLI (`overturn` on npm): `init`, `runs list|get`, `cases list|get|archive`
 - [x] Corrections script: 8 priority edits, 2 rejects, 10 approves → 20 cases with the right `expected`
