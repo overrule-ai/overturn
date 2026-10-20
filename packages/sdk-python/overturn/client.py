@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Callable, Sequence
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar, cast
 
 import httpx
 
@@ -19,6 +20,15 @@ from .types import RunUpsert, StepUpsert
 
 P = ParamSpec("P")
 R = TypeVar("R")
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+class CorrectionRequestError(ValueError):
+    """A browser correction payload that handle_correction() refused; respond 400 with str(err)."""
+
+    status = 400
+
+
 T = TypeVar("T")
 
 Redact = Callable[[StepUpsert], StepUpsert | None]
@@ -160,6 +170,39 @@ class Overturn:
         if actor is not None:
             body["actor"] = actor
         return self.api.create_correction(body)
+
+    def handle_correction(self, payload: Any, *, actor: str | None = None) -> dict[str, Any]:
+        """Turn what <CorrectButton> (from @overturn-ai/sdk/react) posts into a correction, from
+        your own route: validates the body, uses the actor from YOUR session, calls correct().
+        Raises CorrectionRequestError (status 400) for a bad body.
+
+            @app.post("/api/overturn/correct")
+            def correct(body: dict, user=Depends(current_user)):
+                return ov.handle_correction(body, actor=user.email)
+        """
+        if not isinstance(payload, dict):
+            raise CorrectionRequestError("body must be a JSON object")
+        body: dict[str, Any] = {str(k): v for k, v in cast("dict[Any, Any]", payload).items()}
+        run_id = body.get("runId")
+        kind = body.get("kind")
+        if not isinstance(run_id, str) or not _UUID_RE.match(run_id):
+            raise CorrectionRequestError("runId must be a UUID")
+        if kind not in ("approve", "edit", "reject", "escalate"):
+            raise CorrectionRequestError("kind must be approve, edit, reject or escalate")
+        step_id = body.get("stepId")
+        if step_id is not None and (not isinstance(step_id, str) or not _UUID_RE.match(step_id)):
+            raise CorrectionRequestError("stepId must be a UUID or null")
+        note = body.get("note")
+        if note is not None and (not isinstance(note, str) or len(note) > 10_000):
+            raise CorrectionRequestError("note must be a string under 10000 characters")
+        return self.correct(
+            run_id=run_id,
+            kind=kind,
+            step_id=step_id,
+            corrected_output=body.get("correctedOutput"),
+            note=note,
+            actor=actor,
+        )
 
     def replay_mode(
         self,

@@ -32,6 +32,21 @@ async function signIn(email: string): Promise<string> {
 }
 
 describe("magic-link auth", () => {
+  it("rate-limits link requests per address (5 per 10 minutes)", async () => {
+    const ask = () =>
+      fetch(`${ctx.baseUrl}/v1/auth/magic-link`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "Spam@Example.com" }),
+      });
+    for (let i = 0; i < 5; i++) expect((await ask()).status).toBe(200);
+    const blocked = await ask();
+    expect(blocked.status).toBe(429);
+    expect(((await blocked.json()) as { message: string }).message).toMatch(/Too many/);
+    // other addresses are unaffected
+    expect((await signIn("fine@example.com")).length).toBeGreaterThan(0);
+  });
+
   it("signs a new user in, creates a workspace, and the session works on the API", async () => {
     const cookie = await signIn("Priya@Example.com");
     const session = await fetch(`${ctx.baseUrl}/v1/auth/session`, { headers: { cookie } });

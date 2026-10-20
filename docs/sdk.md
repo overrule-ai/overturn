@@ -97,7 +97,7 @@ import { CorrectButton } from "@overturn-ai/sdk/react";
 <CorrectButton endpoint="/api/overturn/correct" runId={run.id} original={run.output} onDone={refresh} />
 ```
 
-The button opens Approve / Edit / Reject / Escalate with a note; the handler validates the body, resolves the actor from your session (return a `Response` to refuse), and calls `ov.correct()`. Unstyled beyond sensible defaults; pass `className`/`style` or `kinds` to narrow the choices.
+Python: `ov.handle_correction(body, actor=user.email)` in a FastAPI/Flask route does the same validation and call (raises `CorrectionRequestError` → respond 400). The button opens Approve / Edit / Reject / Escalate with a note; the handler validates the body, resolves the actor from your session (return a `Response` to refuse), and calls `ov.correct()`. Unstyled beyond sensible defaults; pass `className`/`style` or `kinds` to narrow the choices.
 
 **Reviewing from Slack.** Set a Slack incoming-webhook URL in Settings → Project (`settings.reviewWebhookUrl`). Every completed run is posted once, with the input/output excerpt and two buttons: **Review** opens the run, **Approve** opens it with the approve dialog ready (the correction is written only when the human confirms). "Send test" posts a hello message; `POST /v1/project/webhook-test` does the same.
 
