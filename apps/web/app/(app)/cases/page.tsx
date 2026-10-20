@@ -98,7 +98,7 @@ function CasesList() {
                 <Link className="font-medium underline-offset-2 hover:underline" href={`/cases/${c.id}`}>
                   {c.title}
                 </Link>
-                {c.truncated && <span className="ml-2 text-xs text-amber-700">truncated</span>}
+                {c.truncated && <span className="ml-2 text-xs text-warning">truncated</span>}
               </TD>
               <TD>
                 <KindBadge kind={c.kind} />

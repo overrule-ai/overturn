@@ -1,20 +1,20 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FlaskConical, ListTree, LogOut, RotateCcw, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/input";
 import { ApiError, client, currentProjectId, setCurrentProjectId } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/runs", label: "Runs" },
-  { href: "/cases", label: "Cases" },
-  { href: "/replays", label: "Replays" },
-  { href: "/settings", label: "Settings" },
+  { href: "/runs", label: "Runs", icon: ListTree },
+  { href: "/cases", label: "Cases", icon: FlaskConical },
+  { href: "/replays", label: "Replays", icon: RotateCcw },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -41,31 +41,70 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   const s = session.data;
+  const section = NAV.find((n) => pathname.startsWith(n.href));
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6">
-          <Link href="/runs" className="flex shrink-0 items-center gap-2 font-semibold">
-            <Logo /> <span className="hidden sm:inline">Overturn</span>
-          </Link>
-          <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
-            {NAV.map((n) => (
+    <div className="flex min-h-screen flex-col sm:flex-row">
+      {/* icon rail: top bar on phones, left rail from sm */}
+      <aside className="flex shrink-0 items-center gap-1 border-b bg-card px-2 sm:w-12 sm:flex-col sm:border-b-0 sm:border-r sm:px-0 sm:py-2">
+        <Link href="/runs" className="flex h-11 w-11 items-center justify-center" title="Overturn">
+          <Logo className="h-5 w-5" cutout="fill-card" />
+        </Link>
+        <nav className="flex items-center gap-1 sm:mt-2 sm:flex-col">
+          {NAV.map((n) => {
+            const active = pathname.startsWith(n.href);
+            return (
               <Link
                 key={n.href}
                 href={n.href}
+                title={n.label}
+                aria-label={n.label}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "whitespace-nowrap rounded-md px-2 py-1.5 text-sm hover:bg-accent sm:px-3",
-                  pathname.startsWith(n.href) ? "bg-accent font-medium" : "text-muted-foreground",
+                  "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                  active
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
                 )}
               >
-                {n.label}
+                <n.icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
               </Link>
-            ))}
-          </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-3">
+            );
+          })}
+        </nav>
+        <div className="ml-auto flex items-center gap-1 sm:mt-auto sm:ml-0 sm:flex-col">
+          {s.user && (
+            <button
+              type="button"
+              title={`Sign out (${s.user.email})`}
+              aria-label="Sign out"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              onClick={async () => {
+                await client.logout();
+                setCurrentProjectId(null);
+                qc.clear();
+                router.replace("/login");
+              }}
+            >
+              <LogOut className="h-[18px] w-[18px]" strokeWidth={1.75} />
+            </button>
+          )}
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4 text-[13px]">
+          <span className="text-muted-foreground">{s.project.name}</span>
+          {section && (
+            <>
+              <span className="text-muted-foreground/50">/</span>
+              <span className="font-medium">{section.label}</span>
+            </>
+          )}
+          <div className="ml-auto flex items-center gap-3">
             {s.projects.length > 1 && (
               <NativeSelect
+                className="h-7 text-xs"
                 value={currentProjectId() ?? s.project.id}
                 onChange={(e) => {
                   setCurrentProjectId(e.target.value);
@@ -81,27 +120,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </NativeSelect>
             )}
-            <span className="hidden text-sm text-muted-foreground md:inline">
-              {s.user?.email ?? s.project.name}
-            </span>
-            {s.user && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  await client.logout();
-                  setCurrentProjectId(null);
-                  qc.clear();
-                  router.replace("/login");
-                }}
-              >
-                Sign out
-              </Button>
-            )}
+            <span className="hidden text-xs text-muted-foreground md:inline">{s.user?.email}</span>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+        </header>
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6">{children}</main>
+      </div>
     </div>
   );
 }

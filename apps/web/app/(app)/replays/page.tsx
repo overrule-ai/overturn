@@ -62,10 +62,10 @@ export default function ReplaysPage() {
                 {j.completedCount}/{j.caseCount}
               </TD>
               <TD>{j.summary ? pct(j.summary.passRate) : "—"}</TD>
-              <TD className={j.summary?.verdicts.regression ? "font-medium text-red-700" : ""}>
+              <TD className={j.summary?.verdicts.regression ? "font-medium text-danger" : ""}>
                 {j.summary?.verdicts.regression ?? "—"}
               </TD>
-              <TD className={j.summary?.verdicts.fixed ? "font-medium text-emerald-700" : ""}>
+              <TD className={j.summary?.verdicts.fixed ? "font-medium text-success" : ""}>
                 {j.summary?.verdicts.fixed ?? "—"}
               </TD>
               <TD>{money(j.costUsd)}</TD>

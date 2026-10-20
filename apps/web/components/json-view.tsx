@@ -19,7 +19,7 @@ export function JsonView({
     <div className={cn("relative", className)}>
       <pre
         className={cn(
-          "max-w-full overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-xs leading-5",
+          "max-w-full overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs leading-5 text-foreground/90",
           !open && long && "max-h-64",
         )}
       >

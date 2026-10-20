@@ -22,13 +22,6 @@ export function KindBadge({ kind }: { kind: string }) {
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  const variant =
-    status === "completed"
-      ? "success"
-      : status === "failed"
-        ? "danger"
-        : status === "running"
-          ? "info"
-          : "muted";
+  const variant = status === "failed" ? "danger" : status === "running" ? "warning" : "muted";
   return <Badge variant={variant}>{status}</Badge>;
 }
