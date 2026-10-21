@@ -12,13 +12,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const send = useMutation({ mutationFn: () => client.magicLink(email) });
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="relative flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Logo /> Sign in to Overturn
           </CardTitle>
-          <CardDescription>We email you a link. No password.</CardDescription>
+          <CardDescription>
+            We email you a link. No password. New here? Same box: your workspace is created on first sign-in.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {send.data ? (
@@ -72,6 +74,17 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      <p className="absolute bottom-4 text-xs text-muted-foreground">
+        <a className="hover:text-foreground" href="https://github.com/overrule-ai/overturn#readme">
+          Docs
+        </a>
+        <span className="mx-2">·</span>
+        <a className="hover:text-foreground" href="https://github.com/overrule-ai/overturn/issues">
+          Issues
+        </a>
+        <span className="mx-2">·</span>
+        <span>Open source, Apache-2.0</span>
+      </p>
     </div>
   );
 }
