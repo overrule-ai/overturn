@@ -75,7 +75,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
       <p className="absolute bottom-4 text-xs text-muted-foreground">
-        <a className="hover:text-foreground" href="https://github.com/overrule-ai/overturn#readme">
+        <a className="hover:text-foreground" href="https://docs.overturn.run">
           Docs
         </a>
         <span className="mx-2">·</span>
