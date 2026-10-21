@@ -143,7 +143,7 @@ export function Onboarding() {
             No agent handy?{" "}
             <a
               className="underline"
-              href="https://github.com/overrule-ai/overturn/blob/main/docs/quickstart.md"
+              href="https://docs.overturn.run/quickstart/"
               target="_blank"
               rel="noreferrer"
             >
