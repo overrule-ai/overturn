@@ -9,7 +9,9 @@
       "!**/drizzle/meta",
       "!**/.turbo",
       "!**/.venv",
-      "!**/*.css"
+      "!**/*.css",
+      "!apps/docs/.astro",
+      "!apps/docs/src/content/docs"
     ]
   },
   "formatter": {
