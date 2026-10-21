@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { StatusBadge } from "@/components/badges";
+import { Onboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, NativeSelect } from "@/components/ui/input";
@@ -35,6 +36,17 @@ export default function RunsPage() {
       }),
   });
   const last = lastReplay.data?.[0];
+  const unfiltered =
+    !filters.agent && !filters.tag && !filters.status && !filters.corrected && !filters.since;
+  const empty = unfiltered && !cursor && runs.data?.items.length === 0;
+
+  if (empty) {
+    return (
+      <div className="space-y-6">
+        <Onboarding />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

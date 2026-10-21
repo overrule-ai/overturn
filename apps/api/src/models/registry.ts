@@ -35,6 +35,24 @@ export class ModelRegistry {
     return process.env.FAKE_OPENAI_URL ?? "http://127.0.0.1:4010/v1";
   }
 
+  /**
+   * The judge model to use: the project's choice when its provider has a key, otherwise
+   * the cheapest model of the first configured provider, so judge/reject/escalate cases
+   * score on a hosted instance that only has (say) an Anthropic key. Null = no provider.
+   */
+  resolveJudgeModel(preferred: string): string | null {
+    const provider = preferred.split("/")[0] ?? "";
+    if (this.isConfigured(provider)) return preferred;
+    const defaults: Array<[string, string]> = [
+      ["openai", "openai/gpt-4.1-mini"],
+      ["anthropic", "anthropic/claude-haiku-4-5"],
+      ["google", "google/gemini-2.5-flash"],
+      ["openrouter", "openrouter/openai/gpt-4.1-mini"],
+    ];
+    for (const [p, model] of defaults) if (this.isConfigured(p)) return model;
+    return null;
+  }
+
   isConfigured(provider: string): boolean {
     switch (provider) {
       case "openai":
