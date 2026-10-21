@@ -344,7 +344,10 @@ export class ReplayService {
     settings: ReturnType<typeof parseSettings>,
     charge: (usd: number) => void,
   ): ScorerContext {
-    const judgeModelId = settings.judgeModel;
+    const judgeModelId = this.registry.resolveJudgeModel(settings.judgeModel) ?? settings.judgeModel;
+    if (judgeModelId !== settings.judgeModel) {
+      this.logger.warn(`judge ${settings.judgeModel} has no key; using ${judgeModelId}`);
+    }
     const embeddingModelId = settings.embeddingModel;
     const judgeProvider = parseModel(judgeModelId).provider;
     const embedProvider = parseModel(embeddingModelId).provider;

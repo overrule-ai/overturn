@@ -163,4 +163,43 @@ describe("web UI", () => {
     expect(await page.getByTestId("new-key").textContent()).toContain("OVERTURN_API_KEY=ov_live_");
     await page.getByText("test@example.com").first().waitFor();
   }, 120_000);
+
+  it("a brand-new workspace gets the onboarding panel; the first recorded run replaces it", async () => {
+    const fresh = await browser.newPage({ baseURL: page.url().replace(/\/runs.*$/, "") });
+    await fresh.goto("/login");
+    await fresh.fill("input#email", "newbie@example.com"); // unknown email -> new workspace, zero runs
+    await fresh.click("button[type=submit]");
+    const link = fresh.locator("a[href*='/login/verify']");
+    await link.waitFor({ timeout: 15_000 });
+    const href = await link.getAttribute("href");
+    await fresh.goto(`/login/verify?token=${new URL(href!).searchParams.get("token")}`);
+    await fresh.waitForURL(/\/runs$/, { timeout: 15_000 });
+    await fresh.getByTestId("onboarding").waitFor({ timeout: 15_000 });
+    await fresh.getByTestId("onboarding-create-key").click();
+    const key = (await fresh.getByTestId("onboarding-key").textContent())!.trim();
+    expect(key).toMatch(/^ov_live_/);
+    expect(await fresh.locator("pre").textContent()).toContain(`OVERTURN_API_KEY=${key}`);
+    // record a run with that key, as the snippet would
+    const res = await fetch(`${ctx.baseUrl}/v1/ingest`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        v: 1,
+        runs: [
+          {
+            id: "01a14000-0000-7000-8000-00000000aaaa",
+            agent: "my-agent",
+            status: "completed",
+            startedAt: new Date().toISOString(),
+            output: "ok",
+          },
+        ],
+        steps: [],
+      }),
+    });
+    expect(res.status).toBe(202);
+    await fresh.getByRole("link", { name: "my-agent" }).waitFor({ timeout: 15_000 });
+    expect(await fresh.getByTestId("onboarding").count()).toBe(0);
+    await fresh.close();
+  }, 60_000);
 });
