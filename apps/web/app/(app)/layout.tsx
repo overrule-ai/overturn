@@ -1,11 +1,19 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlaskConical, ListTree, LogOut, RotateCcw, Settings } from "lucide-react";
+import { ChevronDown, FlaskConical, ListTree, LogOut, RotateCcw, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Logo } from "@/components/logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { NativeSelect } from "@/components/ui/input";
 import { ApiError, client, currentProjectId, setCurrentProjectId } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -42,6 +50,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   const s = session.data;
   const section = NAV.find((n) => pathname.startsWith(n.href));
+  const signOut = async () => {
+    await client.logout();
+    setCurrentProjectId(null);
+    qc.clear();
+    router.replace("/login");
+  };
 
   return (
     <div className="flex min-h-screen flex-col sm:flex-row">
@@ -79,12 +93,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               title={`Sign out (${s.user.email})`}
               aria-label="Sign out"
               className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              onClick={async () => {
-                await client.logout();
-                setCurrentProjectId(null);
-                qc.clear();
-                router.replace("/login");
-              }}
+              onClick={signOut}
             >
               <LogOut className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </button>
@@ -120,7 +129,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </NativeSelect>
             )}
-            <span className="hidden text-xs text-muted-foreground md:inline">{s.user?.email}</span>
+            {s.user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                  data-testid="account-menu"
+                >
+                  <span className="max-w-[220px] truncate">{s.user.email}</span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>{s.user.email}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => router.push("/settings")}>
+                    <Settings className="h-4 w-4" /> Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={signOut} data-testid="sign-out">
+                    <LogOut className="h-4 w-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </header>
         <main className="min-w-0 flex-1 px-4 py-5 sm:px-6">{children}</main>

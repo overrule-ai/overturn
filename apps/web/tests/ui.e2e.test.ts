@@ -200,6 +200,10 @@ describe("web UI", () => {
     expect(res.status).toBe(202);
     await fresh.getByRole("link", { name: "my-agent" }).waitFor({ timeout: 15_000 });
     expect(await fresh.getByTestId("onboarding").count()).toBe(0);
+    // sign out from the account menu
+    await fresh.getByTestId("account-menu").click();
+    await fresh.getByTestId("sign-out").click();
+    await fresh.waitForURL(/\/login/, { timeout: 15_000 });
     await fresh.close();
   }, 60_000);
 });
