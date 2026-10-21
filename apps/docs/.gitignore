@@ -1,0 +1,6 @@
+src/content/docs/quickstart.md
+src/content/docs/sdk.md
+src/content/docs/self-hosting.md
+src/content/docs/fingerprint.md
+dist
+.astro
