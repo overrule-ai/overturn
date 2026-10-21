@@ -77,3 +77,16 @@ Day 1 is 2026-10-15.
 - [x] Quickstart tested from a fresh clone in under ten minutes (`scripts/quickstart-check.sh`, also a CI job)
 - [x] Release workflow (manual run) publishes to npm and PyPI, then tags `v0.1.0`; waits on `NPM_TOKEN` / `PYPI_TOKEN`
 - [x] Status report
+
+## Onboarding-ready (Oct 20)
+
+What a stranger gets today: app.overturn.run → email link → fresh workspace → "Record your first run" panel (key, TS/Python/OTel snippet with the key in it, polls for the first run) → run list → Correct → case → Replay → report. Judge scoring works on the hosted instance with the Anthropic key alone (fallback), semantic scoring needs an OpenAI key.
+
+- [x] real sign-in email (Resend, overturn.run verified), rate-limited
+- [x] first-run onboarding panel + e2e for a brand-new workspace
+- [x] judge model fallback to any configured provider
+- [x] hosted smoke test green after every deploy
+- [ ] `OPENAI_API_KEY` on Railway for the semantic scorer (optional)
+- [ ] terms/privacy pages (needed before any paid tier, not before a free beta)
+- [ ] first outside user: Fluorine wired in for a week
+
