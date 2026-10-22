@@ -161,9 +161,56 @@ function openLlmetryMessages(
   return msgs.length ? msgs : null;
 }
 
+/**
+ * OTel GenAI semconv ≥1.37 writes messages as {role, parts:[{type:"text"|"tool_call"|"tool_call_response", …}]}.
+ * Replay sends messages to providers in chat format, so fold parts back into {role, content, tool_calls}.
+ */
+export function toChatMessages(value: unknown): unknown {
+  if (!Array.isArray(value)) return value;
+  if (!value.some((m) => m && typeof m === "object" && Array.isArray((m as { parts?: unknown }).parts)))
+    return value;
+  const out: Record<string, unknown>[] = [];
+  for (const m of value as Array<Record<string, unknown>>) {
+    const parts = Array.isArray(m.parts) ? (m.parts as Array<Record<string, unknown>>) : null;
+    if (!parts) {
+      out.push(m);
+      continue;
+    }
+    const role = typeof m.role === "string" ? m.role : "user";
+    const text = parts
+      .filter((p) => p.type === "text" && typeof p.content === "string")
+      .map((p) => p.content as string)
+      .join("");
+    const toolCalls = parts
+      .filter((p) => p.type === "tool_call")
+      .map((p) => ({
+        id: p.id ?? null,
+        type: "function",
+        function: {
+          name: p.name ?? null,
+          arguments: typeof p.arguments === "string" ? p.arguments : JSON.stringify(p.arguments ?? {}),
+        },
+      }));
+    const responses = parts.filter((p) => p.type === "tool_call_response");
+    if (text || toolCalls.length > 0 || responses.length === 0) {
+      const msg: Record<string, unknown> = { role, content: text || null };
+      if (toolCalls.length > 0) msg.tool_calls = toolCalls;
+      out.push(msg);
+    }
+    for (const r of responses) {
+      out.push({
+        role: "tool",
+        tool_call_id: r.id ?? null,
+        content: typeof r.response === "string" ? r.response : JSON.stringify(r.response ?? null),
+      });
+    }
+  }
+  return out;
+}
+
 function llmInput(attrs: Record<string, unknown>, events: OtlpEvent[]): Record<string, unknown> {
   const messages =
-    parseJsonMaybe(attrs["gen_ai.input.messages"]) ??
+    toChatMessages(parseJsonMaybe(attrs["gen_ai.input.messages"])) ??
     parseJsonMaybe(attrs["gen_ai.prompt"]) ??
     openLlmetryMessages(attrs, "gen_ai.prompt") ??
     parseJsonMaybe(attrs["llm.input_messages"]) ??
@@ -179,7 +226,7 @@ function llmInput(attrs: Record<string, unknown>, events: OtlpEvent[]): Record<s
 
 function llmOutput(attrs: Record<string, unknown>, events: OtlpEvent[]): unknown {
   const out =
-    parseJsonMaybe(attrs["gen_ai.output.messages"]) ??
+    toChatMessages(parseJsonMaybe(attrs["gen_ai.output.messages"])) ??
     parseJsonMaybe(attrs["gen_ai.completion"]) ??
     openLlmetryMessages(attrs, "gen_ai.completion") ??
     parseJsonMaybe(attrs["llm.output_messages"]) ??

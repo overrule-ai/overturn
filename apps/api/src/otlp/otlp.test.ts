@@ -286,3 +286,33 @@ describe("POST /v1/traces", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("toChatMessages", () => {
+  it("folds semconv parts into chat messages (text, tool calls, tool responses)", async () => {
+    const { toChatMessages } = await import("./otlp-mapper");
+    const parts = [
+      { role: "system", parts: [{ type: "text", content: "Triage." }] },
+      {
+        role: "assistant",
+        parts: [{ type: "tool_call", id: "c1", name: "lookup", arguments: { email: "a@b.c" } }],
+      },
+      { role: "tool", parts: [{ type: "tool_call_response", id: "c1", response: { plan: "pro" } }] },
+      { role: "assistant", parts: [{ type: "text", content: "P1" }] },
+    ];
+    expect(toChatMessages(parts)).toEqual([
+      { role: "system", content: "Triage." },
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          { id: "c1", type: "function", function: { name: "lookup", arguments: '{"email":"a@b.c"}' } },
+        ],
+      },
+      { role: "tool", tool_call_id: "c1", content: '{"plan":"pro"}' },
+      { role: "assistant", content: "P1" },
+    ]);
+    // already-chat-shaped input is untouched
+    const chat = [{ role: "user", content: "hi" }];
+    expect(toChatMessages(chat)).toBe(chat);
+  });
+});
