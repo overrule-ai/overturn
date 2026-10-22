@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, FlaskConical, ListTree, LogOut, RotateCcw, Settings } from "lucide-react";
+import { ChevronDown, FlaskConical, ListTree, LogOut, RotateCcw, Settings, SunMoon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -50,6 +50,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   const s = session.data;
   const section = NAV.find((n) => pathname.startsWith(n.href));
+  const toggleTheme = () => {
+    const light = document.documentElement.classList.toggle("light");
+    try {
+      localStorage.setItem("ov-theme", light ? "light" : "dark");
+    } catch {}
+  };
   const signOut = async () => {
     await client.logout();
     setCurrentProjectId(null);
@@ -143,6 +149,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => router.push("/settings")}>
                     <Settings className="h-4 w-4" /> Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={toggleTheme} data-testid="toggle-theme">
+                    <SunMoon className="h-4 w-4" /> Light / dark
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={signOut} data-testid="sign-out">
                     <LogOut className="h-4 w-4" /> Sign out
