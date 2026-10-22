@@ -11,7 +11,9 @@
       "!**/.venv",
       "!**/*.css",
       "!apps/docs/.astro",
-      "!apps/docs/src/content/docs"
+      "!apps/docs/src/content/docs",
+      "!apps/docs/site",
+      "!apps/docs/dist"
     ]
   },
   "formatter": {
