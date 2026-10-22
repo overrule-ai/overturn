@@ -28,10 +28,29 @@ export default function NewReplayPage() {
   const [since, setSince] = useState("30");
   const [prompt, setPrompt] = useState("");
   const [maxCost, setMaxCost] = useState("");
+  // ?ids=a,b (from a case page) or ?agent=&tag=&set= (from the cases list) preselect the cases
+  const [ids, setIds] = useState<string[]>([]);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const list = (q.get("ids") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length > 0) {
+      setIds(list);
+      setSince("");
+    }
+    if (q.get("agent")) setAgent(q.get("agent") ?? "");
+    if (q.get("tag")) setTag(q.get("tag") ?? "");
+    if (q.get("set")) setSet(q.get("set") ?? "");
+    setReady(true);
+  }, []);
   const sets = useQuery({ queryKey: ["case-sets"], queryFn: client.cases.sets });
   const prompts = useQuery({ queryKey: ["prompts"], queryFn: client.prompts.list });
 
   const filter = {
+    ids: ids.length > 0 ? ids : undefined,
     agent: agent || undefined,
     tag: tag || undefined,
     set: set || undefined,
@@ -46,8 +65,8 @@ export default function NewReplayPage() {
   const estimate = useMutation({ mutationFn: () => client.replays.estimate({ model: first, filter }) });
   // biome-ignore lint/correctness/useExhaustiveDependencies: estimate is a stable mutation handle
   useEffect(() => {
-    if (first.includes("/")) estimate.mutate();
-  }, [first, agent, tag, set, since]);
+    if (ready && first.includes("/")) estimate.mutate();
+  }, [ready, first, agent, tag, set, since, ids]);
 
   const create = useMutation({
     mutationFn: () =>
@@ -119,6 +138,14 @@ export default function NewReplayPage() {
           <CardDescription>Filter, or pick a saved set.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
+          {ids.length > 0 && (
+            <p className="text-sm sm:col-span-2" data-testid="selected-cases">
+              {ids.length} selected case{ids.length === 1 ? "" : "s"} ·{" "}
+              <button type="button" className="underline" onClick={() => setIds([])}>
+                clear
+              </button>
+            </p>
+          )}
           <div className="space-y-1">
             <Label>Agent</Label>
             <Input value={agent} onChange={(e) => setAgent(e.target.value)} placeholder="any" />

@@ -80,6 +80,9 @@ export default function CasePage() {
           >
             {k.status === "archived" ? "Restore" : "Archive"}
           </Button>
+          <Button asChild>
+            <Link href={`/replays/new?ids=${k.id}`}>Replay this case</Link>
+          </Button>
         </div>
       </div>
 
