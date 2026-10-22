@@ -25,14 +25,25 @@ Use the framework's OpenTelemetry instrumentation and point it at Overturn. With
 
 ```bash
 pip install traceloop-sdk
-export TRACELOOP_BASE_URL=https://api.overturn.run    # the SDK appends /v1/traces
-export TRACELOOP_HEADERS="authorization=Bearer ov_live_…"
+export TRACELOOP_BASE_URL=https://api.overturn.run        # the SDK appends /v1/traces
+export TRACELOOP_HEADERS="authorization=Bearer%20ov_live_…"   # value is URL-encoded: %20 for the space
+export TRACELOOP_METRICS_ENABLED=false                    # Overturn ingests traces only
 ```
 
 ```python
 from traceloop.sdk import Traceloop
-Traceloop.init(app_name="my-agent")   # before importing the framework
+from traceloop.sdk.decorators import workflow, tool
+
+Traceloop.init(app_name="my-agent", disable_batch=True)   # before importing the framework
+
+@tool(name="lookup_customer")              # becomes a tool recording with arguments + result
+def lookup_customer(email: str) -> dict: ...
+
+@workflow(name="triage")                   # becomes the run; app_name is the agent
+def triage(ticket: dict) -> dict: ...
 ```
+
+Verified with OpenLLMetry 0.62 and the OpenAI client: the run shows the tool recording with a fingerprint and the model step with the full prompt (**replay-ready**), and a correction on it replays with a target answer.
 
 Spans with `gen_ai.*` attributes become model steps; `execute_tool` spans with `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` become tool recordings. Mark side-effect tools with the span attribute `overturn.side_effect = true` so replay refuses them. The run page tells you what the trace can prove: **replay-ready**, **partially replayable** (tool spans without results) or **not replayable**.
 
