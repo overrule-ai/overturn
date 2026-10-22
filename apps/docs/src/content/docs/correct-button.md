@@ -5,6 +5,8 @@ description: Drop <CorrectButton> into your product; the key stays on your serve
 
 The best corrections come from the people already reviewing the agent's work, inside the product they already use. `<CorrectButton>` is a React component that posts to a route on *your* server; your server calls Overturn with the project key, so the key never reaches the browser and the actor comes from your own session.
 
+A complete, tested Next.js example lives in [`examples/next-review`](https://github.com/overrule-ai/overturn/tree/main/examples/next-review): a page that lists runs with a button next to each answer, and the route handler.
+
 ## Server route
 
 ```ts

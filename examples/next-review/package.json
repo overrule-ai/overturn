@@ -1,0 +1,30 @@
+{
+  "name": "@overturn-ai/example-next-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Next.js review page: your runs, with <CorrectButton> next to each answer, key kept server-side",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo skip",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@overturn-ai/sdk": "workspace:*",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@overturn-ai/api": "workspace:*",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "playwright": "^1.56.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
