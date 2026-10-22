@@ -158,6 +158,26 @@
   .cursor::after{content:"▍";animation:blink 1s steps(1) infinite}
   @keyframes blink{50%{opacity:0}}
 
+  /* real screens */
+  .shot{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;box-shadow:0 20px 50px -30px rgba(0,0,0,.35)}
+  .panel .shot{border-radius:4px}
+  .prod{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media (max-width:900px){.prod{grid-template-columns:1fr}}
+  .clip{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;cursor:pointer;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+  .clip:hover{transform:translateY(-4px);box-shadow:0 30px 60px -30px rgba(0,0,0,.35);border-color:#c8c8ce}
+  .clip .vw{aspect-ratio:16/10;overflow:hidden;background:#fff}
+  .clip video{display:block;width:100%;transform:scale(1.45);transform-origin:0 0;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+  .clip.playing video{transform:scale(1.15)}
+  .clip .cap{padding:18px 20px 20px;border-top:1px solid var(--line)}
+  .clip .cap b{display:block;font-weight:500;font-size:17px;margin-bottom:4px}
+  .clip .cap span{font-size:15px;color:var(--muted)}
+  .clip .play{position:absolute;top:14px;right:14px;font:12px var(--mono);padding:4px 9px;border-radius:999px;background:rgba(17,17,17,.85);color:#fff;opacity:0;transition:opacity .25s}
+  .clip:hover .play,.clip.playing .play{opacity:1}
+  .clip .bar{position:absolute;left:0;bottom:0;height:2px;width:0;background:#111;transition:width .1s linear}
+  .big{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 30px 60px -30px rgba(0,0,0,.3)}
+  .big video{display:block;width:100%}
+  .big .cap{position:absolute;left:16px;bottom:16px;font:13px var(--mono);padding:6px 12px;border-radius:999px;background:rgba(17,17,17,.85);color:#fff}
+
   /* comparison */
   .cmp-head{display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:40px}
   .chip{border:1px solid var(--line);border-radius:999px;padding:9px 22px;font-size:18px;display:flex;align-items:center;gap:10px;background:#fff}
@@ -288,7 +308,7 @@
     <div class="pill">Open beta · Apache-2.0 · self-host on one Postgres</div>
     <h1>Every correction<br>becomes a test.</h1>
     <p class="lede">Record your agent. When a human fixes its answer, <b>Overturn</b> freezes the case with the fix attached. Replay the whole suite against any model or prompt before you ship — tools answered from the recording, nothing fires twice.</p>
-    <div class="install"><div class="cmd"><span class="logos"><span style="background:#111">TS</span><span style="background:#3572a5">Py</span><span style="background:#f5a623">OT</span></span><code id="cmd">npm i @overturn-ai/sdk</code></div><button type="button" aria-label="Copy" onclick="copy('cmd',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
+    <div class="install"><div class="cmd"><span class="logos"><span style="background:#111">TS</span><span style="background:#3572a5">Py</span><span style="background:#f5a623">OT</span></span><code id="cmd">npm i @overturn-ai/sdk</code></div><button type="button" aria-label="Copy" data-copy="cmd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
     <div class="ctas"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="/docs/quickstart/">Read the docs</a></div>
     <div class="stats"><div class="cap">What a replay costs you.</div><div class="row">
       <div><div class="n">0</div><div class="l">side effects re-executed</div></div>
@@ -324,7 +344,7 @@
 </div>
 </main>
 
-<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
+<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#product">Product</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
 
 <main class="wrap">
 
@@ -339,15 +359,11 @@
       <div class="foot"><a class="btn primary" href="https://app.overturn.run/login">Get API key</a><a class="link" href="/docs/quickstart/">Full quickstart →</a><button class="pp" id="qs-pp" type="button" aria-label="Pause"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button></div>
     </div>
     <div class="panel">
-      <div class="ph" id="ph">app.overturn.run · Settings · API keys</div>
+      <div class="ph" id="ph">app.overturn.run · first sign-in</div>
       <div class="pb">
         <div class="view on" data-v="0">
-          <div class="krow"><b>API keys</b><span class="btn primary sm">Create key</span></div>
-          <div class="kbox"><span>first-agent</span><span class="dots">••••••••••••••••••••••••</span><span class="cp">Copy</span></div>
-          <div class="hint">Store it in your secret store as OVERTURN_API_KEY</div>
-          <pre><span class="c"># shown once; already filled into the snippet on the onboarding screen</span>
-export OVERTURN_API_KEY="…"
-export OVERTURN_BASE_URL=https://api.overturn.run</pre>
+          <img class="shot" src="/media/onboarding.png" width="1440" height="900" alt="Overturn onboarding screen: create a key, copy the snippet, wait for the first run" loading="lazy">
+          <div class="hint">The first screen after sign-in. The key is created here and already filled into the snippet.</div>
         </div>
         <div class="view" data-v="1">
 <pre><span class="k">import</span> { Overturn } <span class="k">from</span> <span class="s">"@overturn-ai/sdk"</span>;
@@ -384,6 +400,15 @@ export OVERTURN_BASE_URL=https://api.overturn.run</pre>
   </div>
 </section>
 
+<section id="product" class="band">
+  <div class="sec-head"><h2>The product, not a mockup</h2><a class="link" href="https://app.overturn.run/login">Open the app →</a></div>
+  <div class="prod">
+    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/correct-poster.png"><source src="/media/light/correct.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Correct a run</b><span>Open a step, edit the answer, leave a note. The case is frozen with the fix attached.</span></div></div>
+    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/replay-poster.png"><source src="/media/light/replay.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Replay the suite</b><span>Pick a model and prompt version. Regressions come first, with the baseline beside the new answer.</span></div></div>
+    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/matrix-poster.png"><source src="/media/light/matrix.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Compare models</b><span>Several models, one table: pass rate, regressions and cost side by side.</span></div></div>
+  </div>
+</section>
+
 <section id="compare" class="band">
   <div class="cmp-head"><span class="chip">🛠 Your agent</span><span>+</span><span class="chip"><svg width="18" height="18" viewBox="14 7 74 76" aria-hidden="true"><path d="M18 31 47 10 57 17 57 31 71 31 84 43 84 57 55 80 44 73 44 59 30 59 17 47Z" fill="#111"/><path d="M31 34 47 22 47 42 68 42 72 46 72 53 54 67 54 48 33 48 29 44Z" fill="#fff"/></svg>Overturn</span></div>
   <div id="cmp"></div>
@@ -403,6 +428,7 @@ export OVERTURN_BASE_URL=https://api.overturn.run</pre>
         <div><div class="n">$0.03</div><div class="l">model spend</div></div>
       </div>
       <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><a class="btn" href="/docs/replay/">How a case is scored</a><a class="link" href="/docs/fingerprint/">How tools are matched →</a></div>
+      <div class="big" style="margin-top:40px"><img class="shot" style="border:0;box-shadow:none;border-radius:0" src="/media/light/report.png" width="1440" height="900" alt="A replay report: pass rate, regressions first, baseline beside target" loading="lazy"><span class="cap">the report this section describes</span></div>
     </div>
     <div class="explain">
       <div class="k">WHAT THIS MEANS</div>
@@ -495,7 +521,7 @@ export OVERTURN_BASE_URL=https://api.overturn.run</pre>
 </div></footer>
 
 <script>
-function copy(id,btn){navigator.clipboard&&navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{btn.style.color='#1f9d5f';setTimeout(()=>btn.style.color='',1200)}).catch(()=>{});}
+document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',()=>{navigator.clipboard&&navigator.clipboard.writeText(document.getElementById(btn.dataset.copy).textContent).then(()=>{btn.style.color='#1f9d5f';setTimeout(()=>btn.style.color='',1200)}).catch(()=>{});}));
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // hero phases
@@ -520,12 +546,20 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // quickstart
 (()=>{const steps=[...document.querySelectorAll('#steps .step')];const views=[...document.querySelectorAll('.panel .view')];const ph=document.getElementById('ph');
-  const heads=['app.overturn.run · Settings · API keys','agent.ts','$ overturn replay'];let i=0,timer=null,paused=reduce;
+  const heads=['app.overturn.run · first sign-in','agent.ts','$ overturn replay'];let i=0,timer=null,paused=reduce;
   function go(n){i=n;steps.forEach((s,k)=>{s.classList.toggle('on',k===n);const b=s.querySelector('.bar');b.style.animation='none';void b.offsetWidth;b.style.animation='';});views.forEach((v,k)=>v.classList.toggle('on',k===n));ph.textContent=heads[n];}
   function tick(){if(!paused)go((i+1)%3);}
   steps.forEach(s=>s.addEventListener('click',()=>{go(+s.dataset.i);clearInterval(timer);timer=setInterval(tick,7000);}));
   const pp=document.getElementById('qs-pp');pp.addEventListener('click',()=>{paused=!paused;pp.style.opacity=paused?.5:1;steps[i].querySelector('.bar').style.animationPlayState=paused?'paused':'running';});
   timer=setInterval(tick,7000);})();
+
+// product clips: play on hover (or tap), progress bar, pause on leave
+(()=>{document.querySelectorAll('[data-clip]').forEach(c=>{const v=c.querySelector('video'),bar=c.querySelector('.bar'),lab=c.querySelector('.play');
+  const play=()=>{c.classList.add('playing');lab.textContent='playing';v.play().catch(()=>{});};
+  const stop=()=>{v.pause();c.classList.remove('playing');lab.textContent='▶ hover to play';};
+  c.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')play();});c.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')stop();});
+  c.addEventListener('click',()=>v.paused?play():stop());
+  v.addEventListener('timeupdate',()=>{bar.style.width=(v.duration?v.currentTime/v.duration*100:0)+'%';});});})();
 
 // comparison
 (()=>{const data=[
