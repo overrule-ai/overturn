@@ -83,7 +83,13 @@ export default function LoginPage() {
           Issues
         </a>
         <span className="mx-2">·</span>
-        <span>Open source, Apache-2.0</span>
+        <a className="hover:text-foreground" href="https://docs.overturn.run/terms/">
+          Terms
+        </a>
+        <span className="mx-2">·</span>
+        <a className="hover:text-foreground" href="https://docs.overturn.run/privacy/">
+          Privacy
+        </a>
       </p>
     </div>
   );
