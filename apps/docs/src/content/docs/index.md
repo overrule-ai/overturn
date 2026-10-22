@@ -17,6 +17,6 @@ Overturn records your agent's runs, turns every human correction into a replayab
 
 ## Where to start
 
-- Hosted and want to see it in ten minutes: [Hosted app](/hosted/).
-- Running your own: [Quickstart](/quickstart/) and [Self-hosting](/self-hosting/).
-- Already recording: [SDK & CLI](/sdk/).
+- Hosted and want to see it in ten minutes: [Hosted app](/docs/hosted/).
+- Running your own: [Quickstart](/docs/quickstart/) and [Self-hosting](/docs/self-hosting/).
+- Already recording: [SDK & CLI](/docs/sdk/).

@@ -9,7 +9,7 @@ description: Terms for the hosted Overturn at app.overturn.run during the free b
 
 **Beta.** The hosted service is provided as is, free of charge, without warranty of any kind and without an uptime commitment. We may change, limit or shut down the hosted service, and will try to give notice and a way to export your data when we do.
 
-**Your data.** You keep all rights to the runs, corrections, cases and prompts you send us. You grant us only what is needed to store, process and show them back to you and the members of your workspace. We do not train models on your data and we do not sell it. The [privacy policy](/privacy/) says what we store and for how long.
+**Your data.** You keep all rights to the runs, corrections, cases and prompts you send us. You grant us only what is needed to store, process and show them back to you and the members of your workspace. We do not train models on your data and we do not sell it. The [privacy policy](/docs/privacy/) says what we store and for how long.
 
 **Acceptable use.** Do not send data you are not allowed to share with a third-party processor, do not use the service to attack other systems, and do not try to access other workspaces. API keys are yours to keep secret; rotate a key the moment you suspect it leaked.
 

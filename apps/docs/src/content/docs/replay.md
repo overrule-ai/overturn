@@ -9,7 +9,7 @@ A replay re-runs the agent's decision-making against recorded reality. It does n
 
 **Step mode** (default) replays the corrected model call: the exact prompt the agent sent, against the target model or prompt version. Fast and cheap; it answers "would this model have made the same decision here?".
 
-**Trajectory mode** (`--mode trajectory`) re-runs your whole agent through `overturn.config.ts`, with every `ov.tool()` answered from the recording. Tool calls are matched by [fingerprint](/fingerprint/) — the tool name plus the arguments you declared with `matchOn` — not by position, so a model that takes a different path still gets the right answers where they exist, and the trajectory stops where they don't.
+**Trajectory mode** (`--mode trajectory`) re-runs your whole agent through `overturn.config.ts`, with every `ov.tool()` answered from the recording. Tool calls are matched by [fingerprint](/docs/fingerprint/) — the tool name plus the arguments you declared with `matchOn` — not by position, so a model that takes a different path still gets the right answers where they exist, and the trajectory stops where they don't.
 
 ## Side effects
 

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overturn — every correction becomes a regression test</title>
+<meta name="description" content="Record your agent. When a human fixes its answer, Overturn freezes the case. Replay the suite against any model or prompt before you ship — tools answered from the recording, nothing fires twice.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Overturn — every correction becomes a regression test">
+<meta property="og:description" content="Replay your agent's mistakes before you ship. Open source.">
+<meta property="og:image" content="https://overturn.run/media/report.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f0f11;--panel:#151518;--line:#26262c;--text:#e8e8ec;--muted:#8b8b95;--muted2:#5b5b66;--green:#3fcf8e;--red:#f06a6a;--amber:#e5a33b}
+  *{box-sizing:border-box}
+  html{background:var(--bg);color:var(--text);font:16px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+  body{margin:0;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+  h1,h2,h3{margin:0;font-weight:500;letter-spacing:-.03em;color:#fff}
+  h1{font-size:clamp(40px,6vw,72px);line-height:1.02}
+  h2{font-size:clamp(32px,4vw,48px);line-height:1.06}
+  h3{font-size:19px;letter-spacing:-.01em}
+  p{margin:0}
+  .lede{font-size:19px;line-height:1.5;color:var(--muted);max-width:30em}
+  .btn{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:6px;font-size:15px;font-weight:500;border:1px solid var(--line);background:#1c1c21;color:#fff;transition:background .15s}
+  .btn:hover{background:#24242a}
+  .btn.primary{background:#fff;color:#0f0f11;border-color:#fff}
+  .btn.primary:hover{background:#e8e8ec}
+  .btn svg{width:14px;height:14px}
+  .frame{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+  .frame video,.frame img{display:block;width:100%;height:auto}
+
+  /* nav */
+  nav{height:72px;display:flex;align-items:center;gap:36px}
+  nav .logo{display:flex;align-items:center;gap:10px;font-weight:500;letter-spacing:-.01em}
+  nav .logo svg{width:22px;height:22px}
+  nav .links{display:flex;gap:28px;color:var(--muted);font-size:15px}
+  nav .links a:hover{color:#fff}
+  nav .right{margin-left:auto;display:flex;align-items:center;gap:22px;font-size:15px;white-space:nowrap}
+  nav .right a.signin{color:var(--muted)}nav .right a.signin:hover{color:#fff}
+  nav .right .btn{height:38px;padding:0 14px}
+
+  /* hero */
+  .hero{position:relative;padding:72px 0 0;min-height:640px}
+  .hero .copy{max-width:560px;position:relative;z-index:2;padding-top:48px}
+  .hero .copy .lede{margin:28px 0 36px}
+  .hero .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .hero .shot{position:absolute;left:calc(50% + 10px);top:40px;width:min(980px,68vw);z-index:1}
+  .hero .shot .frame{box-shadow:0 40px 120px -40px rgba(0,0,0,.9)}
+  .hero .glow{position:absolute;inset:auto -10% -20% 30%;height:60%;background:radial-gradient(60% 60% at 50% 50%,rgba(255,255,255,.05),transparent 70%);pointer-events:none}
+  .hero .fade{position:absolute;right:0;top:0;bottom:0;width:120px;background:linear-gradient(90deg,transparent,var(--bg));z-index:3;pointer-events:none}
+
+  /* stat row */
+  .stats{margin-top:120px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+  .stats>div{border-top:1px solid var(--line);padding:22px 0 0;margin-right:40px}
+  .stats>div:last-child{margin-right:0}
+  .stats b{display:block;font-size:34px;font-weight:500;letter-spacing:-.02em;color:#fff;line-height:1.1}
+  .stats span{display:block;margin-top:8px;color:var(--muted);font-size:14px}
+
+  section{padding:140px 0 0}
+  .split{display:grid;grid-template-columns:360px 1fr;gap:56px;align-items:start}
+  .steps{margin:0;padding:0;list-style:none}
+  .steps li{padding:18px 0 18px 22px;border-left:1px solid var(--line);cursor:pointer;transition:border-color .2s}
+  .steps li h3{color:var(--muted);transition:color .2s}
+  .steps li p{color:var(--muted2);margin-top:6px;font-size:15px;line-height:1.5;max-height:0;overflow:hidden;transition:max-height .35s ease,color .2s,margin .2s;margin-top:0}
+  .steps li.on{border-left-color:#fff}
+  .steps li.on h3{color:#fff}
+  .steps li.on p{max-height:120px;color:var(--muted);margin-top:6px}
+  .panel{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .panel video,.panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:top left;opacity:0;transition:opacity .35s}
+  .panel .on{opacity:1}
+
+  .proof .frame{margin-top:48px;max-height:720px;position:relative}
+  .proof .frame::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line)}
+  .proof .cap{margin-top:20px;color:var(--muted);font-size:16px;max-width:60em}
+  .proof .cap b{color:#fff;font-weight:500}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:48px}
+  .cols>div{border-top:1px solid var(--line);padding-top:22px}
+  .cols p{margin-top:10px;color:var(--muted);font-size:15px;line-height:1.55}
+
+  .quick{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+  .code{padding:0}
+  .code .tabs{display:flex;gap:4px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .code .tabs button{font:500 12px/1 Inter,sans-serif;color:var(--muted);background:none;border:0;padding:8px 10px;border-radius:4px;cursor:pointer}
+  .code .tabs button.on{background:#1f1f25;color:#fff}
+  .code pre{margin:0;padding:22px 24px;font-size:13.5px;line-height:1.7;color:#c9c9cf;overflow:auto;display:none}
+  .code pre.on{display:block}
+  .code .c{color:var(--muted2)}.code .k{color:#fff}.code .g{color:var(--green)}.code .r{color:var(--red)}.code .a{color:var(--amber)}
+  .link{color:#fff;font-weight:500;display:inline-flex;align-items:center;gap:8px;margin-top:22px}
+  .link svg{width:14px;height:14px}
+
+  .cta{padding:160px 0 120px;border-bottom:1px solid var(--line)}
+  .cta h2{max-width:14em}
+  .cta .actions{margin-top:36px;display:flex;gap:10px}
+  footer{padding:36px 0 56px;display:flex;align-items:center;gap:28px;color:var(--muted);font-size:14px}
+  footer .logo{display:flex;align-items:center;gap:8px;color:#fff;font-weight:500}
+  footer .logo svg{width:18px;height:18px}
+  footer .r{margin-left:auto;display:flex;gap:24px}
+  footer a:hover{color:#fff}
+
+  @media (max-width:1000px){
+    .hero{min-height:0;padding-top:40px}
+    .hero .shot{position:static;width:auto;margin-top:48px}
+    .hero .shot .frame{max-height:380px!important}
+    .hero .shot img{height:380px;object-fit:cover;object-position:top left}
+    .hero .fade,.hero .glow{display:none}
+    .stats{grid-template-columns:1fr 1fr;row-gap:28px}
+    .split{grid-template-columns:1fr;gap:28px}
+    .steps li p{max-height:none;color:var(--muted);margin-top:6px}
+    .cols{grid-template-columns:1fr;gap:28px}
+    .quick{grid-template-columns:1fr;gap:28px}
+    section{padding-top:96px}
+    nav .links{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/">
+      <svg viewBox="14 7 74 76" fill="currentColor" aria-hidden="true"><path d="M18 31 47 10 57 17 57 31 71 31 84 43 84 57 55 80 44 73 44 59 30 59 17 47Z"/><path d="M31 34 47 22 47 42 68 42 72 46 72 53 54 67 54 48 33 48 29 44Z" fill="#0f0f11"/></svg>
+      Overturn
+    </a>
+    <div class="links"><a href="/docs/">Docs</a><a href="https://github.com/overrule-ai/overturn">GitHub</a></div>
+    <div class="right">
+      <a class="signin" href="https://app.overturn.run/login">Sign in</a>
+      <a class="btn" href="https://app.overturn.run/login">Start free <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+    </div>
+  </nav>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="copy">
+      <h1>Every correction<br>becomes a test.</h1>
+      <p class="lede">Record your agent. When a human fixes its answer, Overturn freezes the case. Replay the suite against any model or prompt before you ship — tools answered from the recording, nothing fires twice.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://app.overturn.run/login">Start free <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+        <a class="btn" href="/docs/">Read the docs <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      </div>
+    </div>
+    <div class="shot">
+      <div class="frame" style="max-height:620px"><img src="/media/report.png" alt="Overturn replay report: pass rate, regressions, fixed; each regression with baseline, target and the human correction side by side" style="object-fit:cover;object-position:top left"></div>
+    </div>
+  </div>
+  <div class="glow"></div>
+  <div class="fade"></div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div><b>Apache-2.0</b><span>Open source. Self-host on one Postgres, or use the hosted app.</span></div>
+    <div><b>2 SDKs</b><span>TypeScript and Python mirror each other. OpenTelemetry in.</span></div>
+    <div><b>0 side effects</b><span>re-executed during replay. Tools answer from the recording.</span></div>
+    <div><b>Any model</b><span>OpenAI, Anthropic, Google, OpenRouter. Compare them in one matrix.</span></div>
+  </div>
+
+  <section>
+    <h2>From a human correction<br>to a replayable test.</h2>
+    <div class="split" style="margin-top:48px">
+      <ol class="steps" id="steps">
+        <li class="on" data-v="0"><h3>Record</h3><p>Wrap the model client you already have. Every prompt, tool call and answer is recorded with a fingerprint.</p></li>
+        <li data-v="1"><h3>Correct</h3><p>A human approves, edits, rejects or escalates — in the app, in Slack, or inside your own product. The case freezes with the fix.</p></li>
+        <li data-v="2"><h3>Replay</h3><p>One command runs the suite against any model or prompt. Side-effect tools are refused, never executed.</p></li>
+        <li data-v="3"><h3>Report</h3><p>Regressions first, then still wrong, then fixed — baseline, target and the human's correction side by side.</p></li>
+      </ol>
+      <div class="frame panel" id="panel">
+        <img class="on" src="/media/record.png" alt="" data-i="0" style="object-fit:cover">
+        <video src="/media/correct.mp4" poster="/media/correct-poster.png" muted loop playsinline data-i="1"></video>
+        <video src="/media/cli.mp4" poster="/media/cli-poster.png" muted loop playsinline data-i="2"></video>
+        <video src="/media/matrix.mp4" poster="/media/matrix-poster.png" muted loop playsinline data-i="3"></video>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof">
+    <h2>Regressions first.<br>Everything else after.</h2>
+    <div class="frame"><video src="/media/replay.mp4" poster="/media/replay-poster.png" autoplay muted loop playsinline aria-label="Starting a replay and reading the report"></video></div>
+    <p class="cap"><b>Replayed, not re-executed.</b> Side-effect tools are refused, every tool answer comes from the recording, and the receipt at the bottom of each report says exactly what was and wasn't tested.</p>
+  </section>
+
+  <section>
+    <div class="cols">
+      <div><h3>Cases come from real corrections</h3><p>Not hand-written datasets. Every approve, edit, reject or escalate becomes a case with the human's answer attached, scored on the decision fields — not the prose — so a different phrasing is never a regression.</p></div>
+      <div><h3>Safe replay</h3><p>Tool calls are matched to recordings by fingerprint, not by position, so a model that takes a different path still gets the right answers where they exist. Nothing is emailed, refunded or written twice.</p></div>
+      <div><h3>Model-agnostic</h3><p>OpenAI, Anthropic, Vercel AI SDK and OpenTelemetry in. Compare models and prompt versions in one case × model matrix. Gate pull requests with the GitHub Action.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="quick">
+      <div>
+        <h2>Three lines to<br>your first replay.</h2>
+        <p class="lede" style="margin-top:24px">Install the SDK, wrap the client you already have, replay. Self-host on one Postgres or sign in at app.overturn.run — the CLI is the same either way.</p>
+        <a class="link" href="/docs/quickstart/">Read the quickstart <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      </div>
+      <div class="frame code" id="code">
+        <div class="tabs"><button class="on" data-t="0">terminal</button><button data-t="1">typescript</button><button data-t="2">python</button></div>
+<pre class="on"><span class="c"># install</span>
+<span class="k">$</span> npm i @overturn-ai/sdk
+
+<span class="c"># replay every correction against a new model</span>
+<span class="k">$</span> overturn replay --model anthropic/claude-sonnet-4-5
+<span class="c">25 cases · 2 regressed · 7 fixed · 8 still wrong · 8 passed</span>
+<span class="r">regression</span>  approve  ticket-triage T-1020   1/2 fields match
+<span class="g">fixed</span>       edit     ticket-triage T-1004   expected fields match</pre>
+<pre><span class="k">import</span> { Overturn } <span class="k">from</span> "@overturn-ai/sdk";
+<span class="k">import</span> OpenAI <span class="k">from</span> "openai";
+
+<span class="k">const</span> ov = <span class="k">new</span> Overturn();                 <span class="c">// OVERTURN_API_KEY</span>
+<span class="k">const</span> openai = ov.wrapOpenAI(<span class="k">new</span> OpenAI()); <span class="c">// every call recorded</span>
+
+<span class="k">const</span> run = ov.startRun({ agent: "triage", input: ticket });
+<span class="k">await</span> run.context(<span class="k">async</span> () => {
+  <span class="k">const</span> res = <span class="k">await</span> openai.chat.completions.create({ model, messages });
+  run.end({ output: res.choices[0].message.content });
+});</pre>
+<pre><span class="k">from</span> overturn <span class="k">import</span> Overturn
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+
+ov = Overturn()                       <span class="c"># OVERTURN_API_KEY</span>
+client = ov.wrap_openai(OpenAI())     <span class="c"># every call recorded</span>
+
+<span class="k">with</span> ov.run(agent="triage", input=ticket) <span class="k">as</span> run:
+    res = client.chat.completions.create(model=model, messages=messages)
+    run.end(output=res.choices[0].message.content)</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Replay your agent's mistakes before you ship.</h2>
+    <div class="actions">
+      <a class="btn primary" href="https://app.overturn.run/login">Start free <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+      <a class="btn" href="https://github.com/overrule-ai/overturn">GitHub</a>
+    </div>
+  </section>
+
+  <footer>
+    <a class="logo" href="/"><svg viewBox="14 7 74 76" fill="currentColor" aria-hidden="true"><path d="M18 31 47 10 57 17 57 31 71 31 84 43 84 57 55 80 44 73 44 59 30 59 17 47Z"/><path d="M31 34 47 22 47 42 68 42 72 46 72 53 54 67 54 48 33 48 29 44Z" fill="#0f0f11"/></svg>Overturn</a>
+    <span class="mono" style="font-size:12px">© 2026 · Apache-2.0 · self-host on one Postgres</span>
+    <div class="r"><a href="/docs/">Docs</a><a href="https://github.com/overrule-ai/overturn">GitHub</a><a href="/docs/terms/">Terms</a><a href="/docs/privacy/">Privacy</a><a href="https://app.overturn.run/login">Sign in</a></div>
+  </footer>
+</div>
+
+<script>
+  // steps -> panel: hover/click selects; auto-advance until the user picks one
+  const steps=[...document.querySelectorAll('#steps li')], media=[...document.querySelectorAll('#panel [data-i]')];
+  let cur=0, auto=true, timer;
+  function show(i){cur=i;steps.forEach((s,j)=>s.classList.toggle('on',j===i));media.forEach((m,j)=>{m.classList.toggle('on',j===i);if(m.tagName==='VIDEO'){if(j===i){m.currentTime=0;m.play().catch(()=>{})}else m.pause()}})}
+  steps.forEach((s,i)=>{s.addEventListener('mouseenter',()=>{auto=false;show(i)});s.addEventListener('click',()=>{auto=false;show(i)})});
+  function tick(){if(auto)show((cur+1)%steps.length);timer=setTimeout(tick,7000)}
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) timer=setTimeout(tick,7000);
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)show(cur)}),{threshold:.3});io.observe(document.getElementById('panel'));
+  // code tabs
+  const tabs=[...document.querySelectorAll('#code .tabs button')], pres=[...document.querySelectorAll('#code pre')];
+  tabs.forEach((t,i)=>t.addEventListener('click',()=>{tabs.forEach((x,j)=>x.classList.toggle('on',j===i));pres.forEach((x,j)=>x.classList.toggle('on',j===i))}));
+</script>
+</body>
+</html>

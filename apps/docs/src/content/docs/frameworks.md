@@ -51,4 +51,4 @@ To correct from inside the framework, call the API directly (`POST /v1/correctio
 
 ## Raw OpenAI / Anthropic clients in another language
 
-`POST /v1/ingest` takes the same batches the SDKs send; the schema is in `/openapi.json`. Fingerprints are documented in the [fingerprint contract](/fingerprint/) so any language can produce matching ones.
+`POST /v1/ingest` takes the same batches the SDKs send; the schema is in `/openapi.json`. Fingerprints are documented in the [fingerprint contract](/docs/fingerprint/) so any language can produce matching ones.

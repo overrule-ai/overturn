@@ -21,8 +21,8 @@ for (const [file, target, description] of pages) {
   md = md.replace(/^# .+\n/, "");
   // repo-relative links -> site links
   md = md
-    .replace(/\]\(docs\/([a-z-]+)\.md\)/g, "](/$1/)")
-    .replace(/\]\(([a-z-]+)\.md\)/g, "](/$1/)")
+    .replace(/\]\(docs\/([a-z-]+)\.md\)/g, "](/docs/$1/)")
+    .replace(/\]\(([a-z-]+)\.md\)/g, "](/docs/$1/)")
     .replace(/\]\(docs\/assets\//g, "](/");
   const fm = `---\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n`;
   writeFileSync(path.join(out, target), fm + md);
