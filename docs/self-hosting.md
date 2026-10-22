@@ -47,5 +47,5 @@ OVERTURN_API_URL=http://localhost:4000 pnpm --filter @overturn-ai/web start
 - **Retention**: a daily job (03:23 UTC) deletes runs older than `retentionDays` that back no case, with their steps and corrections. Runs behind a case are kept: they are the evidence.
 - **Review webhook**: `reviewWebhookUrl` (Slack incoming-webhook format) gets every completed run once (`runs.notified_at`); a failed POST is logged, not retried.
 - **Cache**: model responses for replay live in `response_cache` (24h TTL, purged hourly).
-- **Backups**: it is one Postgres database; `pg_dump` is the whole story.
-- **Scaling**: the API is stateless apart from pg-boss, which coordinates through Postgres; run several replicas behind a load balancer if needed.
+- **Scaling**: the API is stateless; pg-boss coordinates replay jobs through Postgres, so several API replicas behind a load balancer share one queue. Two things are per replica and that is fine at small scale: the magic-link rate limiter (5/address, 30/IP per 10 min) and the replay response cache's in-flight dedupe. Replays are the only CPU-heavy work; they run `PROVIDER_CONCURRENCY` model calls in parallel per replica. A 1 vCPU / 1 GB API and a 1 GB Postgres handle tens of teams; grow Postgres first (runs and steps are the bulk), then replicas.
+- **Backups**: it is one Postgres database; `pg_dump` is the whole story. Response cache rows are disposable.
