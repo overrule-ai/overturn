@@ -75,7 +75,17 @@ function CasesList() {
           <option value="archived">archived</option>
         </NativeSelect>
         <Button asChild>
-          <Link href="/replays/new">Replay these</Link>
+          <Link
+            href={`/replays/new?${new URLSearchParams(
+              Object.fromEntries(
+                Object.entries({ agent: filters.agent, tag: filters.tag, set: filters.set }).filter(
+                  ([, v]) => v,
+                ),
+              ),
+            ).toString()}`}
+          >
+            Replay these
+          </Link>
         </Button>
       </div>
       <Table>

@@ -141,6 +141,15 @@ describe("web UI", () => {
     await page.goto("/cases");
     expect(await page.getByText("approve: ticket-triage").count()).toBe(0); // active filter hides it
 
+    // --- "Replay this case" preselects the case; the cases list link carries its filters ---
+    await page.goto("/cases");
+    await page.getByText("edit: ticket-triage").click();
+    await page.waitForURL(/\/cases\/[0-9a-f-]+$/);
+    await page.getByRole("link", { name: "Replay this case" }).click();
+    await page.waitForURL(/\/replays\/new\?ids=/);
+    await page.getByTestId("selected-cases").waitFor();
+    expect(await page.getByTestId("selected-cases").textContent()).toContain("1 selected case");
+
     // --- new replay against the fake model ---
     await page.goto("/replays/new");
     await page.getByTestId("model").fill("fake/fake-triage-weak");
