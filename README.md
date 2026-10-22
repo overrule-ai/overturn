@@ -49,7 +49,7 @@ Sign in, create an API key in Settings, point the SDK at `http://localhost:4000`
 
 ## Docs
 
-**Docs: [docs.overturn.run](https://docs.overturn.run)** · [SDK reference](docs/sdk.md) · [Quickstart](docs/quickstart.md) · [Fingerprint contract](docs/fingerprint.md) · [Self-hosting](docs/self-hosting.md) · [Decisions](docs/decisions.md)
+**Docs: [overturn.run/docs](https://overturn.run/docs)** · [SDK reference](docs/sdk.md) · [Quickstart](docs/quickstart.md) · [Fingerprint contract](docs/fingerprint.md) · [Self-hosting](docs/self-hosting.md) · [Decisions](docs/decisions.md)
 
 ## License
 

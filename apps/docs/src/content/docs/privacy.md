@@ -17,6 +17,6 @@ description: What the hosted Overturn stores, where, for how long, and how to de
 
 **Cookies.** One session cookie on app.overturn.run. No analytics, no third-party trackers.
 
-**Self-hosting.** None of this applies when you run Overturn yourself: the data stays on your Postgres. See [Self-hosting](/self-hosting/).
+**Self-hosting.** None of this applies when you run Overturn yourself: the data stays on your Postgres. See [Self-hosting](/docs/self-hosting/).
 
 **Changes.** Posted here; material changes are emailed to workspace members.

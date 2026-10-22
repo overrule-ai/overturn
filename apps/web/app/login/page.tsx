@@ -75,7 +75,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
       <p className="absolute bottom-4 text-xs text-muted-foreground">
-        <a className="hover:text-foreground" href="https://docs.overturn.run">
+        <a className="hover:text-foreground" href="https://overturn.run/docs/">
           Docs
         </a>
         <span className="mx-2">·</span>
@@ -83,11 +83,11 @@ export default function LoginPage() {
           Issues
         </a>
         <span className="mx-2">·</span>
-        <a className="hover:text-foreground" href="https://docs.overturn.run/terms/">
+        <a className="hover:text-foreground" href="https://overturn.run/docs/terms/">
           Terms
         </a>
         <span className="mx-2">·</span>
-        <a className="hover:text-foreground" href="https://docs.overturn.run/privacy/">
+        <a className="hover:text-foreground" href="https://overturn.run/docs/privacy/">
           Privacy
         </a>
       </p>
