@@ -357,15 +357,23 @@ export class ReplayService {
         const cached = await this.cached(judgeModelId, { judge: prompt });
         if (cached) return cached.output as JudgeVerdict;
         const model = this.registry.languageModel(judgeModelId);
-        const res = await this.withRetry(judgeProvider, () =>
-          generateText({
-            model,
-            temperature: 0,
-            seed: 42,
-            maxRetries: 0,
-            messages: [{ role: "user", content: prompt }],
-          }),
-        );
+        let res: Awaited<ReturnType<typeof generateText>>;
+        try {
+          res = await this.withRetry(judgeProvider, () =>
+            generateText({
+              model,
+              temperature: 0,
+              seed: 42,
+              maxRetries: 0,
+              messages: [{ role: "user", content: prompt }],
+            }),
+          );
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `judge ${judgeModelId} failed (${msg}); check the ${judgeProvider} key on the server or set another judgeModel in project settings`,
+          );
+        }
         const parsed = parseJsonText(res.text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
         const verdict: JudgeVerdict =
           parsed && typeof parsed === "object" && "pass" in parsed
