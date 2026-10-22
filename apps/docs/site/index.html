@@ -11,7 +11,7 @@
 <meta property="og:image" content="https://overturn.run/media/report.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#0f0f11;--panel:#151518;--line:#26262c;--text:#e8e8ec;--muted:#8b8b95;--muted2:#5b5b66;--green:#3fcf8e;--red:#f06a6a;--amber:#e5a33b}
   *{box-sizing:border-box}
@@ -20,9 +20,9 @@
   a{color:inherit;text-decoration:none}
   code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
   .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
-  h1,h2,h3{margin:0;font-weight:500;letter-spacing:-.03em;color:#fff}
-  h1{font-size:clamp(40px,6vw,72px);line-height:1.02}
-  h2{font-size:clamp(32px,4vw,48px);line-height:1.06}
+  h1,h2,h3{margin:0;font-weight:400;letter-spacing:-.035em;color:#fff}
+  h1{font-size:clamp(44px,5.5vw,76px);line-height:1;white-space:nowrap}
+  h2{font-size:clamp(34px,4.4vw,54px);line-height:1.05}
   h3{font-size:19px;letter-spacing:-.01em}
   p{margin:0}
   .lede{font-size:19px;line-height:1.5;color:var(--muted);max-width:30em}
@@ -31,7 +31,16 @@
   .btn.primary{background:#fff;color:#0f0f11;border-color:#fff}
   .btn.primary:hover{background:#e8e8ec}
   .btn svg{width:14px;height:14px}
-  .frame{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+  .frame{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden;position:relative;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 30px 80px -30px rgba(0,0,0,.8)}
+  .frame::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);z-index:2;pointer-events:none}
+  .pill{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 6px;margin-bottom:28px}
+  .pill b{font-weight:500;color:#fff;background:#1f1f25;border-radius:999px;padding:3px 9px;font-size:12px}
+  .pill svg{width:12px;height:12px}
+  .callout{position:absolute;z-index:4;display:flex;align-items:center;gap:0;pointer-events:none}
+  .callout .dot{width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.15)}
+  .callout .ln{height:1px;background:rgba(255,255,255,.5)}
+  .callout .lbl{font-size:13px;color:#fff;background:rgba(15,15,17,.85);border:1px solid var(--line);border-radius:6px;padding:6px 10px;backdrop-filter:blur(6px);white-space:nowrap}
+  .callout .lbl small{display:block;color:var(--muted);font-size:12px}
   .frame video,.frame img{display:block;width:100%;height:auto}
 
   /* nav */
@@ -45,13 +54,14 @@
   nav .right .btn{height:38px;padding:0 14px}
 
   /* hero */
-  .hero{position:relative;padding:72px 0 0;min-height:640px}
-  .hero .copy{max-width:560px;position:relative;z-index:2;padding-top:48px}
+  .hero{position:relative;padding:72px 0 0;min-height:680px}
+  .hero canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.9;pointer-events:none;mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.5) 30%,#000 55%,#000 100%)}
+  .hero .copy{max-width:600px;position:relative;z-index:2;padding-top:40px}
   .hero .copy .lede{margin:28px 0 36px}
   .hero .actions{display:flex;gap:10px;flex-wrap:wrap}
-  .hero .shot{position:absolute;left:calc(50% + 10px);top:40px;width:min(980px,68vw);z-index:1}
+  .hero .shot{position:absolute;left:calc(50% + 40px);top:48px;width:min(980px,66vw);z-index:1}
   .hero .shot .frame{box-shadow:0 40px 120px -40px rgba(0,0,0,.9)}
-  .hero .glow{position:absolute;inset:auto -10% -20% 30%;height:60%;background:radial-gradient(60% 60% at 50% 50%,rgba(255,255,255,.05),transparent 70%);pointer-events:none}
+  .hero .glow{position:absolute;left:35%;right:-20%;top:-10%;bottom:-30%;background:radial-gradient(50% 50% at 55% 45%,rgba(120,130,160,.14),transparent 70%);pointer-events:none;z-index:0}
   .hero .fade{position:absolute;right:0;top:0;bottom:0;width:120px;background:linear-gradient(90deg,transparent,var(--bg));z-index:3;pointer-events:none}
 
   /* stat row */
@@ -61,7 +71,8 @@
   .stats b{display:block;font-size:34px;font-weight:500;letter-spacing:-.02em;color:#fff;line-height:1.1}
   .stats span{display:block;margin-top:8px;color:var(--muted);font-size:14px}
 
-  section{padding:140px 0 0}
+  section{padding:120px 0 0;margin-top:120px;border-top:1px solid var(--line)}
+  section.first{margin-top:0;border-top:0}
   .split{display:grid;grid-template-columns:360px 1fr;gap:56px;align-items:start}
   .steps{margin:0;padding:0;list-style:none}
   .steps li{padding:18px 0 18px 22px;border-left:1px solid var(--line);cursor:pointer;transition:border-color .2s}
@@ -94,7 +105,7 @@
   .link{color:#fff;font-weight:500;display:inline-flex;align-items:center;gap:8px;margin-top:22px}
   .link svg{width:14px;height:14px}
 
-  .cta{padding:160px 0 120px;border-bottom:1px solid var(--line)}
+  .cta{padding:140px 0 120px;border-bottom:1px solid var(--line)}
   .cta h2{max-width:14em}
   .cta .actions{margin-top:36px;display:flex;gap:10px}
   footer{padding:36px 0 56px;display:flex;align-items:center;gap:28px;color:var(--muted);font-size:14px}
@@ -104,6 +115,7 @@
   footer a:hover{color:#fff}
 
   @media (max-width:1000px){
+    h1{white-space:normal}
     .hero{min-height:0;padding-top:40px}
     .hero .shot{position:static;width:auto;margin-top:48px}
     .hero .shot .frame{max-height:380px!important}
@@ -137,8 +149,10 @@
 </div>
 
 <header class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="copy">
+      <a class="pill" href="https://github.com/overrule-ai/overturn/releases"><b>Open beta</b> v0.1 · open source, Apache-2.0 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
       <h1>Every correction<br>becomes a test.</h1>
       <p class="lede">Record your agent. When a human fixes its answer, Overturn freezes the case. Replay the suite against any model or prompt before you ship — tools answered from the recording, nothing fires twice.</p>
       <div class="actions">
@@ -147,6 +161,7 @@
       </div>
     </div>
     <div class="shot">
+      <div class="callout" style="left:21.5%;top:19.5%"><span class="dot"></span><span class="ln" style="width:56px"></span><span class="lbl">2 regressions caught before deploy<small>approved cases that now fail</small></span></div>
       <div class="frame" style="max-height:620px"><img src="/media/report.png" alt="Overturn replay report: pass rate, regressions, fixed; each regression with baseline, target and the human correction side by side" style="object-fit:cover;object-position:top left"></div>
     </div>
   </div>
@@ -162,7 +177,7 @@
     <div><b>Any model</b><span>OpenAI, Anthropic, Google, OpenRouter. Compare them in one matrix.</span></div>
   </div>
 
-  <section>
+  <section class="first">
     <h2>From a human correction<br>to a replayable test.</h2>
     <div class="split" style="margin-top:48px">
       <ol class="steps" id="steps">
@@ -172,6 +187,7 @@
         <li data-v="3"><h3>Report</h3><p>Regressions first, then still wrong, then fixed — baseline, target and the human's correction side by side.</p></li>
       </ol>
       <div class="frame panel" id="panel">
+        <div class="callout" id="pc" style="right:4%;top:8%;flex-direction:row-reverse"><span class="dot"></span><span class="ln" style="width:40px"></span><span class="lbl" id="pcl">Every prompt and tool call, recorded</span></div>
         <img class="on" src="/media/record.png" alt="" data-i="0" style="object-fit:cover">
         <video src="/media/correct.mp4" poster="/media/correct-poster.png" muted loop playsinline data-i="1"></video>
         <video src="/media/cli.mp4" poster="/media/cli-poster.png" muted loop playsinline data-i="2"></video>
@@ -251,10 +267,36 @@ client = ov.wrap_openai(OpenAI())     <span class="c"># every call recorded</spa
 </div>
 
 <script>
+  // hero: a slow monochrome flow field. Runs drift; a few are "overturned" (flip to white and settle).
+  (() => {
+    const c = document.getElementById('field'); if (!c || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = c.getContext('2d'); let W, H, dpr, pts = [];
+    const N = 1400;
+    function size(){ dpr = Math.min(2, devicePixelRatio||1); W = c.clientWidth; H = c.clientHeight; c.width = W*dpr; c.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function seed(){ pts = Array.from({length:N}, () => ({ x: Math.random()*W, y: Math.random()*H, a: Math.random()*Math.PI*2, s: .25+Math.random()*.6, l: Math.random(), hot: Math.random() < .035 })); }
+    const noise = (x,y,t) => Math.sin(x*.0021 + t*.21) * Math.cos(y*.0017 - t*.17) + Math.sin((x+y)*.0009 + t*.11);
+    let t = 0;
+    function frame(){
+      t += .004;
+      ctx.fillStyle = 'rgba(15,15,17,.08)'; ctx.fillRect(0,0,W,H);
+      for (const p of pts){
+        const a = noise(p.x,p.y,t) * Math.PI;
+        p.x += Math.cos(a)*p.s; p.y += Math.sin(a)*p.s;
+        if (p.x < -2 || p.x > W+2 || p.y < -2 || p.y > H+2){ p.x = Math.random()*W; p.y = Math.random()*H; }
+        const d = Math.min(1, p.x / W);
+        ctx.fillStyle = p.hot ? 'rgba(232,232,236,.9)' : `rgba(139,139,149,${.12 + .3*d*p.l})`;
+        ctx.fillRect(p.x, p.y, p.hot ? 1.6 : 1, p.hot ? 1.6 : 1);
+      }
+      requestAnimationFrame(frame);
+    }
+    size(); seed(); ctx.fillStyle = '#0f0f11'; ctx.fillRect(0,0,W,H); frame();
+    addEventListener('resize', () => { size(); seed(); });
+  })();
   // steps -> panel: hover/click selects; auto-advance until the user picks one
   const steps=[...document.querySelectorAll('#steps li')], media=[...document.querySelectorAll('#panel [data-i]')];
   let cur=0, auto=true, timer;
-  function show(i){cur=i;steps.forEach((s,j)=>s.classList.toggle('on',j===i));media.forEach((m,j)=>{m.classList.toggle('on',j===i);if(m.tagName==='VIDEO'){if(j===i){m.currentTime=0;m.play().catch(()=>{})}else m.pause()}})}
+  const labels=['Every prompt and tool call, recorded','One click. The case freezes with the fix','Tools answered from the recording','Regressions first, side by side'];
+  function show(i){cur=i;document.getElementById('pcl').textContent=labels[i];steps.forEach((s,j)=>s.classList.toggle('on',j===i));media.forEach((m,j)=>{m.classList.toggle('on',j===i);if(m.tagName==='VIDEO'){if(j===i){m.currentTime=0;m.play().catch(()=>{})}else m.pause()}})}
   steps.forEach((s,i)=>{s.addEventListener('mouseenter',()=>{auto=false;show(i)});s.addEventListener('click',()=>{auto=false;show(i)})});
   function tick(){if(auto)show((cur+1)%steps.length);timer=setTimeout(tick,7000)}
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches) timer=setTimeout(tick,7000);
