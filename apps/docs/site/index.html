@@ -161,6 +161,26 @@
   /* real screens */
   .shot{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;box-shadow:0 20px 50px -30px rgba(0,0,0,.35)}
   .panel .shot{border-radius:4px}
+  .flow{display:grid;grid-template-columns:440px 1fr;gap:56px;align-items:start}
+  @media (max-width:1000px){.flow{grid-template-columns:1fr;gap:28px}}
+  .flow h2{margin-bottom:44px}
+  .fsteps{border-left:1px solid var(--line)}
+  .fstep{position:relative;padding:22px 0 22px 26px;cursor:pointer}
+  .fstep h3{font-size:24px;letter-spacing:-.02em;color:var(--muted);transition:color .3s}
+  .fstep p{color:var(--muted);font-size:16px;max-height:0;overflow:hidden;transition:max-height .45s,margin .45s;margin-top:0}
+  .fstep.on h3{color:var(--fg)}
+  .fstep.on p{max-height:140px;margin-top:8px}
+  .fstep::before{content:"";position:absolute;left:-1px;top:0;width:2px;height:0;background:var(--fg)}
+  .fstep.on::before{animation:growy 7s linear forwards}
+  .fstep.paused::before{animation-play-state:paused}
+  @keyframes growy{to{height:100%}}
+  .fpanel{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 40px 80px -40px rgba(0,0,0,.35)}
+  .fpanel .fv{display:none;aspect-ratio:16/10;background:#fff}
+  .fpanel .fv.on{display:block;animation:fadein .5s}
+  .fpanel img,.fpanel video{display:block;width:100%;height:100%;object-fit:cover;object-position:top left}
+  .fpanel .callout{position:absolute;right:22px;top:22px;font-size:15px;padding:9px 14px;border-radius:8px;background:#111;color:#fff;box-shadow:0 12px 30px -12px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;animation:fadein .5s}
+  .fpanel .callout::before{content:"";width:8px;height:8px;border-radius:50%;background:#fff}
+  .fpanel .term{border-radius:0;height:100%;font-size:14px;padding:28px 32px}
   .prod{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
   @media (max-width:900px){.prod{grid-template-columns:1fr}}
   .clip{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;cursor:pointer;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
@@ -401,11 +421,33 @@
 </section>
 
 <section id="product" class="band">
-  <div class="sec-head"><h2>The product, not a mockup</h2><a class="link" href="https://app.overturn.run/login">Open the app →</a></div>
-  <div class="prod">
-    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/correct-poster.png"><source src="/media/light/correct.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Correct a run</b><span>Open a step, edit the answer, leave a note. The case is frozen with the fix attached.</span></div></div>
-    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/replay-poster.png"><source src="/media/light/replay.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Replay the suite</b><span>Pick a model and prompt version. Regressions come first, with the baseline beside the new answer.</span></div></div>
-    <div class="clip" data-clip><div class="vw"><video muted playsinline preload="metadata" loop poster="/media/light/matrix-poster.png"><source src="/media/light/matrix.mp4" type="video/mp4"></video></div><span class="play">▶ hover to play</span><span class="bar"></span><div class="cap"><b>Compare models</b><span>Several models, one table: pass rate, regressions and cost side by side.</span></div></div>
+  <div class="flow">
+    <div>
+      <h2>From a human correction<br>to a replayable test.</h2>
+      <div class="fsteps" id="fsteps">
+        <div class="fstep on" data-i="0"><h3>Record</h3><p>Wrap the model client you already have. Every prompt, tool call and answer is recorded with a fingerprint.</p></div>
+        <div class="fstep" data-i="1"><h3>Correct</h3><p>A human approves, edits, rejects or escalates — in the app, in Slack, or inside your own product. The case freezes with the fix.</p></div>
+        <div class="fstep" data-i="2"><h3>Replay</h3><p>Run every case against a new model or prompt from the CLI, the app, or CI. Tools are answered from the recording; nothing fires twice.</p></div>
+        <div class="fstep" data-i="3"><h3>Report</h3><p>Regressions first — approved cases that now fail — then fixed and still-wrong, with the baseline beside the new answer.</p></div>
+      </div>
+    </div>
+    <div class="fpanel" id="fpanel">
+      <div class="fv on"><img src="/media/light/record.png" width="1440" height="900" alt="A recorded run: input, output and the trajectory of tool calls and model steps" loading="lazy"></div>
+      <div class="fv"><video muted playsinline loop preload="metadata" poster="/media/light/correct-poster.png"><source src="/media/light/correct.mp4" type="video/mp4"></video></div>
+      <div class="fv"><div class="term"><span class="p">$</span> overturn replay --model claude-sonnet-4-5 --prompt ticket-triage@v3
+<span class="d">25 cases · tools answered from the recording · ~40s</span>
+
+<span class="g">passed</span>      23/25
+<span class="r">regression</span>  approve  ticket-triage T-1020   1/2 fields match
+<span class="r">regression</span>  approve  ticket-triage T-1022   1/2 fields match
+<span class="y">fixed</span>       edit     ticket-triage T-1004   expected fields match
+<span class="y">fixed</span>       reject   ticket-triage T-1030   refund tool not called
+
+<span class="d">report</span>  https://app.overturn.run/replays/01a156ea
+<span class="p">$</span><span class="cursor"></span></div></div>
+      <div class="fv"><video muted playsinline loop preload="metadata" poster="/media/light/replay-poster.png"><source src="/media/light/replay.mp4" type="video/mp4"></video></div>
+      <div class="callout" id="fcl">Every prompt and tool call, recorded</div>
+    </div>
   </div>
 </section>
 
@@ -553,13 +595,15 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pp=document.getElementById('qs-pp');pp.addEventListener('click',()=>{paused=!paused;pp.style.opacity=paused?.5:1;steps[i].querySelector('.bar').style.animationPlayState=paused?'paused':'running';});
   timer=setInterval(tick,7000);})();
 
-// product clips: play on hover (or tap), progress bar, pause on leave
-(()=>{document.querySelectorAll('[data-clip]').forEach(c=>{const v=c.querySelector('video'),bar=c.querySelector('.bar'),lab=c.querySelector('.play');
-  const play=()=>{c.classList.add('playing');lab.textContent='playing';v.play().catch(()=>{});};
-  const stop=()=>{v.pause();c.classList.remove('playing');lab.textContent='▶ hover to play';};
-  c.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')play();});c.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')stop();});
-  c.addEventListener('click',()=>v.paused?play():stop());
-  v.addEventListener('timeupdate',()=>{bar.style.width=(v.duration?v.currentTime/v.duration*100:0)+'%';});});})();
+// flow: steps ↔ panel, auto-advance, hover pauses, clicking a step jumps
+(()=>{const steps=[...document.querySelectorAll('#fsteps .fstep')],views=[...document.querySelectorAll('#fpanel .fv')],cl=document.getElementById('fcl'),panel=document.getElementById('fpanel');
+  const labels=['Every prompt and tool call, recorded','One click. The case freezes with the fix','Tools answered from the recording','Regressions first, side by side'];let i=0,timer,paused=reduce;
+  function go(n){i=n;steps.forEach((s,k)=>{s.classList.remove('paused');s.classList.toggle('on',k===n);});views.forEach((v,k)=>{v.classList.toggle('on',k===n);const vid=v.querySelector('video');if(vid){if(k===n){vid.currentTime=0;vid.play().catch(()=>{});}else vid.pause();}});cl.textContent=labels[n];}
+  function restart(){clearInterval(timer);timer=setInterval(()=>{if(!paused)go((i+1)%steps.length);},7000);}
+  steps.forEach(s=>s.addEventListener('click',()=>{go(+s.dataset.i);restart();}));
+  panel.addEventListener('pointerenter',()=>{paused=true;steps[i].classList.add('paused');});
+  panel.addEventListener('pointerleave',()=>{paused=reduce;steps[i].classList.remove('paused');});
+  restart();})();
 
 // comparison
 (()=>{const data=[
