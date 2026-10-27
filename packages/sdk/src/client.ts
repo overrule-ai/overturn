@@ -1,4 +1,4 @@
-import type { CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn-ai/shared";
+import type { Contract, CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn-ai/shared";
 import { aiMiddleware } from "./ai-sdk.js";
 import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { OverturnApi } from "./api.js";
@@ -125,6 +125,8 @@ export class Overturn implements RunSink {
     correctedOutput?: unknown;
     note?: string | null;
     actor?: string | null;
+    /** Hard rules for the case: never call a tool, call it once, the answer must contain a word. */
+    contract?: Contract;
   }): Promise<CorrectionResult> {
     return this.api.corrections.create({ ...input, source: "sdk" });
   }

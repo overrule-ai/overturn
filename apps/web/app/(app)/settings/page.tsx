@@ -28,7 +28,17 @@ export default function SettingsPage() {
   const [newKey, setNewKey] = useState<{ name: string; key: string } | null>(null);
   const [keyName, setKeyName] = useState("default");
   const [email, setEmail] = useState("");
-  const [form, setForm] = useState<Record<string, string> | null>(null);
+  type Form = {
+    name: string;
+    defaultScorer: string;
+    judgeModel: string;
+    embeddingModel: string;
+    implicitApproveAfterDays: string;
+    retentionDays: string;
+    reviewWebhookUrl: string;
+    newPathsBlock: boolean;
+  };
+  const [form, setForm] = useState<Form | null>(null);
 
   const createKey = useMutation({
     mutationFn: () => client.keys.create(keyName || "default"),
@@ -64,6 +74,7 @@ export default function SettingsPage() {
           implicitApproveAfterDays: Number(form!.implicitApproveAfterDays),
           retentionDays: Number(form!.retentionDays),
           reviewWebhookUrl: (form!.reviewWebhookUrl ?? "").trim() || null,
+          newPathsBlock: form!.newPathsBlock,
         },
       }),
     onSuccess: () => {
@@ -84,6 +95,7 @@ export default function SettingsPage() {
           implicitApproveAfterDays: String(p.settings.implicitApproveAfterDays),
           retentionDays: String(p.settings.retentionDays),
           reviewWebhookUrl: p.settings.reviewWebhookUrl ?? "",
+          newPathsBlock: p.settings.newPathsBlock,
         }
       : null);
 
@@ -222,6 +234,22 @@ export default function SettingsPage() {
                   onChange={(e) => setForm({ ...f, retentionDays: e.target.value })}
                 />
               </div>
+              <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={f.newPathsBlock}
+                  onChange={(e) => setForm({ ...f, newPathsBlock: e.target.checked })}
+                  data-testid="new-paths-block"
+                />
+                <span>
+                  New paths block the gate
+                  <span className="block text-xs text-muted-foreground">
+                    A replay where the agent called a tool with no recording fails the CI check until a human
+                    accepts the call as equivalent. Off: new paths are reported but do not fail the check.
+                  </span>
+                </span>
+              </label>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Review webhook (Slack incoming webhook URL)</Label>
                 <div className="flex flex-wrap gap-2">

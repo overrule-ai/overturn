@@ -1,4 +1,9 @@
-import { type CorrectionKind, correctionKindSchema, jsonValueSchema } from "@overturn-ai/shared";
+import {
+  type CorrectionKind,
+  contractSchema,
+  correctionKindSchema,
+  jsonValueSchema,
+} from "@overturn-ai/shared";
 import { z } from "zod";
 import type { Overturn } from "./client.js";
 
@@ -9,6 +14,7 @@ export const correctionRequestSchema = z.object({
   kind: correctionKindSchema,
   correctedOutput: jsonValueSchema.optional(),
   note: z.string().max(10_000).nullish(),
+  contract: contractSchema.optional(),
 });
 export type CorrectionRequest = z.infer<typeof correctionRequestSchema>;
 
@@ -58,6 +64,7 @@ export function createCorrectionHandler(
       correctedOutput: parsed.data.correctedOutput,
       note: parsed.data.note ?? null,
       actor,
+      ...(parsed.data.contract ? { contract: parsed.data.contract } : {}),
     };
     try {
       const result = await ov.correct(input);

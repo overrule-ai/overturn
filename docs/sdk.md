@@ -72,16 +72,22 @@ Each call becomes an `llm_call` step with `input` = `{ messages, tools, tool_cho
 ## Corrections
 
 ```ts
-const { correction, case } = await ov.correct({ runId, stepId?, kind: "approve" | "edit" | "reject" | "escalate", correctedOutput?, note?, actor? });
+const { correction, case } = await ov.correct({ runId, stepId?, kind: "approve" | "edit" | "reject" | "escalate", correctedOutput?, note?, actor?, contract? });
 ```
 
 ```python
-ov.correct(run_id=..., step_id=None, kind="edit", corrected_output={...}, note=None, actor=None)
+ov.correct(run_id=..., step_id=None, kind="edit", corrected_output={...}, note=None, actor=None, contract=None)
 ```
 
 Sent immediately (not batched). `stepId` omitted = run-level correction (attached to the last model step). The case is returned.
 
 **How the case is scored.** The scorer is picked from the shape of the expected answer: `tool_choice` for tool decisions, `json_match` for objects, `equals` (semantic fallback) for short text, `judge` for long text, `not_equals` / `should_escalate` for rejects and escalations. When an object mixes decision fields (short strings, numbers, booleans, lists of those) with prose, only the decision fields are scored (`scorerConfig.fields`, marked `auto: true`): a different model's phrasing is not a regression. Override per correction with `scorer` / `scorerConfig`, or later with `cases.patch`.
+
+**Contract.** One or two hard rules the case must keep on every replay, evaluated after the scorer; a broken rule fails the case and is a regression when the recorded run kept it. `contract: [{ type: "tool_called", tool: "refund", count: "never" | "once" | "at_least_once" }, { type: "answer", contains: "P0", negate?: false }, { type: "tool_order", first: "lookup_customer", second: "refund" }]` (max 8; `cases.patch(id, { contract })` edits it later). The Correct dialog and `<CorrectButton>` carry the same rules.
+
+**New paths.** In trajectory replay a tool call with no recording is verdict `new_path`, not a failure: the report shows it beside the recorded calls of that tool, and `POST /v1/cases/{id}/equivalents` `{ toolName, args, equivalentOf: <recorded fingerprint>, note?, jobId? }` accepts it as equivalent — the recorded output answers it from then on and the result stands as a pass. New paths keep the gate red until accepted unless `settings.newPathsBlock` is off or `--allow-new-paths` is passed.
+
+**Suppress.** `cases.patch(id, { status: "suppressed" })` takes a case out of the default suite without losing it; `GET /v1/cases/counts` reports active / suppressed / archived so the suite never shrinks silently.
 
 **One-offs.** A correction made for an unusual reason is evidence, not a rule. Tick **One-off** in the dialog (or `cases.patch(id, { status: "archived" })`): the correction and case are kept, but archived cases are left out of replays until restored.
 
@@ -141,7 +147,7 @@ Return `null` to drop a step entirely. Applied before the step leaves the proces
 overturn init                                  # writes .env + overturn.config.ts, verifies the key
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
 overturn cases list [--agent --kind --tag --set --status --since]    | cases get <id> | cases archive <id>
-overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--format table|json|md] [--output file]
+overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--allow-new-paths] [--format table|json|md] [--output file]
 overturn report <jobId> [--format md]
 overturn replays list
 overturn prompts register name@version <file> | prompts list

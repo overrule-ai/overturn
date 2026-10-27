@@ -153,10 +153,16 @@ class Overturn:
         actor: str | None = None,
         scorer: str | None = None,
         scorer_config: dict[str, Any] | None = None,
+        contract: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Record a human correction and freeze a regression case. Sent immediately; returns
-        {"correction": ..., "case": ...}. The scorer is picked from the answer's shape unless given."""
+        {"correction": ..., "case": ...}. The scorer is picked from the answer's shape unless given.
+        `contract` is a list of hard rules checked on every replay, e.g.
+        [{"type": "tool_called", "tool": "refund", "count": "never"},
+         {"type": "answer", "contains": "P0"}]."""
         body: dict[str, Any] = {"runId": run_id, "kind": kind, "source": "sdk"}
+        if contract is not None:
+            body["contract"] = contract
         if scorer is not None:
             body["scorer"] = scorer
         if scorer_config is not None:
@@ -195,6 +201,13 @@ class Overturn:
         note = body.get("note")
         if note is not None and (not isinstance(note, str) or len(note) > 10_000):
             raise CorrectionRequestError("note must be a string under 10000 characters")
+        contract = body.get("contract")
+        if contract is not None and (
+            not isinstance(contract, list)
+            or len(cast("list[Any]", contract)) > 8
+            or not all(isinstance(r, dict) and "type" in r for r in cast("list[Any]", contract))
+        ):
+            raise CorrectionRequestError("contract must be a list of at most 8 rule objects")
         return self.correct(
             run_id=run_id,
             kind=kind,
@@ -202,6 +215,7 @@ class Overturn:
             corrected_output=body.get("correctedOutput"),
             note=note,
             actor=actor,
+            contract=cast("list[dict[str, Any]] | None", contract),
         )
 
     def replay_mode(

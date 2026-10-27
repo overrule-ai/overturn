@@ -39,7 +39,7 @@ export const stepKind = pgEnum("step_kind", ["llm_call", "tool_call", "retrieval
 export const runStatus = pgEnum("run_status", ["running", "completed", "failed"]);
 export const correctionKind = pgEnum("correction_kind", ["approve", "edit", "reject", "escalate"]);
 export const correctionSource = pgEnum("correction_source", ["sdk", "ui", "api", "implicit"]);
-export const caseStatus = pgEnum("case_status", ["active", "archived"]);
+export const caseStatus = pgEnum("case_status", ["active", "archived", "suppressed"]);
 export const replayMode = pgEnum("replay_mode", ["step", "trajectory"]);
 export const replayStatus = pgEnum("replay_status", [
   "pending",
@@ -55,6 +55,7 @@ export const verdict = pgEnum("verdict", [
   "fixed",
   "unchanged",
   "unreplayable",
+  "new_path",
   "error",
 ]);
 
@@ -247,6 +248,8 @@ export const cases = pgTable(
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     status: caseStatus("status").notNull().default("active"),
     truncated: boolean("truncated").notNull().default(false),
+    /** Hard rules evaluated after the scorer on every replay (shared contractSchema). */
+    contract: jsonb("contract").notNull().default(sql`'[]'::jsonb`),
     /** Model the run was recorded with; baseline for verdicts. */
     recordedModel: text("recorded_model"),
     lastVerdict: verdict("last_verdict"),

@@ -90,3 +90,16 @@ What a stranger gets today: app.overturn.run → email link → fresh workspace 
 - [ ] terms/privacy pages (needed before any paid tier, not before a free beta)
 - [ ] first outside user: Fluorine wired in for a week
 
+## Trust the gate (Oct 26)
+
+A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. Milestone from the product review:
+
+- [x] `new_path` verdict for tool calls with no recording; side-by-side with the recorded calls; "Accept as equivalent" records the fingerprint and lets the result stand (`POST /v1/cases/:id/equivalents`)
+- [x] new paths block the gate until accepted; per-project toggle, `--allow-new-paths`, Action input
+- [x] outcome contract on cases (tool never / once / at least once, answer contains, tool order), set in the dialog, SDKs and CorrectButton, edited on the case page; violations are regressions
+- [x] suppress from any report row; counts on the cases list; one-click restore
+- [x] `gate` on every report; CLI, Action and web read it
+- [ ] auto-suggest case title and tags from the run
+- [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
+- [ ] replay audit log, latency column, "what changed" narrative for the PR
+

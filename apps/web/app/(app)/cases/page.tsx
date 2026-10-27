@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -20,7 +20,17 @@ function CasesList() {
     status: "active",
     set: "",
   });
+  const qc = useQueryClient();
   const sets = useQuery({ queryKey: ["case-sets"], queryFn: client.cases.sets });
+  // suppressed and archived counts stay visible so the suite never shrinks silently
+  const counts = useQuery({ queryKey: ["case-counts"], queryFn: client.cases.counts });
+  const restore = useMutation({
+    mutationFn: (id: string) => client.cases.patch(id, { status: "active" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cases"] });
+      qc.invalidateQueries({ queryKey: ["case-counts"] });
+    },
+  });
   const cases = useQuery({
     queryKey: ["cases", filters],
     queryFn: () =>
@@ -71,8 +81,9 @@ function CasesList() {
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
         >
-          <option value="active">active</option>
-          <option value="archived">archived</option>
+          <option value="active">active{counts.data ? ` (${counts.data.active})` : ""}</option>
+          <option value="suppressed">suppressed{counts.data ? ` (${counts.data.suppressed})` : ""}</option>
+          <option value="archived">archived{counts.data ? ` (${counts.data.archived})` : ""}</option>
         </NativeSelect>
         <Button asChild>
           <Link
@@ -88,6 +99,18 @@ function CasesList() {
           </Link>
         </Button>
       </div>
+      {counts.data && counts.data.suppressed > 0 && filters.status === "active" && (
+        <p className="text-xs text-muted-foreground" data-testid="suppressed-note">
+          {counts.data.suppressed} case{counts.data.suppressed === 1 ? "" : "s"} suppressed from the suite.{" "}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => setFilters({ ...filters, status: "suppressed" })}
+          >
+            Review them
+          </button>
+        </p>
+      )}
       <Table>
         <THead>
           <TR>
@@ -124,7 +147,21 @@ function CasesList() {
                 </Link>
               </TD>
               <TD className="text-xs text-muted-foreground">{c.actor ?? ""}</TD>
-              <TD className="text-muted-foreground">{ago(c.createdAt)}</TD>
+              <TD className="text-muted-foreground">
+                {ago(c.createdAt)}
+                {c.status !== "active" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-6 px-2 text-xs"
+                    onClick={() => restore.mutate(c.id)}
+                    disabled={restore.isPending}
+                    data-testid="restore-case"
+                  >
+                    Restore
+                  </Button>
+                )}
+              </TD>
             </TR>
           ))}
           {cases.data?.items.length === 0 && (

@@ -3,6 +3,7 @@ import {
   type Case,
   type CaseFilter,
   estimateCostUsd,
+  evaluateContract,
   type FrozenInput,
   hashJSON,
   type JudgeVerdict,
@@ -21,6 +22,8 @@ import {
   type ReportRow,
   type ScorerContext,
   score,
+  toolCallsOf,
+  toolFingerprint,
   type Verdict,
 } from "@overturn-ai/shared";
 import { embed, generateText } from "ai";
@@ -89,6 +92,27 @@ export function serializeResult(r: ReplayResultRow): ReplayResult {
 }
 
 /** Verdict rules (brief, Replay engine). `unchanged` is reserved for job-vs-job comparison. */
+/**
+ * The outcome contract runs after the scorer: a violated rule fails the case whatever the scorer
+ * said, and the violations are spelled out in the reason. Returns the violations for the report.
+ */
+export function applyContract(
+  c: Pick<Case, "contract">,
+  scored: { score: number | null; passed: boolean | null; reason: string | null },
+  subject: { output: unknown; steps?: unknown[] | null },
+): string[] {
+  if (!c.contract?.length) return [];
+  const violations = evaluateContract(c.contract, {
+    toolCalls: toolCallsOf(subject.output, subject.steps),
+    output: subject.output,
+  });
+  if (violations.length === 0) return [];
+  scored.passed = false;
+  scored.score = 0;
+  scored.reason = `contract: ${violations.join("; ")}${scored.reason ? ` (scorer: ${scored.reason})` : ""}`;
+  return violations;
+}
+
 export function verdictFor(c: Pick<Case, "kind">, passed: boolean, baselinePassed: boolean | null): Verdict {
   if (baselinePassed !== null) {
     if (c.kind === "approve" && baselinePassed && !passed) return "regression";
@@ -557,6 +581,7 @@ export class ReplayService {
         reason: null,
       };
       let verdict: Verdict = "error";
+      let contractViolations: string[] = [];
       if (!error) {
         try {
           const r = await score(
@@ -573,7 +598,8 @@ export class ReplayService {
           const base = baselineResults.get(c.id);
           const baselinePassed = base ? base.passed : await this.recordedBaselinePassed(c, ctx);
           scored = r;
-          verdict = verdictFor(c, r.passed, baselinePassed);
+          contractViolations = applyContract(c, scored, { output });
+          verdict = verdictFor(c, scored.passed ?? false, baselinePassed);
         } catch (err) {
           error = `scoring failed: ${err instanceof Error ? err.message : String(err)}`;
         }
@@ -594,6 +620,7 @@ export class ReplayService {
                 expected: c.expected,
                 baseline: baselineResults.get(c.id)?.output ?? c.originalOutput,
                 target: output,
+                ...(contractViolations.length ? { contractViolations } : {}),
               },
       });
       completed++;
@@ -662,6 +689,13 @@ export class ReplayService {
         },
         ctx,
       );
+      // the recorded run's tool calls are its recordings (accepted paths excluded: they were not made)
+      applyContract(c, r, {
+        output: c.originalOutput,
+        steps: Object.values(c.toolRecordings)
+          .filter((rec) => !rec.equivalentOf)
+          .map((rec) => ({ kind: "tool_call", name: rec.name })),
+      });
       return r.passed;
     } catch {
       return null;
@@ -798,9 +832,24 @@ export class ReplayService {
         reason: null,
       };
       let error = r.error ?? null;
-      if (r.unreplayable) {
+      let contractViolations: string[] = [];
+      let newPath: ReportRow["newPath"] | undefined;
+      if (r.unreplayable?.reason === "unseen") {
+        // a tool call with no recording: not a failure yet, a path a human has to accept or reject
+        verdict = "new_path";
+        const { toolName, args } = r.unreplayable;
+        newPath = {
+          toolName,
+          args,
+          fingerprint: toolFingerprint(toolName, args),
+          candidates: Object.entries(c.toolRecordings)
+            .filter(([, rec]) => rec.name === toolName)
+            .map(([fp, rec]) => ({ fingerprint: fp, args: rec.args })),
+        };
+        scored.reason = `new path: ${toolName}(${JSON.stringify(args)}) has no recording${newPath.candidates.length ? `; ${newPath.candidates.length} recorded call${newPath.candidates.length === 1 ? "" : "s"} of ${toolName} to compare` : "; this tool was never called in the recording"}`;
+      } else if (r.unreplayable) {
         verdict = "unreplayable";
-        scored.reason = `${r.unreplayable.reason === "refused" ? "side-effect tool refused" : "no recording for tool call"}: ${r.unreplayable.toolName}(${JSON.stringify(r.unreplayable.args)})`;
+        scored.reason = `side-effect tool refused: ${r.unreplayable.toolName}(${JSON.stringify(r.unreplayable.args)})`;
       } else if (!error) {
         try {
           const s = await score(
@@ -817,7 +866,8 @@ export class ReplayService {
           const base = baselineResults.get(c.id);
           const baselinePassed = base ? base.passed : await this.recordedBaselinePassed(c, ctx);
           scored = s;
-          verdict = verdictFor(c, s.passed, baselinePassed);
+          contractViolations = applyContract(c, scored, { output: r.output ?? null, steps: r.steps });
+          verdict = verdictFor(c, scored.passed ?? false, baselinePassed);
         } catch (err) {
           error = `scoring failed: ${err instanceof Error ? err.message : String(err)}`;
         }
@@ -838,6 +888,8 @@ export class ReplayService {
           steps: r.steps ?? null,
           unreplayable: r.unreplayable ?? null,
           refusedSideEffects: r.refusedSideEffects ?? null,
+          ...(newPath ? { newPath } : {}),
+          ...(contractViolations.length ? { contractViolations } : {}),
         },
       });
     }
@@ -904,6 +956,8 @@ export class ReplayService {
       ...trajectoryExtras(r.diff),
     });
     const all = rows.map(toRow).sort((a, b) => a.title.localeCompare(b.title));
+    const [projectRow] = await this.db.execute(sql`select settings from projects where id = ${projectId}`);
+    const settings = parseSettings((projectRow as { settings?: unknown } | undefined)?.settings);
     const summary: ReplaySummary = job.summary ?? {
       cases: job.caseCount,
       completed: all.length,
@@ -920,25 +974,45 @@ export class ReplayService {
       job,
       summary,
       regressions: all.filter((x) => x.verdict === "regression"),
+      newPaths: all.filter((x) => x.verdict === "new_path"),
       stillWrong: all.filter((x) => x.verdict === "fail"),
       fixed: all.filter((x) => x.verdict === "fixed"),
       passed: all.filter((x) => x.verdict === "pass"),
       unreplayable: all.filter((x) => x.verdict === "unreplayable"),
       errors: all.filter((x) => x.verdict === "error"),
+      gate: gateFor(all, settings.newPathsBlock),
     };
   }
+}
+
+/** The CI verdict: regressions always block; new paths block until accepted unless the project says otherwise. */
+export function gateFor(rows: ReportRow[], newPathsBlock: boolean): NonNullable<ReplayReport["gate"]> {
+  const reasons: string[] = [];
+  const regressions = rows.filter((r) => r.verdict === "regression").length;
+  const newPaths = rows.filter((r) => r.verdict === "new_path").length;
+  if (regressions > 0) reasons.push(`${regressions} regression${regressions === 1 ? "" : "s"}`);
+  if (newPaths > 0 && newPathsBlock)
+    reasons.push(`${newPaths} new path${newPaths === 1 ? "" : "s"} not yet accepted`);
+  return { pass: reasons.length === 0, reasons, newPathsBlock };
 }
 
 /** Report columns that only exist for trajectory replays (see POST /v1/replays/:id/results). */
 function trajectoryExtras(
   diff: unknown,
-): Pick<ReportRow, "refusedSideEffects" | "stepCount" | "simulatedToolCalls"> {
+): Pick<
+  ReportRow,
+  "refusedSideEffects" | "stepCount" | "simulatedToolCalls" | "newPath" | "contractViolations"
+> {
   const d = diff as {
     refusedSideEffects?: { toolName: string; args: unknown }[];
     steps?: { kind?: string }[];
+    newPath?: ReportRow["newPath"];
+    contractViolations?: string[];
   } | null;
-  if (!d || (!Array.isArray(d.refusedSideEffects) && !Array.isArray(d.steps))) return {};
+  if (!d) return {};
   return {
+    ...(d.newPath ? { newPath: d.newPath } : {}),
+    ...(Array.isArray(d.contractViolations) ? { contractViolations: d.contractViolations } : {}),
     ...(Array.isArray(d.refusedSideEffects)
       ? { refusedSideEffects: d.refusedSideEffects as ReportRow["refusedSideEffects"] }
       : {}),

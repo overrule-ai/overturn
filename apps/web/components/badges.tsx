@@ -9,9 +9,10 @@ export function VerdictBadge({ verdict }: { verdict: string | null | undefined }
         ? "success"
         : verdict === "pass"
           ? "info"
-          : verdict === "fail"
+          : verdict === "fail" || verdict === "new_path"
             ? "warning"
             : "muted";
+  if (verdict === "new_path") return <Badge variant="warning">new path</Badge>;
   return <Badge variant={variant}>{verdict}</Badge>;
 }
 

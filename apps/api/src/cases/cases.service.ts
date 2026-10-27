@@ -1,14 +1,17 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type {
-  Case,
-  CaseFilter,
-  CaseListQuery,
-  CasePatch,
-  CaseSet,
-  CaseSetCreate,
-  CaseSummary,
-  Page,
-  ToolRecordingEntry,
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  type Case,
+  type CaseCounts,
+  type CaseEquivalent,
+  type CaseFilter,
+  type CaseListQuery,
+  type CasePatch,
+  type CaseSet,
+  type CaseSetCreate,
+  type CaseSummary,
+  fingerprint as fingerprintOf,
+  type Page,
+  type ToolRecordingEntry,
 } from "@overturn-ai/shared";
 import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
@@ -38,6 +41,7 @@ export function serializeCase(r: CaseJoined): Case {
     tags: r.tags,
     status: r.status,
     truncated: r.truncated,
+    contract: (r.contract ?? []) as Case["contract"],
     recordedModel: r.recordedModel,
     lastVerdict: r.lastVerdict,
     note: r.note,
@@ -164,6 +168,7 @@ export class CasesService {
     if (patch.scorer !== undefined) set.scorer = patch.scorer;
     if (patch.scorerConfig !== undefined) set.scorerConfig = patch.scorerConfig;
     if (patch.expected !== undefined) set.expected = patch.expected;
+    if (patch.contract !== undefined) set.contract = patch.contract;
     if (Object.keys(set).length > 0) {
       const rows = await this.db
         .update(cases)
@@ -171,6 +176,65 @@ export class CasesService {
         .where(and(eq(cases.projectId, projectId), eq(cases.id, id)))
         .returning({ id: cases.id });
       if (rows.length === 0) throw new NotFoundException(`Case ${id} not found`);
+    }
+    return this.get(projectId, id);
+  }
+
+  /** How many cases are in the suite, suppressed from it, or archived — so a shrinking suite is visible. */
+  async counts(projectId: string): Promise<CaseCounts> {
+    const rows = await this.db
+      .select({ status: cases.status, n: sql<number>`count(*)::int` })
+      .from(cases)
+      .where(eq(cases.projectId, projectId))
+      .groupBy(cases.status);
+    const out: CaseCounts = { active: 0, suppressed: 0, archived: 0 };
+    for (const r of rows) out[r.status] = r.n;
+    return out;
+  }
+
+  /**
+   * A human accepts a tool call the agent made in replay as equivalent to a recorded one: the
+   * recorded output is copied under the new call's fingerprint, so future replays answer it, and
+   * the replay result that surfaced it is re-scored under the human's original decision.
+   */
+  async acceptEquivalent(projectId: string, id: string, input: CaseEquivalent): Promise<Case> {
+    const c = await this.get(projectId, id);
+    const source = c.toolRecordings[input.equivalentOf];
+    if (!source) throw new BadRequestException(`No recording ${input.equivalentOf} on case ${id}`);
+    if (source.name !== input.toolName)
+      throw new BadRequestException(
+        `Recording ${input.equivalentOf} is for ${source.name}, not ${input.toolName}`,
+      );
+    const fp = fingerprintOf("tool_call", input.toolName, input.args);
+    const entry: ToolRecordingEntry = {
+      name: input.toolName,
+      args: input.args,
+      output: source.output,
+      sideEffect: source.sideEffect,
+      equivalentOf: source.equivalentOf ?? input.equivalentOf,
+      note: input.note ?? null,
+      acceptedAt: new Date().toISOString(),
+      acceptedBy: input.actor ?? null,
+    };
+    await this.db
+      .update(cases)
+      .set({ toolRecordings: { ...c.toolRecordings, [fp]: entry } })
+      .where(and(eq(cases.projectId, projectId), eq(cases.id, id)));
+    if (input.jobId) {
+      // the result that surfaced the new path now stands as the human's original decision
+      const reason = `new path accepted as equivalent to ${source.name}(${JSON.stringify(source.args)})${input.note ? ` — ${input.note}` : ""}`;
+      await this.db
+        .update(replayResults)
+        .set({ verdict: "pass", passed: true, reason })
+        .where(
+          and(
+            eq(replayResults.projectId, projectId),
+            eq(replayResults.jobId, input.jobId),
+            eq(replayResults.caseId, id),
+            eq(replayResults.verdict, "new_path"),
+          ),
+        );
+      await this.db.update(cases).set({ lastVerdict: "pass" }).where(eq(cases.id, id));
     }
     return this.get(projectId, id);
   }

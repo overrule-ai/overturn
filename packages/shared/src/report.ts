@@ -18,6 +18,7 @@ function cell(v: unknown, max = 160): string {
 export function replayReceipt(report: ReplayReport): string[] {
   const rows = [
     ...report.regressions,
+    ...(report.newPaths ?? []),
     ...report.stillWrong,
     ...report.fixed,
     ...report.passed,
@@ -67,8 +68,9 @@ function section(title: string, rows: ReportRow[], emptyText: string): string[] 
       ? ` · refused side effects: ${r.refusedSideEffects.map((x) => x.toolName).join(", ")}`
       : "";
     const steps = r.stepCount !== undefined ? ` · ${r.stepCount} steps` : "";
+    const contract = r.contractViolations?.length ? ` · contract: ${r.contractViolations.join("; ")}` : "";
     out.push(
-      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)}${steps}${refused} |`,
+      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)}${contract}${steps}${refused} |`,
     );
   }
   out.push("");
@@ -105,6 +107,24 @@ export function renderMarkdownReport(
       "",
     );
   lines.push(...section("Regressions", report.regressions, "No regressions."));
+  const newPaths = report.newPaths ?? [];
+  if (newPaths.length > 0) {
+    lines.push(
+      `### New paths (${newPaths.length})`,
+      "",
+      "_The agent called a tool with no recording. Accept the call as equivalent to a recorded one on the case page, or correct the run; until then the gate stays red._",
+      "",
+      "| Case | New call | Closest recorded call |",
+      "|---|---|---|",
+    );
+    for (const r of newPaths) {
+      const np = r.newPath;
+      lines.push(
+        `| ${cell(r.title, 60)} | \`${np?.toolName ?? "?"}\` ${cell(np?.args)} | ${np?.candidates[0] ? cell(np.candidates[0].args) : "— (tool never recorded)"} |`,
+      );
+    }
+    lines.push("");
+  }
   lines.push(...section("Still wrong", report.stillWrong, "Nothing still wrong."));
   lines.push(...section("Fixed", report.fixed, "Nothing newly fixed."));
   if (report.unreplayable.length > 0) lines.push(...section("Unreplayable", report.unreplayable, ""));
@@ -130,6 +150,7 @@ const VERDICT_MARK: Record<string, string> = {
   fail: "❌",
   regression: "🔴 regression",
   unreplayable: "⚠️ unreplayable",
+  new_path: "🟣 new path",
   error: "⚠️ error",
 };
 

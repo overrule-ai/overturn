@@ -115,12 +115,19 @@ describe("web UI", () => {
     const editor = page.locator("textarea").first();
     await editor.fill(JSON.stringify({ priority: "P0" }));
     await page.locator("textarea").nth(1).fill("Enterprise customer, outage keyword in body");
+    // a rule set while the reviewer has the context: the tool names come from the run
+    const rules = page.getByTestId("rules");
+    await rules.getByTestId("contract-count").selectOption("never");
+    await rules.getByTestId("contract-tool").selectOption("set_priority");
+    await rules.getByTestId("contract-add").click();
+    await rules.getByText("never call set_priority").waitFor();
     await page.getByRole("button", { name: "Save edit" }).click();
 
     // --- lands on the case ---
     await page.waitForURL(/\/cases\/[0-9a-f-]+$/, { timeout: 15_000 });
     await page.getByText("Expected (from the human)").waitFor();
     expect(await page.locator("pre").first().textContent()).toContain('"priority": "P0"');
+    await page.getByTestId("case-contract").getByText("never call set_priority").waitFor();
     await page.getByRole("tab", { name: /Tool recordings \(4\)/ }).click();
     await page.getByText("side effect · refused in replay").first().waitFor();
 
@@ -164,6 +171,19 @@ describe("web UI", () => {
     const pageText = await page.textContent("main");
     expect(pageText).toMatch(/Baseline/);
     expect(pageText).toMatch(/Human correction/);
+    await page.getByTestId("gate").waitFor();
+
+    // --- suppress from the report, see the count, restore from the list ---
+    await page.getByTestId("suppress-case").first().click();
+    await page.getByText("Suppressed").first().waitFor();
+    await page.goto("/cases");
+    await page.getByTestId("suppressed-note").waitFor();
+    expect(await page.getByTestId("suppressed-note").textContent()).toContain("1 case suppressed");
+    await page.getByTestId("suppressed-note").getByRole("button", { name: "Review them" }).click();
+    await page.getByTestId("restore-case").first().click();
+    await page.getByText("edit: ticket-triage").waitFor();
+    await page.goto("/cases");
+    expect(await page.getByTestId("suppressed-note").count()).toBe(0);
 
     // --- settings: mint an API key ---
     await page.goto("/settings");

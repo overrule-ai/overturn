@@ -46,6 +46,8 @@ export const verdictSchema = z.enum([
   "fixed",
   "unchanged",
   "unreplayable",
+  /** Trajectory mode: the agent called a tool with no recording. Needs a human to accept the path or not. */
+  "new_path",
   "error",
 ]);
 export type Verdict = z.infer<typeof verdictSchema>;
@@ -213,8 +215,40 @@ export const projectSettingsSchema = z.object({
   retentionDays: z.number().int().min(1).max(3650).default(90),
   /** Slack incoming-webhook URL; every completed run is posted there with Review / Approve buttons. */
   reviewWebhookUrl: z.string().url().max(2000).nullable().default(null),
+  /** A replay with new paths (tool calls with no recording) fails the CI gate until a human accepts them. */
+  newPathsBlock: z.boolean().default(true),
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
+
+// ---------- outcome contract ----------
+
+/**
+ * A few hard rules a human attaches to a case at correction time. Evaluated after the
+ * scorer on every replay; a violation fails the case (and is a regression when the
+ * baseline passed). Kept deliberately small: the power is in the one or two rules a
+ * reviewer actually cares about.
+ */
+export const contractRuleSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("tool_called"),
+    tool: z.string().min(1).max(200),
+    count: z.enum(["once", "at_least_once", "never"]).default("at_least_once"),
+  }),
+  z.object({
+    type: z.literal("answer"),
+    contains: z.string().min(1).max(2000),
+    negate: z.boolean().default(false),
+    caseSensitive: z.boolean().default(false),
+  }),
+  z.object({
+    type: z.literal("tool_order"),
+    first: z.string().min(1).max(200),
+    second: z.string().min(1).max(200),
+  }),
+]);
+export type ContractRule = z.infer<typeof contractRuleSchema>;
+export const contractSchema = z.array(contractRuleSchema).max(8);
+export type Contract = z.infer<typeof contractSchema>;
 
 // ---------- corrections ----------
 
@@ -229,6 +263,8 @@ export const correctionCreateSchema = z.object({
   /** Override the scorer the case gets; omitted = chosen from the shape of the expected answer. */
   scorer: scorerNameSchema.optional(),
   scorerConfig: z.record(z.string(), jsonValueSchema).optional(),
+  /** Hard rules for the case this correction creates (see contractRuleSchema). */
+  contract: contractSchema.optional(),
 });
 export type CorrectionCreate = z.infer<typeof correctionCreateSchema>;
 
@@ -253,7 +289,8 @@ export const correctionListQuerySchema = z.object({
 
 // ---------- cases ----------
 
-export const caseStatusSchema = z.enum(["active", "archived"]);
+/** suppressed: taken out of the default suite by a human from a report; restorable. */
+export const caseStatusSchema = z.enum(["active", "archived", "suppressed"]);
 export type CaseStatus = z.infer<typeof caseStatusSchema>;
 
 /** What a case freezes from the corrected llm_call step. */
@@ -278,6 +315,11 @@ export const toolRecordingSchema = z.object({
   output: jsonValueSchema,
   sideEffect: z.boolean().default(false),
   truncated: z.boolean().optional(),
+  /** Set when a human accepted this call as equivalent to a recorded one (its fingerprint). */
+  equivalentOf: z.string().optional(),
+  note: z.string().max(2000).nullish(),
+  acceptedAt: isoDateSchema.optional(),
+  acceptedBy: z.string().max(200).nullish(),
 });
 export type ToolRecordingEntry = z.infer<typeof toolRecordingSchema>;
 export const toolRecordingsSchema = z.record(z.string(), toolRecordingSchema);
@@ -301,6 +343,7 @@ export const caseSchema = z.object({
   tags: z.array(z.string()),
   status: caseStatusSchema,
   truncated: z.boolean(),
+  contract: contractSchema,
   recordedModel: z.string().nullable(),
   lastVerdict: verdictSchema.nullable(),
   note: z.string().nullable(),
@@ -339,8 +382,29 @@ export const casePatchSchema = z.object({
   scorer: scorerNameSchema.optional(),
   scorerConfig: z.record(z.string(), jsonValueSchema).optional(),
   expected: jsonValueSchema.optional(),
+  contract: contractSchema.optional(),
 });
 export type CasePatch = z.infer<typeof casePatchSchema>;
+
+/** Accept a tool call the agent made during replay as equivalent to a recorded one. */
+export const caseEquivalentSchema = z.object({
+  toolName: z.string().min(1).max(200),
+  args: jsonValueSchema,
+  /** Fingerprint of the recorded call whose output answers this one. */
+  equivalentOf: z.string().min(1),
+  note: z.string().max(2000).nullish(),
+  actor: z.string().max(200).nullish(),
+  /** The replay result this came from; its verdict is re-evaluated under the human's original decision. */
+  jobId: uuidSchema.optional(),
+});
+export type CaseEquivalent = z.infer<typeof caseEquivalentSchema>;
+
+export const caseCountsSchema = z.object({
+  active: z.number().int(),
+  suppressed: z.number().int(),
+  archived: z.number().int(),
+});
+export type CaseCounts = z.infer<typeof caseCountsSchema>;
 
 export const caseSetCreateSchema = z.object({
   name: z.string().min(1).max(200),
@@ -545,6 +609,17 @@ export const reportRowSchema = z.object({
   stepCount: z.number().int().optional(),
   /** Trajectory mode: tool calls answered from the recordings (simulated, not executed). */
   simulatedToolCalls: z.number().int().optional(),
+  /** Verdict new_path: the call with no recording, and the recorded calls of the same tool it might be equivalent to. */
+  newPath: z
+    .object({
+      toolName: z.string(),
+      args: jsonValueSchema,
+      fingerprint: z.string(),
+      candidates: z.array(z.object({ fingerprint: z.string(), args: jsonValueSchema })),
+    })
+    .optional(),
+  /** Contract rules this replay broke, in words. */
+  contractViolations: z.array(z.string()).optional(),
 });
 export type ReportRow = z.infer<typeof reportRowSchema>;
 
@@ -552,11 +627,21 @@ export const replayReportSchema = z.object({
   job: replayJobSchema,
   summary: replaySummarySchema,
   regressions: z.array(reportRowSchema),
+  /** Tool calls with no recording; block the gate until a human accepts or rejects the path. */
+  newPaths: z.array(reportRowSchema),
   stillWrong: z.array(reportRowSchema),
   fixed: z.array(reportRowSchema),
   passed: z.array(reportRowSchema),
   unreplayable: z.array(reportRowSchema),
   errors: z.array(reportRowSchema),
+  /** The CI verdict for this report: red on regressions, and on new paths unless the project allows them. */
+  gate: z
+    .object({
+      pass: z.boolean(),
+      reasons: z.array(z.string()),
+      newPathsBlock: z.boolean(),
+    })
+    .optional(),
 });
 export type ReplayReport = z.infer<typeof replayReportSchema>;
 

@@ -31,6 +31,7 @@ export interface ReplayOptions {
   config?: string;
   maxCost?: string;
   failOnRegression?: string;
+  allowNewPaths?: boolean;
   format: "table" | "json" | "md";
   output?: string;
   wait: boolean;
@@ -78,6 +79,7 @@ export function printSummary(job: ReplayJob): void {
     v.fixed ? pc.green(`${v.fixed} fixed`) : null,
     v.fail ? pc.yellow(`${v.fail} still wrong`) : null,
     v.pass ? pc.dim(`${v.pass} passed`) : null,
+    v.new_path ? pc.magenta(`${v.new_path} new path${v.new_path === 1 ? "" : "s"}`) : null,
     v.unreplayable ? pc.magenta(`${v.unreplayable} unreplayable`) : null,
     v.error ? pc.red(`${v.error} errors`) : null,
   ].filter(Boolean);
@@ -93,6 +95,7 @@ export function emitReport(report: ReplayReport, format: "table" | "json" | "md"
   else {
     const rows = [
       ...report.regressions,
+      ...(report.newPaths ?? []),
       ...report.stillWrong,
       ...report.fixed,
       ...report.unreplayable,
@@ -104,7 +107,10 @@ export function emitReport(report: ReplayReport, format: "table" | "json" | "md"
       baseline: short(r.baselineOutput),
       target: short(r.error ?? r.targetOutput),
       expected: short(r.kind === "approve" ? "(as baseline)" : r.expected),
-      why: (r.reason ?? "").slice(0, 60),
+      why: (r.contractViolations?.length
+        ? `contract: ${r.contractViolations.join("; ")}`
+        : (r.reason ?? "")
+      ).slice(0, 60),
     }));
     text = rows.length
       ? table(rows, ["verdict", "kind", "case", "baseline", "target", "expected", "why"])
@@ -141,6 +147,10 @@ export function registerReplay(program: Command): void {
     .option("--config <file>", "overturn.config.ts to use in trajectory mode")
     .option("--max-cost <usd>", "Stop the job cleanly past this spend")
     .option("--fail-on-regression <n>", "Exit 1 when regressions exceed n (default 0 when set)")
+    .option(
+      "--allow-new-paths",
+      "Do not exit 1 on new paths (tool calls with no recording); default follows the project setting",
+    )
     .option("--format <fmt>", "table | json | md", "table")
     .option("--output <file>", "Write the report to a file")
     .option("--no-wait", "Create the job and return (step mode)")
@@ -352,6 +362,16 @@ async function finish(
     const n = report.regressions.length;
     if (n > limit) {
       console.error(pc.red(`${n} regression${n === 1 ? "" : "s"} (limit ${limit})`));
+      process.exit(1);
+    }
+    const newPaths = report.newPaths?.length ?? 0;
+    const block = opts.allowNewPaths ? false : (report.gate?.newPathsBlock ?? true);
+    if (newPaths > 0 && block) {
+      console.error(
+        pc.magenta(
+          `${newPaths} new path${newPaths === 1 ? "" : "s"}: the agent called a tool with no recording. Accept the call on the case page or pass --allow-new-paths.`,
+        ),
+      );
       process.exit(1);
     }
   }

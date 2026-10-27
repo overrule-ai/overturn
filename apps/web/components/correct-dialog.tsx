@@ -1,10 +1,11 @@
 "use client";
 
-import type { CorrectionKind, Step } from "@overturn-ai/shared";
+import type { Contract, CorrectionKind, Step } from "@overturn-ai/shared";
 import { decisionFields, extractAnswer } from "@overturn-ai/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ContractEditor } from "@/components/contract-editor";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Label, Textarea } from "@/components/ui/input";
@@ -22,12 +23,15 @@ export function CorrectDialog({
   runId,
   step,
   runOutput,
+  tools = [],
   open,
   onOpenChange,
 }: {
   runId: string;
   step: Step | null;
   runOutput: unknown;
+  /** Tool names the run called, offered in the rules editor. */
+  tools?: string[];
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
@@ -43,6 +47,8 @@ export function CorrectDialog({
   const [parseError, setParseError] = useState<string | null>(null);
   // A correction made for an unusual reason is evidence, not a rule: keep it, but out of replays.
   const [oneOff, setOneOff] = useState(false);
+  // Hard rules the case must keep on every replay, set while the reviewer has the context.
+  const [contract, setContract] = useState<Contract>([]);
 
   // What the case will be scored on: the decision fields of the answer, not its prose.
   // Shown so the reviewer says what matters while they still remember why.
@@ -85,6 +91,7 @@ export function CorrectDialog({
         note: note || null,
         actor: actor || null,
         ...(showFields && fields.length > 0 ? { scorer: "json_match", scorerConfig: { fields } } : {}),
+        ...(contract.length > 0 ? { contract } : {}),
       });
       if (oneOff && r.case) await client.cases.patch(r.case.id, { status: "archived" });
       return r;
@@ -155,6 +162,14 @@ export function CorrectDialog({
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+        </div>
+        <div className="mt-4 space-y-1" data-testid="rules">
+          <Label>Rules (optional)</Label>
+          <p className="text-xs text-muted-foreground">
+            One or two things that must hold whenever this case is replayed: a tool that must never be called,
+            a tool that must be called once, a word the answer must contain. A broken rule is a regression.
+          </p>
+          <ContractEditor value={contract} onChange={setContract} tools={tools} compact />
         </div>
         <div className="mt-3 space-y-1">
           <Label>Actor (optional)</Label>

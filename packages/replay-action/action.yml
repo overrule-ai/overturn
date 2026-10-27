@@ -43,6 +43,10 @@ inputs:
     description: "Fail the check when regressions exceed this number"
     required: false
     default: "0"
+  allow-new-paths:
+    description: "Do not fail the check on new paths (tool calls with no recording); default follows the project setting"
+    required: false
+    default: "false"
   comment:
     description: "Post the markdown report as a PR comment"
     required: false
@@ -100,12 +104,18 @@ runs:
         if [ -f "$JSON" ]; then
           JOB_ID=$(node -e "const r=require(process.argv[1]);console.log(r.job.id)" "$JSON")
           REGRESSIONS=$(node -e "const r=require(process.argv[1]);console.log(r.regressions.length)" "$JSON")
+          NEW_PATHS=$(node -e "const r=require(process.argv[1]);console.log((r.newPaths||[]).length)" "$JSON")
+          NEW_PATHS_BLOCK=$(node -e "const r=require(process.argv[1]);console.log(r.gate?r.gate.newPathsBlock:true)" "$JSON")
           ${{ inputs.cli-command }} report "$JOB_ID" --format md --output "$REPORT" >/dev/null
           echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
           echo "regressions=$REGRESSIONS" >> "$GITHUB_OUTPUT"
+          echo "new_paths=$NEW_PATHS" >> "$GITHUB_OUTPUT"
           echo "report=$REPORT" >> "$GITHUB_OUTPUT"
           cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$REGRESSIONS" -gt "${{ inputs.fail-on-regression }}" ]; then echo "failed=true" >> "$GITHUB_OUTPUT"; else echo "failed=false" >> "$GITHUB_OUTPUT"; fi
+          FAILED=false
+          [ "$REGRESSIONS" -gt "${{ inputs.fail-on-regression }}" ] && FAILED=true
+          if [ "$NEW_PATHS" -gt 0 ] && [ "${{ inputs.allow-new-paths }}" != "true" ] && [ "$NEW_PATHS_BLOCK" = "true" ]; then FAILED=true; fi
+          echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
         else
           echo "failed=true" >> "$GITHUB_OUTPUT"
           echo "::error::overturn replay produced no report (exit $CODE)"
@@ -118,6 +128,8 @@ runs:
       env:
         REPORT_PATH: ${{ steps.replay.outputs.report }}
         REGRESSIONS: ${{ steps.replay.outputs.regressions }}
+        NEW_PATHS: ${{ steps.replay.outputs.new_paths }}
+        FAILED: ${{ steps.replay.outputs.failed }}
         LIMIT: ${{ inputs.fail-on-regression }}
       with:
         github-token: ${{ inputs.github-token }}
@@ -125,8 +137,15 @@ runs:
           const fs = require("fs");
           const marker = "<!-- overturn-replay-report -->";
           const report = fs.readFileSync(process.env.REPORT_PATH, "utf8");
-          const failed = Number(process.env.REGRESSIONS) > Number(process.env.LIMIT);
-          const body = `${marker}\n${failed ? "### ❌ Overturn: regressions found" : "### ✅ Overturn: no regressions"}\n\n${report}`;
+          const failed = process.env.FAILED === "true";
+          const regressions = Number(process.env.REGRESSIONS);
+          const newPaths = Number(process.env.NEW_PATHS || 0);
+          const head = !failed
+            ? "### ✅ Overturn: no regressions"
+            : regressions > Number(process.env.LIMIT)
+              ? "### ❌ Overturn: regressions found"
+              : `### 🟣 Overturn: ${newPaths} new path${newPaths === 1 ? "" : "s"} to review`;
+          const body = `${marker}\n${head}\n\n${report}`;
           const { owner, repo } = context.repo;
           const issue_number = context.payload.pull_request.number;
           const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
@@ -134,9 +153,9 @@ runs:
           if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
           else await github.rest.issues.createComment({ owner, repo, issue_number, body });
 
-    - name: Fail on regressions
+    - name: Fail on regressions or unaccepted new paths
       if: ${{ steps.replay.outputs.failed == 'true' }}
       shell: bash
       run: |
-        echo "::error::Overturn found ${{ steps.replay.outputs.regressions }} regression(s) (limit ${{ inputs.fail-on-regression }})"
+        echo "::error::Overturn: ${{ steps.replay.outputs.regressions }} regression(s) (limit ${{ inputs.fail-on-regression }}), ${{ steps.replay.outputs.new_paths }} new path(s) not yet accepted"
         exit 1

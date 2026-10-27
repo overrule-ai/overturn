@@ -205,6 +205,7 @@ export class CorrectionsService {
             scorerConfig: config,
             tags: run.tags,
             truncated: frozen.truncated,
+            contract: input.contract ?? [],
             recordedModel: step.model,
           })
           .returning();

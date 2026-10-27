@@ -460,6 +460,148 @@ describe("replay jobs (step mode)", () => {
     expect(md).toContain("refused side effects: set_priority");
   });
 
+  it("new path: a tool call with no recording needs a human, and accepting it answers future replays", async () => {
+    const a = await recordRun("NP-1", { priority: "P1" }, { agent: "np-agent" });
+    const c = await correct(a.runId, "approve");
+    const created = await api<{ job: ReplayJob }>(ctx, "POST", "/v1/replays", {
+      model: "openai/gpt-4.1-mini",
+      mode: "trajectory",
+      filter: { agent: "np-agent" },
+    });
+    const jobId = created.body.job.id;
+    // the agent looked the customer up by a different key: same tool, new fingerprint
+    const posted = await api<ReplayJob>(ctx, "POST", `/v1/replays/${jobId}/results`, {
+      results: [
+        { caseId: c.id, unreplayable: { toolName: "lookup", args: { email: "A@b.c" }, reason: "unseen" } },
+      ],
+      finish: true,
+    });
+    expect(posted.body.summary!.verdicts).toEqual({ new_path: 1 });
+    const report = await api<ReplayReport>(ctx, "GET", `/v1/replays/${jobId}/report`);
+    expect(report.body.newPaths).toHaveLength(1);
+    const row = report.body.newPaths[0]!;
+    expect(row.verdict).toBe("new_path");
+    expect(row.newPath!.toolName).toBe("lookup");
+    expect(row.newPath!.candidates).toEqual([
+      { fingerprint: toolFingerprint("lookup", { email: "a@b.c" }), args: { email: "a@b.c" } },
+    ]);
+    // the gate is red until a human accepts the path
+    expect(report.body.gate).toEqual({
+      pass: false,
+      reasons: ["1 new path not yet accepted"],
+      newPathsBlock: true,
+    });
+    const md = await fetch(`${ctx.baseUrl}/v1/replays/${jobId}/report.md`, {
+      headers: { authorization: `Bearer ${ctx.apiKey}` },
+    }).then((r) => r.text());
+    expect(md).toContain("### New paths (1)");
+
+    // accept as equivalent: one click records the fingerprint and lets the result stand
+    const accepted = await api<{
+      toolRecordings: Record<string, { equivalentOf?: string; note?: string | null }>;
+    }>(ctx, "POST", `/v1/cases/${c.id}/equivalents`, {
+      toolName: "lookup",
+      args: { email: "A@b.c" },
+      equivalentOf: row.newPath!.candidates[0]!.fingerprint,
+      note: "same lookup, upper-cased email",
+      actor: "sam@example.com",
+      jobId,
+    });
+    expect(accepted.status).toBe(201);
+    const fp = toolFingerprint("lookup", { email: "A@b.c" });
+    expect(accepted.body.toolRecordings[fp]).toMatchObject({
+      equivalentOf: row.newPath!.candidates[0]!.fingerprint,
+      note: "same lookup, upper-cased email",
+    });
+    const after = await api<ReplayReport>(ctx, "GET", `/v1/replays/${jobId}/report`);
+    expect(after.body.newPaths).toHaveLength(0);
+    expect(after.body.passed.map((r) => r.caseId)).toEqual([c.id]);
+    expect(after.body.passed[0]!.reason).toMatch(/accepted as equivalent/);
+    expect(after.body.gate!.pass).toBe(true);
+    // a mismatched recording is refused
+    const bad = await api(ctx, "POST", `/v1/cases/${c.id}/equivalents`, {
+      toolName: "send_email",
+      args: {},
+      equivalentOf: row.newPath!.candidates[0]!.fingerprint,
+    });
+    expect(bad.status).toBe(400);
+  });
+
+  it("outcome contract: broken rules fail the case whatever the scorer says", async () => {
+    const a = await recordRun("CT-1", { priority: "P1" }, { agent: "ct-agent" });
+    const c = await correct(a.runId, "approve", {
+      contract: [
+        { type: "tool_called", tool: "refund", count: "never" },
+        { type: "tool_called", tool: "lookup", count: "once" },
+        { type: "answer", contains: "P1" },
+      ],
+    });
+    expect(c.contract).toHaveLength(3);
+    const created = await api<{ job: ReplayJob }>(ctx, "POST", "/v1/replays", {
+      model: "openai/gpt-4.1-mini",
+      mode: "trajectory",
+      filter: { agent: "ct-agent" },
+    });
+    const jobId = created.body.job.id;
+    // right answer, but it called refund and skipped the lookup → contract violation → regression
+    const posted = await api<ReplayJob>(ctx, "POST", `/v1/replays/${jobId}/results`, {
+      results: [
+        {
+          caseId: c.id,
+          output: { priority: "P1" },
+          steps: [
+            { kind: "tool_call", name: "refund" },
+            { kind: "llm_call", name: "chat" },
+          ],
+        },
+      ],
+      finish: true,
+    });
+    expect(posted.body.summary!.verdicts).toEqual({ regression: 1 });
+    const report = await api<ReplayReport>(ctx, "GET", `/v1/replays/${jobId}/report`);
+    const row = report.body.regressions[0]!;
+    expect(row.contractViolations).toEqual([
+      "never call refund — called 1×",
+      "call lookup exactly once — called 0×",
+    ]);
+    expect(row.reason).toMatch(/^contract: never call refund/);
+    expect(report.body.gate!.reasons).toEqual(["1 regression"]);
+    // the contract is editable on the case
+    const patched = await api<{ contract: unknown[] }>(ctx, "PATCH", `/v1/cases/${c.id}`, {
+      contract: [{ type: "answer", contains: "P1" }],
+    });
+    expect(patched.body.contract).toHaveLength(1);
+    const bad = await api(ctx, "PATCH", `/v1/cases/${c.id}`, { contract: [{ type: "nope" }] });
+    expect(bad.status).toBe(400);
+  });
+
+  it("suppress: a case leaves the default suite, stays countable and comes back", async () => {
+    const a = await recordRun("SP-1", { priority: "P1" }, { agent: "sp-agent" });
+    const c = await correct(a.runId, "approve");
+    const before = await api<{ active: number; suppressed: number }>(ctx, "GET", "/v1/cases/counts");
+    await api(ctx, "PATCH", `/v1/cases/${c.id}`, { status: "suppressed" });
+    const counts = await api<{ active: number; suppressed: number }>(ctx, "GET", "/v1/cases/counts");
+    expect(counts.body.suppressed).toBe(before.body.suppressed + 1);
+    expect(counts.body.active).toBe(before.body.active - 1);
+    const est = await api<ReplayEstimate>(ctx, "POST", "/v1/replays/estimate", {
+      model: "openai/gpt-4.1-mini",
+      filter: { agent: "sp-agent" },
+    });
+    expect(est.body.cases).toBe(0);
+    const listed = await api<{ items: { id: string }[] }>(
+      ctx,
+      "GET",
+      "/v1/cases?status=suppressed&agent=sp-agent",
+    );
+    expect(listed.body.items.map((x) => x.id)).toEqual([c.id]);
+    await api(ctx, "PATCH", `/v1/cases/${c.id}`, { status: "active" });
+    const est2 = await api<ReplayEstimate>(ctx, "POST", "/v1/replays/estimate", {
+      model: "openai/gpt-4.1-mini",
+      filter: { agent: "sp-agent" },
+    });
+    expect(est2.body.cases).toBe(1);
+  });
+
   it("replays the same cases against several models as a group and builds the matrix", async () => {
     const good = echoModel({ priority: "P1" });
     const bad = echoModel({ priority: "P3" });

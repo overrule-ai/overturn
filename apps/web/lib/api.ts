@@ -2,6 +2,8 @@
 
 import type {
   Case,
+  CaseCounts,
+  CaseEquivalent,
   CaseSummary,
   Correction,
   CorrectionCreate,
@@ -123,6 +125,9 @@ export const client = {
     list: (q: Query) => api<Page<CaseSummary>>("GET", "/v1/cases", undefined, q),
     get: (id: string) => api<Case>("GET", `/v1/cases/${id}`),
     patch: (id: string, body: Record<string, unknown>) => api<Case>("PATCH", `/v1/cases/${id}`, body),
+    counts: () => api<CaseCounts>("GET", "/v1/cases/counts"),
+    acceptEquivalent: (id: string, body: CaseEquivalent) =>
+      api<Case>("POST", `/v1/cases/${id}/equivalents`, body),
     sets: () => api<Array<{ id: string; name: string; filter: unknown }>>("GET", "/v1/case-sets"),
   },
   replays: {

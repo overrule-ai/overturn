@@ -12,11 +12,14 @@ import {
 } from "@nestjs/common";
 import {
   type Case,
+  type CaseCounts,
+  type CaseEquivalent,
   type CaseListQuery,
   type CasePatch,
   type CaseSet,
   type CaseSetCreate,
   type CaseSummary,
+  caseEquivalentSchema,
   caseListQuerySchema,
   casePatchSchema,
   caseSetCreateSchema,
@@ -41,6 +44,11 @@ export class CasesController {
     return this.cases.list(auth.projectId, q);
   }
 
+  @Get("cases/counts")
+  counts(@Auth() auth: AuthContext): Promise<CaseCounts> {
+    return this.cases.counts(auth.projectId);
+  }
+
   @Get("cases/:id")
   get(@Auth() auth: AuthContext, @Param("id", zod(z.uuid())) id: string): Promise<Case> {
     return this.cases.get(auth.projectId, id);
@@ -59,6 +67,17 @@ export class CasesController {
     @Body(zod(casePatchSchema)) body: CasePatch,
   ): Promise<Case> {
     return this.cases.patch(auth.projectId, id, body);
+  }
+
+  /** Accept a tool call with no recording as equivalent to a recorded one (see verdict new_path). */
+  @Post("cases/:id/equivalents")
+  @HttpCode(201)
+  acceptEquivalent(
+    @Auth() auth: AuthContext,
+    @Param("id", zod(z.uuid())) id: string,
+    @Body(zod(caseEquivalentSchema)) body: CaseEquivalent,
+  ): Promise<Case> {
+    return this.cases.acceptEquivalent(auth.projectId, id, body);
   }
 
   @Get("case-sets")

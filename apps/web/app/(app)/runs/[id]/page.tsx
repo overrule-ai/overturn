@@ -207,6 +207,7 @@ export default function RunPage() {
           runId={r.id}
           step={dialog.step}
           runOutput={r.output}
+          tools={[...new Set(r.steps.filter((s) => s.kind === "tool_call").map((s) => s.name))]}
           open
           onOpenChange={(o) => !o && setDialog(null)}
         />

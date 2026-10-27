@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { KindBadge, VerdictBadge } from "@/components/badges";
+import { ContractEditor } from "@/components/contract-editor";
 import { JsonView } from "@/components/json-view";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export default function CasePage() {
             <h1 className="text-xl font-semibold">{k.title}</h1>
             <KindBadge kind={k.kind} />
             {k.status === "archived" && <Badge variant="muted">archived</Badge>}
+            {k.status === "suppressed" && <Badge variant="warning">suppressed</Badge>}
             {k.truncated && <Badge variant="warning">truncated</Badge>}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -74,11 +76,21 @@ export default function CasePage() {
               </option>
             ))}
           </NativeSelect>
+          {k.status === "active" && (
+            <Button
+              variant="outline"
+              onClick={() => patch.mutate({ status: "suppressed" })}
+              data-testid="suppress"
+            >
+              Suppress
+            </Button>
+          )}
           <Button
             variant="outline"
-            onClick={() => patch.mutate({ status: k.status === "archived" ? "active" : "archived" })}
+            onClick={() => patch.mutate({ status: k.status === "active" ? "archived" : "active" })}
+            data-testid="archive-restore"
           >
-            {k.status === "archived" ? "Restore" : "Archive"}
+            {k.status === "active" ? "Archive" : "Restore"}
           </Button>
           <Button asChild>
             <Link href={`/replays/new?ids=${k.id}`}>Replay this case</Link>
@@ -122,6 +134,18 @@ export default function CasePage() {
         )}
       </div>
 
+      <div className="space-y-1" data-testid="case-contract">
+        <div className="text-xs font-medium text-muted-foreground">
+          Contract — rules checked on every replay; a broken one is a regression
+        </div>
+        <ContractEditor
+          value={k.contract}
+          onChange={(contract) => patch.mutate({ contract })}
+          tools={[...new Set(recordings.map(([, rec]) => rec.name))]}
+          compact
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">
@@ -157,6 +181,12 @@ export default function CasePage() {
                   <div className="mb-2 flex items-center gap-2 text-sm">
                     <span className="font-medium">{rec.name}</span>
                     {rec.sideEffect && <Badge variant="warning">side effect · refused in replay</Badge>}
+                    {rec.equivalentOf && (
+                      <Badge variant="info" title={rec.note ?? undefined}>
+                        accepted path{rec.acceptedBy ? ` · ${rec.acceptedBy}` : ""}
+                        {rec.note ? ` · “${rec.note}”` : ""}
+                      </Badge>
+                    )}
                     <span className="ml-auto font-mono text-xs text-muted-foreground">{fp.slice(0, 12)}</span>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2">
