@@ -30,6 +30,7 @@ import {
 } from "../db/schema";
 import { ExportService } from "../export/export.service";
 import { ModelRegistry, parseModel } from "../models/registry";
+import { NotifyService } from "../notify/notify.service";
 import { parseSettings } from "../projects/settings";
 import { callModel } from "../replay/model-call";
 import { ReplayService } from "../replay/replay.service";
@@ -53,6 +54,7 @@ function serialize(r: TrainedModelRow, shadowStats: ShadowStats | null): Trained
     providerJobId: r.providerJobId,
     outputName: r.outputName,
     servedAs: r.servedAs,
+    trigger: r.trigger as TrainedModel["trigger"],
     serving: (r.serving ?? null) as ModelServing | null,
     trainingCostUsd: r.trainingCostUsd,
     gateJobId: r.gateJobId,
@@ -81,6 +83,7 @@ export class TrainingService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly exporter: ExportService,
     private readonly replay: ReplayService,
+    private readonly notify: NotifyService,
   ) {
     this.registry = new ModelRegistry(config);
   }
@@ -103,7 +106,11 @@ export class TrainingService {
 
   // ---------- create ----------
 
-  async create(projectId: string, input: TrainCreate): Promise<TrainedModel> {
+  async create(
+    projectId: string,
+    input: TrainCreate,
+    trigger: "manual" | "auto" = "manual",
+  ): Promise<TrainedModel> {
     this.together();
     const filter: CaseFilter = { status: "active", ...input.filter };
     const stats = await this.exporter.stats(projectId, {
@@ -134,6 +141,7 @@ export class TrainingService {
         caseFilter: filter,
         datasetStats: stats,
         status: "exporting",
+        trigger,
       })
       .returning();
     return serialize(row!, null);
@@ -260,10 +268,105 @@ export class TrainingService {
         reasons,
       };
       await this.set(id, { status: gate.pass ? "passed" : "failed", gate, finishedAt: new Date() });
+      await this.afterGate(m.projectId, id, gate);
     } catch (err) {
       await this.fail(id, err);
     }
     return this.get(m.projectId, id);
+  }
+
+  /** After the gate: an automatic model that passed goes to shadow (opt-in); either way the team hears. */
+  private async afterGate(projectId: string, id: string, gate: ModelGate): Promise<void> {
+    const m = await this.row(id);
+    const settings = await this.settingsOf(projectId);
+    const pct = (n: number | null) => (n == null ? "—" : `${(n * 100).toFixed(1)}%`);
+    if (gate.pass && m.trigger === "auto" && settings.retrain.shadowOnPass && m.servedAs)
+      await this.set(id, { shadow: true, shadowSince: new Date() });
+    const vs =
+      gate.incumbentPassRate != null ? ` vs ${pct(gate.incumbentPassRate)} for ${gate.incumbentModel}` : "";
+    const text = gate.pass
+      ? `Owned model *${m.name}* passed the gate: pass rate ${pct(gate.passRate)}${vs}, no regressions.${
+          m.trigger === "auto" && settings.retrain.shadowOnPass
+            ? " Shadow mode is on; promote when the live numbers convince you."
+            : " Promote when ready."
+        }`
+      : `Owned model *${m.name}* failed the gate: ${gate.reasons.join("; ")}.`;
+    await this.notify.notifyModel(projectId, text);
+  }
+
+  private async settingsOf(projectId: string) {
+    const [p] = await this.db
+      .select({ settings: projects.settings })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+    return parseSettings(p?.settings);
+  }
+
+  // ---------- continuous retraining (opt-in) ----------
+
+  /**
+   * One sweep: for every project with retraining on, count the training rows that arrived since
+   * its last automatic model; when they pass the threshold and nothing is in flight, train. The
+   * model then follows the normal path — gate, dedicated endpoint, shadow — and never promotes
+   * itself. Returns the ids of the models it started.
+   */
+  async retrainSweep(): Promise<string[]> {
+    const started: string[] = [];
+    const rows = await this.db.select({ id: projects.id, settings: projects.settings }).from(projects);
+    for (const p of rows) {
+      const settings = parseSettings(p.settings);
+      const r = settings.retrain;
+      if (!r.enabled || !r.baseModel) continue;
+      const inFlight = await this.db
+        .select({ id: trainedModels.id })
+        .from(trainedModels)
+        .where(
+          and(
+            eq(trainedModels.projectId, p.id),
+            sql`${trainedModels.status} in ('exporting', 'uploading', 'training', 'deploying', 'gating')`,
+          ),
+        )
+        .limit(1);
+      if (inFlight.length > 0) continue;
+      const [last] = await this.db
+        .select({ createdAt: trainedModels.createdAt })
+        .from(trainedModels)
+        .where(and(eq(trainedModels.projectId, p.id), eq(trainedModels.trigger, "auto")))
+        .orderBy(desc(trainedModels.createdAt))
+        .limit(1);
+      const fresh = await this.exporter.stats(p.id, {
+        format: r.method,
+        agent: r.agent ?? undefined,
+        tag: r.tag ?? undefined,
+        since: last?.createdAt.toISOString(),
+        includeApproved: true,
+        limit: 50_000,
+      });
+      if (fresh.rows < r.minNewRows) continue;
+      try {
+        const m = await this.create(
+          p.id,
+          {
+            baseModel: r.baseModel,
+            method: r.method,
+            epochs: r.epochs,
+            filter: { ...(r.agent ? { agent: r.agent } : {}), ...(r.tag ? { tag: r.tag } : {}) },
+            minRows: 1,
+            name: `auto-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${uuidv7().slice(-4)}`,
+          },
+          "auto",
+        );
+        started.push(m.id);
+        this.logger.log(`retrain: project ${p.id} has ${fresh.rows} new rows; training ${m.name}`);
+        await this.notify.notifyModel(
+          p.id,
+          `Retraining *${m.name}* on ${m.datasetStats?.rows ?? "?"} rows (${fresh.rows} new since the last automatic model). It will be gated and, if it passes, shadowed; nothing is promoted without a human.`,
+        );
+      } catch (err) {
+        this.logger.warn(`retrain: project ${p.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    return started;
   }
 
   /** The latest completed plain replay (no examples) of the recorded model on these exact cases. */

@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import type { CorrectionResult, IngestPayload, ModelDeployPlan, TrainedModel } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -196,5 +197,69 @@ describe("train and gate", () => {
     expect(done.gate!.regressions).toBe(5);
     const res = await api<{ message: string }>(ctx, "POST", `/v1/models/${done.id}/promote`);
     expect(res.status).toBe(400);
+  });
+
+  it("continuous retraining (opt-in): enough new corrections → train, gate, shadow, notify; never promote", async () => {
+    // a webhook that records what the team would see in Slack
+    const received: Array<{ text: string }> = [];
+    const hook = createServer((req, res) => {
+      let body = "";
+      req.on("data", (c) => {
+        body += c;
+      });
+      req.on("end", () => {
+        received.push(JSON.parse(body));
+        res.writeHead(200).end("ok");
+      });
+    });
+    await new Promise<void>((r) => hook.listen(0, "127.0.0.1", r));
+    const addr = hook.address();
+    const hookUrl = `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}/hook`;
+    try {
+      const name = echoModel({ priority: "P1" }).slice("fake/".length);
+      await api(ctx, "PATCH", "/v1/project", {
+        settings: {
+          reviewWebhookUrl: hookUrl,
+          retrain: { enabled: true, baseModel: `meta-llama/${name}`, minNewRows: 4, agent: "auto-agent" },
+        },
+      });
+      // three corrections: under the threshold, nothing happens
+      for (let i = 0; i < 3; i++) {
+        const r = await recordRun(`AUTO-${i}`, { priority: "P1" }, "auto-agent");
+        await api(ctx, "POST", "/v1/corrections", { runId: r, kind: "approve" });
+      }
+      expect(await training.retrainSweep()).toEqual([]);
+      // the fourth crosses it
+      const r4 = await recordRun("AUTO-3", { priority: "P1" }, "auto-agent");
+      await api(ctx, "POST", "/v1/corrections", { runId: r4, kind: "approve" });
+      const started = await training.retrainSweep();
+      expect(started).toHaveLength(1);
+      const m0 = await api<TrainedModel>(ctx, "GET", `/v1/models/${started[0]}`);
+      expect(m0.body).toMatchObject({
+        trigger: "auto",
+        status: "exporting",
+        baseModel: `meta-llama/${name}`,
+      });
+      expect(m0.body.name).toMatch(/^auto-\d{8}-/);
+      expect(received.at(-1)?.text).toContain("Retraining");
+      // nothing else starts while one is in flight
+      expect(await training.retrainSweep()).toEqual([]);
+
+      const done = await training.runToCompletion(started[0]!, 10);
+      expect(done.error).toBeNull();
+      expect(done.status).toBe("passed");
+      expect(done.shadow).toBe(true); // shadowOnPass
+      expect(received.at(-1)?.text).toContain("passed the gate");
+      expect(received.at(-1)?.text).toContain("Shadow mode is on");
+      const project = await api<{ settings: { promotedModel: string | null } }>(ctx, "GET", "/v1/project");
+      expect(project.body.settings.promotedModel).toBeNull();
+      // the rows that trained this model do not count again
+      expect(await training.retrainSweep()).toEqual([]);
+    } finally {
+      hook.close();
+      await api(ctx, "PATCH", "/v1/project", {
+        settings: { reviewWebhookUrl: null, retrain: { enabled: false } },
+      });
+    }
   });
 });

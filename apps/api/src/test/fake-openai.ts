@@ -169,7 +169,8 @@ export function startFakeOpenAI(): Promise<{
       if (echoAt >= 0)
         message = {
           role: "assistant",
-          content: Buffer.from(model.slice(echoAt + 5), "base64url").toString(),
+          // a fine-tune suffix may follow the payload (…-auto-20261028-ab12): drop it
+          content: Buffer.from(model.slice(echoAt + 5).split("-auto-")[0]!, "base64url").toString(),
         };
       else if (model.startsWith("judge-"))
         message = {

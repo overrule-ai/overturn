@@ -207,6 +207,21 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 
 // ---------- project settings ----------
 
+export const retrainSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  /** Together base model id; required when enabled. */
+  baseModel: z.string().nullable().default(null),
+  method: z.enum(["sft", "dpo"]).default("sft"),
+  epochs: z.number().int().min(1).max(10).default(3),
+  /** New training rows since the last automatic model before another one is trained. */
+  minNewRows: z.number().int().min(1).default(100),
+  agent: z.string().nullable().default(null),
+  tag: z.string().nullable().default(null),
+  /** Turn shadow mode on for a model that passes the gate, so live evidence accrues before a human promotes. */
+  shadowOnPass: z.boolean().default(true),
+});
+export type RetrainSettings = z.infer<typeof retrainSettingsSchema>;
+
 export const projectSettingsSchema = z.object({
   defaultScorer: scorerNameSchema.nullable().default(null),
   judgeModel: z.string().default("openai/gpt-4.1-mini"),
@@ -219,6 +234,8 @@ export const projectSettingsSchema = z.object({
   newPathsBlock: z.boolean().default(true),
   /** The owned model a human promoted (provider/model); what `ov.promotedModel()` returns. Null = none. */
   promotedModel: z.string().nullable().default(null),
+  /** Opt-in continuous retraining: once enough new corrections pile up, train, gate, shadow, notify. Never promotes. */
+  retrain: retrainSettingsSchema.default(retrainSettingsSchema.parse({})),
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -514,7 +531,10 @@ export type Project = z.infer<typeof projectSchema>;
 
 export const projectPatchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  settings: projectSettingsSchema.partial().optional(),
+  settings: projectSettingsSchema
+    .partial()
+    .extend({ retrain: retrainSettingsSchema.partial().optional() })
+    .optional(),
 });
 export type ProjectPatch = z.infer<typeof projectPatchSchema>;
 
@@ -915,6 +935,8 @@ export const trainedModelSchema = z.object({
   providerJobId: z.string().nullable(),
   outputName: z.string().nullable(),
   servedAs: z.string().nullable(),
+  /** "manual" (someone ran train) or "auto" (continuous retraining). */
+  trigger: z.enum(["manual", "auto"]),
   /** The dedicated endpoint serving the weights, when Overturn created one. */
   serving: modelServingSchema.nullable(),
   trainingCostUsd: z.number().nullable(),

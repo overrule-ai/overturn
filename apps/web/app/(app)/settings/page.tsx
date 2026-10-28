@@ -37,6 +37,11 @@ export default function SettingsPage() {
     retentionDays: string;
     reviewWebhookUrl: string;
     newPathsBlock: boolean;
+    retrainEnabled: boolean;
+    retrainBaseModel: string;
+    retrainMinNewRows: string;
+    retrainAgent: string;
+    retrainShadowOnPass: boolean;
   };
   const [form, setForm] = useState<Form | null>(null);
 
@@ -75,6 +80,13 @@ export default function SettingsPage() {
           retentionDays: Number(form!.retentionDays),
           reviewWebhookUrl: (form!.reviewWebhookUrl ?? "").trim() || null,
           newPathsBlock: form!.newPathsBlock,
+          retrain: {
+            enabled: form!.retrainEnabled,
+            baseModel: form!.retrainBaseModel.trim() || null,
+            minNewRows: Number(form!.retrainMinNewRows) || 100,
+            agent: form!.retrainAgent.trim() || null,
+            shadowOnPass: form!.retrainShadowOnPass,
+          },
         },
       }),
     onSuccess: () => {
@@ -96,6 +108,11 @@ export default function SettingsPage() {
           retentionDays: String(p.settings.retentionDays),
           reviewWebhookUrl: p.settings.reviewWebhookUrl ?? "",
           newPathsBlock: p.settings.newPathsBlock,
+          retrainEnabled: p.settings.retrain.enabled,
+          retrainBaseModel: p.settings.retrain.baseModel ?? "",
+          retrainMinNewRows: String(p.settings.retrain.minNewRows),
+          retrainAgent: p.settings.retrain.agent ?? "",
+          retrainShadowOnPass: p.settings.retrain.shadowOnPass,
         }
       : null);
 
@@ -250,6 +267,64 @@ export default function SettingsPage() {
                   </span>
                 </span>
               </label>
+              <div className="space-y-2 rounded-md border p-3 sm:col-span-2">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={f.retrainEnabled}
+                    onChange={(e) => setForm({ ...f, retrainEnabled: e.target.checked })}
+                    data-testid="retrain-enabled"
+                  />
+                  <span>
+                    Continuous retraining
+                    <span className="block text-xs text-muted-foreground">
+                      Once enough new corrections pile up, train an open-weight model on them, gate it against
+                      the suite and, if it passes, put it in shadow mode. You are told on the review webhook.
+                      Nothing is promoted without a human.
+                    </span>
+                  </span>
+                </label>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label>Base model (Together)</Label>
+                    <Input
+                      placeholder="meta-llama/Meta-Llama-3.1-8B-Instruct-Reference"
+                      value={f.retrainBaseModel}
+                      onChange={(e) => setForm({ ...f, retrainBaseModel: e.target.value })}
+                      disabled={!f.retrainEnabled}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>New rows before retraining</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={f.retrainMinNewRows}
+                      onChange={(e) => setForm({ ...f, retrainMinNewRows: e.target.value })}
+                      disabled={!f.retrainEnabled}
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label>Agent (optional)</Label>
+                    <Input
+                      placeholder="all agents"
+                      value={f.retrainAgent}
+                      onChange={(e) => setForm({ ...f, retrainAgent: e.target.value })}
+                      disabled={!f.retrainEnabled}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 pt-5 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={f.retrainShadowOnPass}
+                      onChange={(e) => setForm({ ...f, retrainShadowOnPass: e.target.checked })}
+                      disabled={!f.retrainEnabled}
+                    />
+                    Shadow on pass
+                  </label>
+                </div>
+              </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Review webhook (Slack incoming webhook URL)</Label>
                 <div className="flex flex-wrap gap-2">

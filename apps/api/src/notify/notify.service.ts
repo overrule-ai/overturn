@@ -59,6 +59,23 @@ export class NotifyService {
     return posted;
   }
 
+  /** A one-line event about an owned model (gate passed, failed, retrain started), with a link to the models page. */
+  async notifyModel(projectId: string, text: string): Promise<boolean> {
+    const url = await this.webhookUrl(projectId);
+    if (!url) return false;
+    const link = `${this.config.WEB_URL.replace(/\/+$/, "")}/models`;
+    return this.post(url, {
+      text: `${text} — ${link}`,
+      blocks: [
+        { type: "section", text: { type: "mrkdwn", text: mrkdwn(text) } },
+        {
+          type: "actions",
+          elements: [{ type: "button", text: { type: "plain_text", text: "Open models" }, url: link }],
+        },
+      ],
+    });
+  }
+
   /** Sends a sample message so the user can confirm the webhook works. */
   async sendTest(projectId: string): Promise<{ ok: boolean; status?: number; error?: string }> {
     const url = await this.webhookUrl(projectId);

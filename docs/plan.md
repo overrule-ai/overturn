@@ -116,4 +116,4 @@ Capture and replay stay open source. Training, gating, hosting and retraining ar
 - [x] train and gate: `overturn train`, Together LoRA fine-tune → gate replay (no regressions, no new paths, pass rate ≥ incumbent) → shadow on live runs → promote by hand; `ov.promotedModel()`
 - [x] serving: Overturn creates the Together dedicated endpoint (base + LoRA adapter, cheapest certified config, auto-stop) and gates when ready; `models deploy --dry-run`; retire deletes it
 - [ ] training in the customer's cloud: a managed trainer; today it is export + train anywhere + `models serve`
-- [ ] continuous retraining (opt-in): new corrections past a threshold or a new base model → retrain → gate → shadow → notify
+- [x] continuous retraining (opt-in): new rows past a threshold → retrain → gate → shadow → notify on the review webhook; never promotes

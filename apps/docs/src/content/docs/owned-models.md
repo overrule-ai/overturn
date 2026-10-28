@@ -26,3 +26,7 @@ Every replay — gate included — shows its estimate first and takes `--max-cos
 ## Data
 
 Training sends the exported rows (prompts, tool results, human answers) to Together under your key. Teams that cannot send traces to a third party: export and train in your own cloud, then `overturn models serve` the result anywhere Overturn can reach — the gate, shadow and promotion work the same. A managed in-your-cloud trainer is on the roadmap.
+
+## Continuous retraining (opt-in)
+
+`overturn models auto --base meta-llama/Meta-Llama-3.1-8B-Instruct-Reference --min-new-rows 100` (or Settings → Continuous retraining). Every hour Overturn counts the training rows that arrived since the last automatic model; past the threshold it trains one, gates it against the suite, and — if it passes — turns shadow mode on so live evidence accrues. The review webhook hears when training starts and how the gate went. Nothing is promoted without a human: promotion stays a click, with the gate and the shadow numbers in front of you. `overturn models auto --off` stops it.

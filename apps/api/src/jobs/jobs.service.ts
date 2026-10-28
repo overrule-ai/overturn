@@ -17,6 +17,7 @@ export const RETENTION_JOB = "retention";
 export const TRAIN_JOB = "train";
 export const TRAIN_POLL_JOB = "train-poll";
 export const SHADOW_JOB = "shadow";
+export const RETRAIN_JOB = "retrain";
 
 /**
  * Background jobs on pg-boss (same Postgres, schema "pgboss"). Started unless
@@ -58,6 +59,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       TRAIN_JOB,
       TRAIN_POLL_JOB,
       SHADOW_JOB,
+      RETRAIN_JOB,
     ]) {
       await this.boss.createQueue(name);
     }
@@ -104,6 +106,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       if (n || scored) this.logger.log(`shadow: ${n} runs answered, ${scored} scored`);
     });
     await this.boss.schedule(SHADOW_JOB, "* * * * *", undefined, { tz: "UTC" });
+    // hourly: opt-in continuous retraining
+    await this.boss.work(RETRAIN_JOB, async () => {
+      for (const id of await this.training.retrainSweep()) await this.enqueueTraining(id);
+    });
+    await this.boss.schedule(RETRAIN_JOB, "41 * * * *", undefined, { tz: "UTC" });
     this.logger.log("pg-boss started");
   }
 

@@ -185,6 +185,45 @@ export function registerModels(program: Command): void {
       },
     );
   models
+    .command("auto")
+    .description(
+      "Continuous retraining: once --min-new-rows new corrections arrive, train on them, gate, shadow if it passes, notify. Never promotes.",
+    )
+    .option("--base <model>", "Together base model id (required to turn on)")
+    .option("--min-new-rows <n>", "New training rows before another model is trained", "100")
+    .option("--agent <name>", "Only this agent's corrections")
+    .option("--no-shadow", "Do not put a passing model in shadow mode")
+    .option("--off", "Turn continuous retraining off")
+    .action(
+      async (
+        opts: { base?: string; minNewRows: string; agent?: string; shadow: boolean; off?: boolean },
+        cmd: Command,
+      ) => {
+        const global = cmd.optsWithGlobals<CliOptions>();
+        const api = apiFor(global);
+        if (!opts.off && !opts.base)
+          throw new Error("--base <model> is required to turn continuous retraining on");
+        const p = await api.project.patch({
+          settings: {
+            retrain: {
+              enabled: !opts.off,
+              baseModel: opts.base ?? null,
+              minNewRows: Number(opts.minNewRows),
+              agent: opts.agent ?? null,
+              shadowOnPass: opts.shadow,
+            },
+          },
+        });
+        if (global.json) return printJson(p.settings.retrain);
+        const r = p.settings.retrain;
+        console.log(
+          r.enabled
+            ? `${pc.green("✓")} continuous retraining on: ${r.baseModel}, every ${r.minNewRows} new rows${r.agent ? ` for ${r.agent}` : ""}${r.shadowOnPass ? ", shadow on pass" : ""}`
+            : `${pc.green("✓")} continuous retraining off`,
+        );
+      },
+    );
+  models
     .command("serve <id> <provider/model>")
     .description(
       "Set where the trained weights answer from (when the provider needs a dedicated endpoint); re-runs the gate",

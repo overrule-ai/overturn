@@ -408,6 +408,7 @@ export const trainedModels = pgTable(
     servedAs: text("served_as"),
     /** Dedicated endpoint behind servedAs: { endpointId, deploymentId, adapterId?, config, model } */
     serving: jsonb("serving"),
+    trigger: text("trigger").notNull().default("manual"),
     trainingCostUsd: doublePrecision("training_cost_usd"),
     gateJobId: uuid("gate_job_id"),
     gate: jsonb("gate"),

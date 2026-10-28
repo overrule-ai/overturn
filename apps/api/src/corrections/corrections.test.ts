@@ -449,6 +449,7 @@ describe("project settings + implicit approval", () => {
       "cache-purge",
       "implicit-approve",
       "retention",
+      "retrain",
       "shadow",
       "train-poll",
     ]);

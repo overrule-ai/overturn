@@ -260,6 +260,11 @@ export default function ModelsPage() {
                 {m.status === "promoted" && " · ov.promotedModel() returns this"}
               </p>
             )}
+            {m.trigger === "auto" && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Trained automatically (continuous retraining).
+              </p>
+            )}
             {m.status === "deploying" && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Provisioning the dedicated endpoint; the gate runs when it is ready.

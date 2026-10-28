@@ -53,7 +53,14 @@ export class ProjectsController {
   ): Promise<Project> {
     const [p] = await this.db.select().from(projects).where(eq(projects.id, auth.projectId)).limit(1);
     if (!p) throw new NotFoundException();
-    const settings = projectSettingsSchema.parse({ ...parseSettings(p.settings), ...(body.settings ?? {}) });
+    const current = parseSettings(p.settings);
+    const incoming = body.settings ?? {};
+    // nested groups merge field by field so a partial PATCH never resets the rest of the group
+    const settings = projectSettingsSchema.parse({
+      ...current,
+      ...incoming,
+      retrain: { ...current.retrain, ...(incoming.retrain ?? {}) },
+    });
     const [updated] = await this.db
       .update(projects)
       .set({ name: body.name ?? p.name, settings })
