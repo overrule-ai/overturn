@@ -34,7 +34,7 @@ afterAll(async () => {
 async function recordRun(
   externalId: string,
   decision: Record<string, unknown>,
-  opts: { tools?: boolean; agent?: string } = {},
+  opts: { tools?: boolean; agent?: string; input?: Record<string, unknown> } = {},
 ) {
   const runId = uuidv7();
   const llmId = uuidv7();
@@ -63,7 +63,7 @@ async function recordRun(
         agent: opts.agent ?? "triage",
         externalId,
         status: "completed",
-        input: { id: externalId },
+        input: opts.input ?? { id: externalId },
         output: opts.tools ? { tool_calls: [{ name: "set_priority", args: decision }] } : decision,
         startedAt: t0,
         endedAt: t0,
@@ -92,7 +92,7 @@ async function recordRun(
         input: {
           messages: [
             { role: "system", content: "triage v1" },
-            { role: "user", content: JSON.stringify({ id: externalId }) },
+            { role: "user", content: JSON.stringify(opts.input ?? { id: externalId }) },
           ],
           ...(opts.tools
             ? {
@@ -662,6 +662,62 @@ describe("replay jobs (step mode)", () => {
     // nothing to train on without edits
     const none = await api<{ rows: number }>(ctx, "GET", "/v1/export/stats?format=dpo&agent=np-agent");
     expect(none.body.rows).toBe(0);
+  });
+
+  it("corrections in the prompt: nearest human-approved cases become examples, leave-one-out", async () => {
+    await api(ctx, "PATCH", "/v1/project", { settings: { embeddingModel: "fake/bag-of-words" } });
+    const mk = async (id: string, input: Record<string, unknown>, answer: Record<string, unknown>) => {
+      const r = await recordRun(id, answer, { agent: "ex-agent", input });
+      return {
+        run: r,
+        c: await correct(r.runId, "edit", { correctedOutput: answer, note: `rule for ${id}` }),
+      };
+    };
+    const a = await mk("X-1", { subject: "invoice refund billing duplicate charge" }, { priority: "P2" });
+    const b = await mk("X-2", { subject: "login outage cannot sign in all users" }, { priority: "P0" });
+    const d = await mk("X-3", { subject: "refund billing invoice wrong amount" }, { priority: "P2" });
+    await recordRun("X-4", { priority: "P3" }, { agent: "ex-agent", input: { subject: "feature request" } });
+    const r4 = await api<{ items: { id: string }[] }>(ctx, "GET", "/v1/runs?agent=ex-agent&limit=1");
+    await correct(r4.body.items[0]!.id, "reject", { note: "no" }); // rejects are never examples
+
+    const res = await api<{
+      examples: { caseId: string; note: string | null; answer: unknown }[];
+      promptBlock: string;
+      embeddingModel: string;
+    }>(
+      ctx,
+      "GET",
+      `/v1/examples?input=${encodeURIComponent("duplicate billing invoice refund")}&k=2&agent=ex-agent`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.embeddingModel).toBe("fake/bag-of-words");
+    expect(res.body.examples.map((e) => e.caseId).sort()).toEqual([a.c.id, d.c.id].sort());
+    expect(res.body.examples[0]!.answer).toEqual({ priority: "P2" });
+    expect(res.body.promptBlock).toContain("## Examples reviewed by a human");
+    expect(res.body.promptBlock).toContain("Reviewer's note: rule for X-");
+    expect(res.body.promptBlock).not.toContain("login outage");
+
+    // leave-one-out: asking for case A's own input never returns A
+    const loo = await api<{ examples: { caseId: string }[] }>(
+      ctx,
+      "GET",
+      `/v1/examples?input=${encodeURIComponent("invoice refund billing duplicate charge")}&k=3&agent=ex-agent&excludeCaseId=${a.c.id}`,
+    );
+    expect(loo.body.examples.map((e) => e.caseId)).not.toContain(a.c.id);
+    expect(loo.body.examples.map((e) => e.caseId)).toContain(d.c.id);
+    void b;
+
+    // a replay with examples carries the option and runs
+    const created = await api<{ job: ReplayJob }>(ctx, "POST", "/v1/replays", {
+      model: echoModel({ priority: "P2" }),
+      filter: { agent: "ex-agent" },
+      examples: 2,
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.job.options).toEqual({ examples: 2 });
+    const job = await waitForJob(created.body.job.id);
+    expect(job.status).toBe("completed");
+    expect(job.summary!.completed).toBe(4);
   });
 
   it("replays the same cases against several models as a group and builds the matrix", async () => {

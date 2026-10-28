@@ -65,6 +65,13 @@ class OverturnApi:
     def patch_case(self, case_id: str, body: dict[str, Any]) -> dict[str, Any]:
         return self.request("PATCH", f"/v1/cases/{case_id}", body=body)
 
+    def get_examples(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Corrections in the prompt: nearest human-approved cases for an input (see Overturn.examples)."""
+        return self.request("GET", "/v1/examples", params=params)
+
+    def export_stats(self, **params: Any) -> dict[str, Any]:
+        return self.request("GET", "/v1/export/stats", params=params)
+
     def list_corrections(self, **params: Any) -> list[dict[str, Any]]:
         return self.request("GET", "/v1/corrections", params=params)
 

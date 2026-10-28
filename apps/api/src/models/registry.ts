@@ -107,6 +107,22 @@ export class ModelRegistry {
     }
   }
 
+  /**
+   * The embedding model to use: the project's choice when its provider has a key, otherwise the
+   * first configured provider that embeds (OpenAI, Together, Google). Null = none; fake/ counts.
+   */
+  resolveEmbeddingModel(preferred: string): string | null {
+    const provider = preferred.split("/")[0] ?? "";
+    if (this.isConfigured(provider)) return preferred;
+    const defaults: Array<[string, string]> = [
+      ["openai", "openai/text-embedding-3-small"],
+      ["together", "together/BAAI/bge-base-en-v1.5"],
+      ["google", "google/text-embedding-004"],
+    ];
+    for (const [p, model] of defaults) if (this.isConfigured(p)) return model;
+    return null;
+  }
+
   /** Embedding model, or null for fake/ which uses a deterministic local embedding. */
   embeddingModel(id: string): EmbeddingModel<string> | null {
     const { provider, model } = parseModel(id);
@@ -117,6 +133,12 @@ export class ModelRegistry {
         return createGoogleGenerativeAI({
           apiKey: this.required("google", this.config.GOOGLE_GENERATIVE_AI_API_KEY),
         }).textEmbedding(model);
+      case "together":
+        return createOpenAICompatible({
+          name: "together",
+          baseURL: this.config.TOGETHER_BASE_URL,
+          apiKey: this.required("together", this.config.TOGETHER_API_KEY),
+        }).textEmbeddingModel(model);
       case "fake":
         return null;
       default:

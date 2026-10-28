@@ -16,7 +16,23 @@ import {
 } from "drizzle-orm/pg-core";
 
 // pgvector column (dimension fixed per embedding model; 1536 fits text-embedding-3-small)
-export const vector = customType<{ data: number[]; driverData: string }>({
+export /** pgvector column of any dimension (no index; scanned). Embedding models differ in size. */
+const anyVector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector";
+  },
+  toDriver(value: number[]): string {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value: string): number[] {
+    return value
+      .slice(1, -1)
+      .split(",")
+      .map((v) => Number.parseFloat(v));
+  },
+});
+
+const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
     return "vector(1536)";
   },
@@ -254,6 +270,9 @@ export const cases = pgTable(
     recordedModel: text("recorded_model"),
     lastVerdict: verdict("last_verdict"),
     expectedEmbedding: vector("expected_embedding"),
+    /** The case's input (last user turn) as text, and its embedding, for example retrieval. Any dimension. */
+    inputText: text("input_text"),
+    inputEmbedding: anyVector("input_embedding"),
     ...timestamps,
   },
   (t) => [
@@ -289,6 +308,8 @@ export const replayJobs = pgTable(
     groupId: uuid("group_id"),
     mode: replayMode("mode").notNull().default("step"),
     caseFilter: jsonb("case_filter").notNull().default(sql`'{}'::jsonb`),
+    /** Replay options beyond model/prompt: { examples: k } puts k nearest corrections in the prompt. */
+    options: jsonb("options").notNull().default(sql`'{}'::jsonb`),
     status: replayStatus("status").notNull().default("pending"),
     summary: jsonb("summary"),
     estimatedCostUsd: doublePrecision("estimated_cost_usd"),

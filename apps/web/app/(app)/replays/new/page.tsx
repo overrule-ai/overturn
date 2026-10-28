@@ -31,6 +31,7 @@ const CHALLENGERS = [
 export default function NewReplayPage() {
   const router = useRouter();
   const [model, setModel] = useState("openai/gpt-4.1-mini");
+  const [examples, setExamples] = useState(0);
   const [mode, setMode] = useState<"step" | "trajectory">("step");
   const [agent, setAgent] = useState("");
   const [tag, setTag] = useState("");
@@ -88,6 +89,7 @@ export default function NewReplayPage() {
         promptVersion: prompt || null,
         maxCostUsd: maxCost ? Number(maxCost) : null,
         start: mode === "step",
+        examples: mode === "step" ? examples : 0,
       }),
     onSuccess: ({ job, jobs }) =>
       router.push(jobs.length > 1 && job.groupId ? `/replays/groups/${job.groupId}` : `/replays/${job.id}`),
@@ -126,6 +128,26 @@ export default function NewReplayPage() {
             >
               + Challenge with open-weight models (Llama 3.3 70B, Qwen 2.5 72B, Llama 3.1 8B on Together)
             </button>
+          </div>
+          <div className="space-y-1">
+            <Label>Corrections in the prompt</Label>
+            <NativeSelect
+              className="w-full"
+              value={String(examples)}
+              onChange={(e) => setExamples(Number(e.target.value))}
+              disabled={mode !== "step"}
+              data-testid="examples"
+            >
+              <option value="0">none — the prompt as recorded</option>
+              <option value="3">3 nearest human-approved cases as examples</option>
+              <option value="5">5 nearest human-approved cases as examples</option>
+              <option value="10">10 nearest human-approved cases as examples</option>
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              Each case is replayed with the most similar corrections appended to its system prompt (never
+              itself). Compare against a plain run to see what your corrections are worth on the model you
+              already pay for.
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
@@ -216,7 +238,12 @@ export default function NewReplayPage() {
               {estimate.data.priced ? money(estimate.data.estimatedCostUsd) : "cost unknown for this model"} (
               {estimate.data.estimatedInputTokens.toLocaleString()} in /{" "}
               {estimate.data.estimatedOutputTokens.toLocaleString()} out tokens)
-              {models.length > 1 ? ` · ×${models.length} models` : ""}
+              {models.length > 1 && estimate.data.priced && estimate.data.estimatedCostUsd != null
+                ? ` · ×${models.length} models ≈ ${money(estimate.data.estimatedCostUsd * models.length)} total (first model's price; the cap applies per model)`
+                : models.length > 1
+                  ? ` · ×${models.length} models`
+                  : ""}
+              {examples > 0 ? ` · +${examples} examples per case adds prompt tokens` : ""}
             </>
           ) : estimate.error ? (
             <span className="text-destructive">{estimate.error.message}</span>

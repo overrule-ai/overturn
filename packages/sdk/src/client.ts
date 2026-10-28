@@ -1,4 +1,11 @@
-import type { Contract, CorrectionKind, CorrectionResult, RunUpsert, StepUpsert } from "@overturn-ai/shared";
+import type {
+  Contract,
+  CorrectionKind,
+  CorrectionResult,
+  ExamplesResponse,
+  RunUpsert,
+  StepUpsert,
+} from "@overturn-ai/shared";
 import { aiMiddleware } from "./ai-sdk.js";
 import { type AnthropicLike, wrapAnthropic } from "./anthropic.js";
 import { OverturnApi } from "./api.js";
@@ -129,6 +136,20 @@ export class Overturn implements RunSink {
     contract?: Contract;
   }): Promise<CorrectionResult> {
     return this.api.corrections.create({ ...input, source: "sdk" });
+  }
+
+  /**
+   * Corrections in the prompt. Returns the k human-approved cases nearest to `input` and a
+   * `promptBlock` to append to your system prompt, so the model you already run learns from
+   * every correction without a retrain. Call it per request; it is one embedding plus a lookup.
+   *
+   * ```ts
+   * const { promptBlock } = await ov.examples({ input: ticket.body, k: 5, agent: "ticket-triage" });
+   * const system = SYSTEM_PROMPT + promptBlock;
+   * ```
+   */
+  examples(q: { input: string; k?: number; agent?: string; tag?: string }): Promise<ExamplesResponse> {
+    return this.api.examples.get(q);
   }
 
   /**

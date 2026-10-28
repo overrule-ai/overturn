@@ -43,9 +43,17 @@ import {
   replayResults,
   responseCache,
 } from "../db/schema";
+import { ExamplesService, inputTextOf } from "../examples/examples.service";
 import { fakeEmbedding, ModelRegistry, PROVIDER_CONCURRENCY, parseModel } from "../models/registry";
 import { parseSettings } from "../projects/settings";
-import { callModel } from "./model-call";
+import { buildMessages, callModel } from "./model-call";
+
+/** The system prompt as recorded in a frozen input, if any. */
+function systemPromptOf(frozen: FrozenInput): string | null {
+  const m = buildMessages(frozen).find((x) => x.role === "system");
+  return m ? String(m.content) : null;
+}
+
 import { PromptsService } from "./prompts.service";
 
 const CACHE_TTL_MS = 24 * 3_600_000;
@@ -57,6 +65,7 @@ export function serializeJob(j: ReplayJobRow): ReplayJob {
     projectId: j.projectId,
     targetModel: j.targetModel,
     targetPromptVersion: j.targetPromptVersion,
+    options: { examples: Number((j.options as { examples?: number } | null)?.examples ?? 0) },
     groupId: j.groupId ?? null,
     mode: j.mode,
     caseFilter: j.caseFilter,
@@ -160,8 +169,22 @@ export class ReplayService {
     @Inject(APP_CONFIG) config: AppConfig,
     private readonly casesService: CasesService,
     private readonly prompts: PromptsService,
+    private readonly examples: ExamplesService,
   ) {
     this.registry = new ModelRegistry(config);
+  }
+
+  /** The embedder examples need, or a clear error naming the keys that would provide one. */
+  examplesContext(
+    settings: { embeddingModel: string },
+    ctx: ScorerContext,
+  ): { embed: NonNullable<ScorerContext["embed"]>; model: string } {
+    const model = this.registry.resolveEmbeddingModel(settings.embeddingModel);
+    if (!model || !ctx.embed)
+      throw new BadRequestException(
+        "Examples need an embedding provider: set OPENAI_API_KEY, TOGETHER_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY on the server",
+      );
+    return { embed: ctx.embed, model };
   }
 
   // ---------- estimate ----------
@@ -235,6 +258,7 @@ export class ReplayService {
           estimatedCostUsd: est.estimatedCostUsd,
           maxCostUsd: input.maxCostUsd ?? null,
           caseCount: list.length,
+          options: { examples: input.examples ?? 0 },
         })
         .returning();
       jobs.push(serializeJob(row!));
@@ -390,7 +414,8 @@ export class ReplayService {
     if (judgeModelId !== settings.judgeModel) {
       this.logger.warn(`judge ${settings.judgeModel} has no key; using ${judgeModelId}`);
     }
-    const embeddingModelId = settings.embeddingModel;
+    const embeddingModelId =
+      this.registry.resolveEmbeddingModel(settings.embeddingModel) ?? settings.embeddingModel;
     const judgeProvider = parseModel(judgeModelId).provider;
     const embedProvider = parseModel(embeddingModelId).provider;
     const ctx: ScorerContext = {};
@@ -552,6 +577,8 @@ export class ReplayService {
     const systemPrompt = job.targetPromptVersion
       ? (await this.prompts.resolve(projectId, job.targetPromptVersion)).template
       : null;
+    // corrections in the prompt: k nearest human-approved cases per case, leave-one-out
+    const examplesK = Number((job.options as { examples?: number } | null)?.examples ?? 0);
     const baseline = await this.baselineJob(projectId, list[0]?.recordedModel ?? null, jobId);
     const baselineResults = baseline
       ? await this.resultsByCase(baseline.id)
@@ -577,13 +604,25 @@ export class ReplayService {
       let error: string | null = null;
       let costUsd = 0;
       try {
-        const cacheInput = { frozen: c.frozenInput, systemPrompt };
+        let prompt = systemPrompt;
+        if (examplesK > 0) {
+          const ex = await this.examples.forInput(
+            projectId,
+            { input: inputTextOf(c) || c.title, k: examplesK, excludeCaseId: c.id },
+            this.examplesContext(settings, ctx),
+          );
+          const base = systemPrompt ?? systemPromptOf(c.frozenInput) ?? "";
+          prompt = `${base}\n${ex.promptBlock}`;
+        }
+        const cacheInput = { frozen: c.frozenInput, systemPrompt: prompt };
         const hit = await this.cached(job.targetModel, cacheInput);
         if (hit) {
           output = hit.output;
           costUsd = 0;
         } else {
-          const res = await this.withRetry(provider, () => callModel(model, c.frozenInput, { systemPrompt }));
+          const res = await this.withRetry(provider, () =>
+            callModel(model, c.frozenInput, { systemPrompt: prompt }),
+          );
           output = res.answer;
           costUsd = estimateCostUsd(job.targetModel, res.usage) ?? 0;
           await this.cache(job.targetModel, cacheInput, res.answer, costUsd, res.usage);
@@ -1019,11 +1058,13 @@ export function scorecardFor(jobs: ReplayJob[], recordedModel: string | null): S
     a.toLowerCase() === b.toLowerCase() ||
     a.toLowerCase().endsWith(`/${b.toLowerCase()}`) ||
     b.toLowerCase().endsWith(`/${a.toLowerCase()}`);
-  const incumbentIdx = recordedModel ? jobs.findIndex((j) => same(j.targetModel, recordedModel)) : -1;
+  const incumbentIdx = recordedModel
+    ? jobs.findIndex((j) => same(j.targetModel, recordedModel) && !(j.options?.examples > 0))
+    : -1;
   const inc = jobs[incumbentIdx >= 0 ? incumbentIdx : 0];
   const rowOf = (j: ReplayJob): ScorecardRow => ({
     jobId: j.id,
-    model: j.targetModel,
+    model: j.options?.examples > 0 ? `${j.targetModel} +${j.options.examples} examples` : j.targetModel,
     incumbent: j === inc,
     status: j.status,
     passRate: j.summary?.passRate ?? null,

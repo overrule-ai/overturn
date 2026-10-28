@@ -220,6 +220,37 @@ export const projectSettingsSchema = z.object({
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
+// ---------- examples (corrections in the prompt) ----------
+
+export const examplesQuerySchema = z.object({
+  /** The input to find examples for: the user's message, the ticket, the document. */
+  input: z.string().min(1).max(20_000),
+  k: z.coerce.number().int().min(1).max(20).default(5),
+  agent: z.string().optional(),
+  tag: z.string().optional(),
+  /** Leave-one-out: never return this case or anything from its run. */
+  excludeCaseId: uuidSchema.optional(),
+});
+export type ExamplesQuery = z.infer<typeof examplesQuerySchema>;
+
+export const exampleSchema = z.object({
+  caseId: uuidSchema,
+  kind: correctionKindSchema,
+  input: z.string(),
+  answer: jsonValueSchema,
+  note: z.string().nullable(),
+  similarity: z.number(),
+});
+export type Example = z.infer<typeof exampleSchema>;
+
+export const examplesResponseSchema = z.object({
+  examples: z.array(exampleSchema),
+  /** Ready to append to a system prompt. */
+  promptBlock: z.string(),
+  embeddingModel: z.string(),
+});
+export type ExamplesResponse = z.infer<typeof examplesResponseSchema>;
+
 // ---------- export (fine-tuning datasets) ----------
 
 export const exportFormatSchema = z.enum(["sft", "dpo"]);
@@ -493,6 +524,11 @@ export const replayCreateSchema = z.object({
   maxCostUsd: z.number().positive().nullish(),
   /** Start the job immediately (default) or just create it (trajectory mode posts results itself). */
   start: z.boolean().default(true),
+  /**
+   * Corrections in the prompt: put the k nearest human-approved cases (by input similarity,
+   * never the case itself or its run) into the system prompt as examples. Step mode only.
+   */
+  examples: z.number().int().min(0).max(20).default(0),
 });
 export type ReplayCreate = z.infer<typeof replayCreateSchema>;
 
@@ -525,11 +561,17 @@ export const replaySummarySchema = z.object({
 });
 export type ReplaySummary = z.infer<typeof replaySummarySchema>;
 
+export const replayOptionsSchema = z.object({
+  examples: z.number().int().min(0).max(20).default(0),
+});
+export type ReplayOptions = z.infer<typeof replayOptionsSchema>;
+
 export const replayJobSchema = z.object({
   id: uuidSchema,
   projectId: uuidSchema,
   targetModel: z.string(),
   targetPromptVersion: z.string().nullable(),
+  options: replayOptionsSchema.default({ examples: 0 }),
   /** Set when several models were replayed together; GET /v1/replays/groups/{groupId} is the matrix. */
   groupId: uuidSchema.nullable(),
   mode: replayModeSchema,

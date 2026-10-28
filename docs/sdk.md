@@ -109,6 +109,22 @@ Python: `ov.handle_correction(body, actor=user.email)` in a FastAPI/Flask route 
 
 **Replay readiness.** The run page says what the recording can prove: *replay-ready* (every tool call recorded or a refused side effect), *partially replayable* (some tool calls have no recorded output: trajectory replay stops at the first one; step replay still works) or *not replayable* (no model step with its prompt). OpenTelemetry traces that only carry tool names and arguments land in the second bucket; add the tool result on the span (`gen_ai.tool.call.result`, `output.value` or `traceloop.entity.output`) to make them full recordings.
 
+## Corrections in the prompt
+
+The first way to use corrections, before any training: put the nearest ones in the prompt of the model you already run.
+
+```ts
+const { examples, promptBlock } = await ov.examples({ input: ticket.body, k: 5, agent: "ticket-triage" });
+const system = SYSTEM_PROMPT + promptBlock;   // "## Examples reviewed by a human …"
+```
+
+```python
+ex = ov.examples(input=ticket["body"], k=5, agent="ticket-triage")
+system = SYSTEM_PROMPT + ex["promptBlock"]
+```
+
+`GET /v1/examples?input=&k=&agent=&tag=` embeds the input (the project's embedding model, or the first configured provider that embeds: OpenAI, Together, Google) and returns the k nearest human-approved cases — approve and edit cases, never rejects — each with the input, the answer the human stood behind, the reviewer's note and a similarity score. Measure what it is worth before wiring it in: `overturn replay --model <yours> --examples 5` replays the suite with each case's nearest *other* corrections in its prompt (leave-one-out, so a case never sees itself), and the scorecard shows the lift next to the plain run.
+
 ## Replay mode
 
 ```ts
@@ -147,7 +163,7 @@ Return `null` to drop a step entirely. Applied before the step leaves the proces
 overturn init                                  # writes .env + overturn.config.ts, verifies the key
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
 overturn cases list [--agent --kind --tag --set --status --since]    | cases get <id> | cases archive <id>
-overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--allow-new-paths] [--format table|json|md] [--output file]
+overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--examples 5] [--fail-on-regression 0] [--allow-new-paths] [--format table|json|md] [--output file]
 overturn export --format sft|dpo [--agent --tag --set --since --no-approved] [--output file.jsonl] [--stats]
 overturn report <jobId> [--format md]
 overturn replays list

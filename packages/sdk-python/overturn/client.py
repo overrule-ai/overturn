@@ -177,6 +177,23 @@ class Overturn:
             body["actor"] = actor
         return self.api.create_correction(body)
 
+    def examples(
+        self, *, input: str, k: int = 5, agent: str | None = None, tag: str | None = None
+    ) -> dict[str, Any]:
+        """Corrections in the prompt: the k human-approved cases nearest to `input` and a
+        `promptBlock` to append to the system prompt, so the model you already run learns from
+        every correction without a retrain. One embedding plus a lookup per call.
+
+            ex = ov.examples(input=ticket["body"], k=5, agent="ticket-triage")
+            system = SYSTEM_PROMPT + ex["promptBlock"]
+        """
+        params: dict[str, Any] = {"input": input, "k": k}
+        if agent is not None:
+            params["agent"] = agent
+        if tag is not None:
+            params["tag"] = tag
+        return self.api.get_examples(params)
+
     def handle_correction(self, payload: Any, *, actor: str | None = None) -> dict[str, Any]:
         """Turn what <CorrectButton> (from @overturn-ai/sdk/react) posts into a correction, from
         your own route: validates the body, uses the actor from YOUR session, calls correct().

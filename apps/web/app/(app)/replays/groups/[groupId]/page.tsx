@@ -61,6 +61,11 @@ export default function ReplayMatrixPage() {
                     <Link className="underline-offset-2 hover:underline" href={`/replays/${r.jobId}`}>
                       {r.model}
                     </Link>
+                    {(m.jobs.find((j) => j.id === r.jobId)?.options.examples ?? 0) > 0 && (
+                      <span className="ml-2 text-muted-foreground">
+                        +{m.jobs.find((j) => j.id === r.jobId)?.options.examples} examples
+                      </span>
+                    )}
                     {r.incumbent && <span className="ml-2 text-muted-foreground">incumbent</span>}
                   </TD>
                   <TD className="font-mono tabular-nums">

@@ -9,6 +9,8 @@ import type {
   Correction,
   CorrectionCreate,
   CorrectionResult,
+  ExamplesQuery,
+  ExamplesResponse,
   ExportQuery,
   ExportStats,
   MeResponse,
@@ -133,6 +135,12 @@ export class OverturnApi {
     postResults: (id: string, body: ReplayResultsPost): Promise<ReplayJob> =>
       this.request("POST", `/v1/replays/${id}/results`, body),
     report: (id: string): Promise<ReplayReport> => this.request("GET", `/v1/replays/${id}/report`),
+  };
+
+  /** Corrections in the prompt: the nearest human-approved cases for an input, as a prompt block. */
+  readonly examples = {
+    get: (q: Partial<ExamplesQuery> & { input: string }): Promise<ExamplesResponse> =>
+      this.request("GET", "/v1/examples", undefined, q),
   };
 
   /** Corrections as fine-tuning datasets (JSONL text) and what they would contain. */

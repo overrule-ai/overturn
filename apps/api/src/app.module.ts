@@ -7,6 +7,8 @@ import { APP_CONFIG, type AppConfig, loadConfig } from "./config";
 import { CorrectionsController } from "./corrections/corrections.controller";
 import { CorrectionsService } from "./corrections/corrections.service";
 import { DbModule } from "./db/db.module";
+import { ExamplesController } from "./examples/examples.controller";
+import { ExamplesService } from "./examples/examples.service";
 import { ExportController } from "./export/export.controller";
 import { ExportService } from "./export/export.service";
 import { HealthController } from "./health/health.controller";
@@ -41,6 +43,7 @@ export class AppModule {
         CasesController,
         ReplayController,
         ExportController,
+        ExamplesController,
       ],
       providers: [
         { provide: APP_CONFIG, useValue: config },
@@ -52,6 +55,7 @@ export class AppModule {
         PromptsService,
         ReplayService,
         ExportService,
+        ExamplesService,
         JobsService,
       ],
       exports: [APP_CONFIG],

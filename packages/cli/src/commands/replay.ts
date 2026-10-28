@@ -32,6 +32,7 @@ export interface ReplayOptions {
   maxCost?: string;
   failOnRegression?: string;
   allowNewPaths?: boolean;
+  examples?: string;
   format: "table" | "json" | "md";
   output?: string;
   wait: boolean;
@@ -146,6 +147,10 @@ export function registerReplay(program: Command): void {
     .option("--prompt <name@version>", "Replace the system prompt with a registered prompt version")
     .option("--config <file>", "overturn.config.ts to use in trajectory mode")
     .option("--max-cost <usd>", "Stop the job cleanly past this spend")
+    .option(
+      "--examples <k>",
+      "Corrections in the prompt: k nearest human-approved cases per case (step mode)",
+    )
     .option("--fail-on-regression <n>", "Exit 1 when regressions exceed n (default 0 when set)")
     .option(
       "--allow-new-paths",
@@ -208,6 +213,7 @@ export function registerReplay(program: Command): void {
         filter,
         maxCostUsd,
         promptVersion: opts.prompt ?? null,
+        ...(opts.examples ? { examples: Number(opts.examples) } : {}),
       });
       if (created.jobs.length > 1) {
         if (!opts.wait) {
