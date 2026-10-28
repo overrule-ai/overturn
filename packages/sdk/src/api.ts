@@ -9,6 +9,8 @@ import type {
   Correction,
   CorrectionCreate,
   CorrectionResult,
+  ExportQuery,
+  ExportStats,
   MeResponse,
   Page,
   Project,
@@ -131,6 +133,30 @@ export class OverturnApi {
     postResults: (id: string, body: ReplayResultsPost): Promise<ReplayJob> =>
       this.request("POST", `/v1/replays/${id}/results`, body),
     report: (id: string): Promise<ReplayReport> => this.request("GET", `/v1/replays/${id}/report`),
+  };
+
+  /** Corrections as fine-tuning datasets (JSONL text) and what they would contain. */
+  readonly export = {
+    stats: (q: Partial<ExportQuery> = {}): Promise<ExportStats> =>
+      this.request("GET", "/v1/export/stats", undefined, q),
+    /** The dataset as JSONL text; one chat-format row per line. */
+    jsonl: async (q: Partial<ExportQuery> = {}): Promise<{ text: string; rows: number }> => {
+      const f = this.options.fetch ?? globalThis.fetch;
+      const res = await f(`${this.options.baseUrl.replace(/\/+$/, "")}/v1/export${qs(q)}`, {
+        headers: {
+          authorization: `Bearer ${this.options.apiKey}`,
+          "user-agent": this.options.userAgent ?? `overturn-sdk-js/${VERSION}`,
+        },
+      });
+      const text = await res.text();
+      if (!res.ok)
+        throw new OverturnApiError(
+          res.status,
+          null,
+          `GET /v1/export failed: ${res.status} ${text.slice(0, 200)}`,
+        );
+      return { text, rows: Number(res.headers.get("x-overturn-rows") ?? 0) };
+    },
   };
 
   readonly prompts = {

@@ -602,6 +602,68 @@ describe("replay jobs (step mode)", () => {
     expect(est2.body.cases).toBe(1);
   });
 
+  it("exports corrections as SFT and DPO fine-tuning datasets", async () => {
+    const a = await recordRun("EX-1", { priority: "P1" }, { agent: "export-agent" });
+    await correct(a.runId, "approve");
+    const b = await recordRun("EX-2", { priority: "P3" }, { agent: "export-agent" });
+    await correct(b.runId, "edit", { correctedOutput: { priority: "P0" }, note: "outage" });
+    const c = await recordRun("EX-3", { priority: "P2" }, { agent: "export-agent" });
+    await correct(c.runId, "reject", { note: "wrong team" });
+    const d = await recordRun(
+      "EX-4",
+      { ticketId: "T", priority: "P1" },
+      { agent: "export-agent", tools: true },
+    );
+    await correct(d.runId, "approve");
+
+    const stats = await api<{ rows: number; byKind: Record<string, number>; skipped: number }>(
+      ctx,
+      "GET",
+      "/v1/export/stats?format=sft&agent=export-agent",
+    );
+    expect(stats.body.rows).toBe(3);
+    expect(stats.body.byKind).toEqual({ approve: 2, edit: 1 });
+    expect(stats.body.skipped).toBe(1);
+
+    const res = await fetch(`${ctx.baseUrl}/v1/export?format=sft&agent=export-agent`, {
+      headers: { authorization: `Bearer ${ctx.apiKey}` },
+    });
+    expect(res.headers.get("x-overturn-rows")).toBe("3");
+    const rows = (await res.text())
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+    expect(rows).toHaveLength(3);
+    for (const r of rows) {
+      expect(r.messages[0].role).toBe("system");
+      expect(r.messages[r.messages.length - 1].role).toBe("assistant");
+    }
+    const edited = rows.find((r) => r.meta.kind === "edit")!;
+    expect(edited.messages.at(-1)).toEqual({
+      role: "assistant",
+      content: JSON.stringify({ priority: "P0" }),
+    });
+    const tooly = rows.find((r) => r.tools)!;
+    const last = tooly.messages.at(-1);
+    expect(last.tool_calls[0].function.name).toBe("set_priority");
+    expect(JSON.parse(last.tool_calls[0].function.arguments)).toEqual({ ticketId: "T", priority: "P1" });
+
+    const dpo = await fetch(`${ctx.baseUrl}/v1/export?format=dpo&agent=export-agent`, {
+      headers: { authorization: `Bearer ${ctx.apiKey}` },
+    });
+    expect(dpo.headers.get("x-overturn-rows")).toBe("1");
+    const [pair] = (await dpo.text())
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+    expect(pair.chosen).toEqual({ role: "assistant", content: JSON.stringify({ priority: "P0" }) });
+    expect(pair.rejected).toEqual({ role: "assistant", content: JSON.stringify({ priority: "P3" }) });
+    expect(pair.messages.at(-1).role).toBe("user");
+    // nothing to train on without edits
+    const none = await api<{ rows: number }>(ctx, "GET", "/v1/export/stats?format=dpo&agent=np-agent");
+    expect(none.body.rows).toBe(0);
+  });
+
   it("replays the same cases against several models as a group and builds the matrix", async () => {
     const good = echoModel({ priority: "P1" });
     const bad = echoModel({ priority: "P3" });

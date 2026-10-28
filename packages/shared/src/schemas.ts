@@ -220,6 +220,34 @@ export const projectSettingsSchema = z.object({
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
+// ---------- export (fine-tuning datasets) ----------
+
+export const exportFormatSchema = z.enum(["sft", "dpo"]);
+export type ExportFormat = z.infer<typeof exportFormatSchema>;
+
+export const exportQuerySchema = z.object({
+  format: exportFormatSchema.default("sft"),
+  agent: z.string().optional(),
+  tag: z.string().optional(),
+  set: z.string().optional(),
+  since: z.string().optional(),
+  /** Include approved cases as positive examples (sft only). */
+  includeApproved: z.coerce.boolean().default(true),
+  limit: z.coerce.number().int().min(1).max(50_000).default(50_000),
+});
+export type ExportQuery = z.infer<typeof exportQuerySchema>;
+
+/** What an export would contain, before downloading it. */
+export const exportStatsSchema = z.object({
+  format: exportFormatSchema,
+  rows: z.number().int(),
+  skipped: z.number().int(),
+  byKind: z.record(z.string(), z.number().int()),
+  /** Rough token count of the dataset (chars / 4). */
+  approxTokens: z.number().int(),
+});
+export type ExportStats = z.infer<typeof exportStatsSchema>;
+
 // ---------- outcome contract ----------
 
 /**

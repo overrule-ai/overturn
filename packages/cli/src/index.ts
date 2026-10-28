@@ -2,6 +2,7 @@ import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { registerCases } from "./commands/cases.js";
+import { registerExport } from "./commands/export.js";
 import { registerInit } from "./commands/init.js";
 import { registerReplay } from "./commands/replay.js";
 import { registerRuns } from "./commands/runs.js";
@@ -22,6 +23,7 @@ export function buildProgram(): Command {
   registerRuns(program);
   registerCases(program);
   registerReplay(program);
+  registerExport(program);
   return program;
 }
 
