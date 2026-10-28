@@ -100,6 +100,7 @@ A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. 
 - [x] suppress from any report row; counts on the cases list; one-click restore
 - [x] `gate` on every report; CLI, Action and web read it
 - [ ] auto-suggest case title and tags from the run
+- [x] suite hygiene: duplicate corrections merge into one case (×N), `cases dedupe` for older ones
 - [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
 - [ ] replay audit log, latency column, "what changed" narrative for the PR
 
