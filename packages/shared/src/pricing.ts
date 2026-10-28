@@ -21,7 +21,12 @@ const PRICES: Record<string, [number, number]> = {
   "gemini-2.5-pro": [1.25, 10],
   "gemini-2.5-flash": [0.3, 2.5],
   "gemini-2.5-flash-lite": [0.1, 0.4],
-  // Together AI serverless list prices (open-weight challengers)
+  // Together AI serverless list prices (open-weight challengers), Oct 2026
+  "deepseek-ai/DeepSeek-V4.1-Flash": [0.3, 1.2],
+  "deepseek-ai/DeepSeek-V4.1-Flash-1017": [0.3, 1.2],
+  "zai-org/GLM-5.3": [1.4, 4.4],
+  "moonshotai/Kimi-K3": [3, 15],
+  // older Together ids (dedicated endpoints / other OpenAI-compatible hosts)
   "meta-llama/Llama-3.3-70B-Instruct-Turbo": [0.88, 0.88],
   "meta-llama/Llama-3.1-70B-Instruct-Turbo": [0.88, 0.88],
   "meta-llama/Llama-3.1-8B-Instruct-Turbo": [0.18, 0.18],

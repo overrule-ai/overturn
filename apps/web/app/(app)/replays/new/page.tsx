@@ -15,17 +15,17 @@ const SUGGESTED = [
   "anthropic/claude-haiku-4-5",
   "anthropic/claude-sonnet-4-5",
   "google/gemini-2.5-flash",
-  "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
-  "together/Qwen/Qwen2.5-72B-Instruct-Turbo",
-  "together/meta-llama/Llama-3.1-8B-Instruct-Turbo",
+  "together/deepseek-ai/DeepSeek-V4.1-Flash",
+  "together/zai-org/GLM-5.3",
+  "together/moonshotai/Kimi-K3",
   "fake/fake-triage-weak",
 ];
 
 /** Open-weight challengers: replayed next to the incumbent, the scorecard shows who matches it for less. */
 const CHALLENGERS = [
-  "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
-  "together/Qwen/Qwen2.5-72B-Instruct-Turbo",
-  "together/meta-llama/Llama-3.1-8B-Instruct-Turbo",
+  "together/deepseek-ai/DeepSeek-V4.1-Flash",
+  "together/zai-org/GLM-5.3",
+  "together/moonshotai/Kimi-K3",
 ];
 
 export default function NewReplayPage() {
@@ -126,7 +126,7 @@ export default function NewReplayPage() {
               }}
               data-testid="add-challengers"
             >
-              + Challenge with open-weight models (Llama 3.3 70B, Qwen 2.5 72B, Llama 3.1 8B on Together)
+              + Challenge with open-weight models (DeepSeek V4.1 Flash, GLM 5.3, Kimi K3 on Together)
             </button>
           </div>
           <div className="space-y-1">
