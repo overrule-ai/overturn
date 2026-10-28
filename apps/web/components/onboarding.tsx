@@ -143,7 +143,7 @@ export function Onboarding() {
             No agent handy?{" "}
             <a
               className="underline"
-              href="https://overturn.run/docs/quickstart/"
+              href="https://docs.overturn.run/docs/quickstart/"
               target="_blank"
               rel="noreferrer"
             >

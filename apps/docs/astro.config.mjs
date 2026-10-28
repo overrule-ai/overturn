@@ -2,7 +2,7 @@ import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://overturn.run",
+  site: "https://docs.overturn.run",
   base: "/docs",
   outDir: "./dist/docs",
   integrations: [

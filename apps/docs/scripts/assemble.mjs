@@ -24,8 +24,8 @@ const body = html.match(/<body>([\s\S]*)<\/body>/)[1];
 const scripts = pick(/<script>([\s\S]*?)<\/script>/g).join("\n");
 const markup = body
   .replace(/<script>[\s\S]*?<\/script>/g, "")
-  // absolute URLs so the module works from any origin
-  .replace(/(src|href|poster)="\/(?!\/)/g, '$1="__BASE__/');
+  // absolute URLs so the module works from any origin; the bare "/" (the brand link) stays the host's root
+  .replace(/(src|href|poster)="\/(?![/"])/g, '$1="__BASE__/');
 const fonts = html.match(/<link href="(https:\/\/fonts\.googleapis\.com[^"]+)"/)[1];
 
 const mod = `// Generated from site/index.html by scripts/assemble.mjs — do not edit.
