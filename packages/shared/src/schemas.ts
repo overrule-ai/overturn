@@ -407,6 +407,9 @@ export const caseSchema = z.object({
   contract: contractSchema,
   recordedModel: z.string().nullable(),
   lastVerdict: verdictSchema.nullable(),
+  /** Times the same input was corrected to the same answer again; those corrections merged here. */
+  duplicates: z.number().int(),
+  lastSeenAt: isoDateSchema.nullable(),
   note: z.string().nullable(),
   actor: z.string().nullable(),
   createdAt: isoDateSchema,
@@ -485,7 +488,17 @@ export type CaseSet = z.infer<typeof caseSetSchema>;
 export const correctionResultSchema = z.object({
   correction: correctionSchema,
   case: caseSchema.nullable(),
+  /** True when an identical case already existed: it was reused, and its duplicate count bumped. */
+  deduplicated: z.boolean().default(false),
 });
+
+export const caseDedupeResultSchema = z.object({
+  /** Cases removed because an older active case had the same input, kind and answer. */
+  merged: z.number().int(),
+  /** Cases that absorbed at least one duplicate. */
+  kept: z.number().int(),
+});
+export type CaseDedupeResult = z.infer<typeof caseDedupeResultSchema>;
 export type CorrectionResult = z.infer<typeof correctionResultSchema>;
 
 // ---------- project ----------

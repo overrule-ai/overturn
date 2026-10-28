@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import {
   type Case,
   type CaseCounts,
+  type CaseDedupeResult,
   type CaseEquivalent,
   type CaseFilter,
   type CaseListQuery,
@@ -9,6 +10,7 @@ import {
   type CaseSet,
   type CaseSetCreate,
   type CaseSummary,
+  caseInputHash,
   fingerprint as fingerprintOf,
   type Page,
   type ToolRecordingEntry,
@@ -44,6 +46,8 @@ export function serializeCase(r: CaseJoined): Case {
     contract: (r.contract ?? []) as Case["contract"],
     recordedModel: r.recordedModel,
     lastVerdict: r.lastVerdict,
+    duplicates: r.duplicates,
+    lastSeenAt: r.lastSeenAt?.toISOString() ?? null,
     note: r.note,
     actor: r.actor,
     createdAt: r.createdAt.toISOString(),
@@ -181,6 +185,97 @@ export class CasesService {
   }
 
   /** How many cases are in the suite, suppressed from it, or archived — so a shrinking suite is visible. */
+  /** Backfills input_hash for cases created before duplicate detection existed. Idempotent. */
+  async ensureHashed(projectId: string, db: Db = this.db): Promise<void> {
+    const rows = await db
+      .select({ id: cases.id, agent: cases.agent, frozenInput: cases.frozenInput })
+      .from(cases)
+      .where(and(eq(cases.projectId, projectId), sql`${cases.inputHash} is null`))
+      .limit(5000);
+    for (const r of rows)
+      await db
+        .update(cases)
+        .set({ inputHash: caseInputHash(r.agent, r.frozenInput as Record<string, unknown>) })
+        .where(eq(cases.id, r.id));
+  }
+
+  /**
+   * The active case this input, kind and answer already have, if any. A correction that matches
+   * is the same test made again, and is merged into it rather than added beside it.
+   */
+  async findDuplicate(
+    projectId: string,
+    key: { agent: string; frozenInput: Record<string, unknown>; kind: Case["kind"]; expected: unknown },
+    db: Db = this.db,
+  ): Promise<CaseRow | null> {
+    await this.ensureHashed(projectId, db);
+    const hash = caseInputHash(key.agent, key.frozenInput);
+    const rows = await db
+      .select()
+      .from(cases)
+      .where(
+        and(
+          eq(cases.projectId, projectId),
+          eq(cases.inputHash, hash),
+          eq(cases.kind, key.kind),
+          eq(cases.status, "active"),
+        ),
+      )
+      .orderBy(cases.createdAt);
+    const want = JSON.stringify(key.expected ?? null);
+    return rows.find((r) => JSON.stringify(r.expected ?? null) === want) ?? null;
+  }
+
+  /**
+   * Suite hygiene: merges cases that share input, kind and answer into the oldest active one.
+   * The duplicates are deleted (their corrections stay), the keeper's duplicate count absorbs them.
+   */
+  async dedupe(projectId: string): Promise<CaseDedupeResult> {
+    await this.ensureHashed(projectId);
+    const rows = await this.db
+      .select({
+        id: cases.id,
+        inputHash: cases.inputHash,
+        kind: cases.kind,
+        expected: cases.expected,
+        duplicates: cases.duplicates,
+        createdAt: cases.createdAt,
+      })
+      .from(cases)
+      .where(and(eq(cases.projectId, projectId), eq(cases.status, "active")))
+      .orderBy(cases.createdAt, cases.id);
+    const groups = new Map<string, typeof rows>();
+    for (const r of rows) {
+      const k = `${r.inputHash}|${r.kind}|${JSON.stringify(r.expected ?? null)}`;
+      const g = groups.get(k);
+      if (g) g.push(r);
+      else groups.set(k, [r]);
+    }
+    let merged = 0;
+    let kept = 0;
+    await this.db.transaction(async (tx) => {
+      for (const g of groups.values()) {
+        if (g.length < 2) continue;
+        const [keeper, ...dups] = g;
+        const absorbed = dups.reduce((n, d) => n + 1 + d.duplicates, 0);
+        const latest = dups.reduce((t, d) => (d.createdAt > t ? d.createdAt : t), keeper!.createdAt);
+        await tx
+          .update(cases)
+          .set({ duplicates: sql`${cases.duplicates} + ${absorbed}`, lastSeenAt: latest })
+          .where(eq(cases.id, keeper!.id));
+        await tx.delete(cases).where(
+          inArray(
+            cases.id,
+            dups.map((d) => d.id),
+          ),
+        );
+        merged += dups.length;
+        kept++;
+      }
+    });
+    return { merged, kept };
+  }
+
   async counts(projectId: string): Promise<CaseCounts> {
     const rows = await this.db
       .select({ status: cases.status, n: sql<number>`count(*)::int` })

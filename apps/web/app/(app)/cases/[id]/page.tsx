@@ -47,6 +47,11 @@ export default function CasePage() {
             {k.status === "archived" && <Badge variant="muted">archived</Badge>}
             {k.status === "suppressed" && <Badge variant="warning">suppressed</Badge>}
             {k.truncated && <Badge variant="warning">truncated</Badge>}
+            {k.duplicates > 0 && (
+              <Badge variant="muted" title={`corrected the same way ${k.duplicates + 1} times`}>
+                ×{k.duplicates + 1}
+              </Badge>
+            )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {k.agent} {k.agentVersion ?? ""} · recorded with {k.recordedModel ?? "?"} · from run{" "}

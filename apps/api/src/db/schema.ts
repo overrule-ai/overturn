@@ -273,9 +273,14 @@ export const cases = pgTable(
     /** The case's input (last user turn) as text, and its embedding, for example retrieval. Any dimension. */
     inputText: text("input_text"),
     inputEmbedding: anyVector("input_embedding"),
+    /** caseInputHash(agent, frozenInput); null until backfilled. */
+    inputHash: text("input_hash"),
+    duplicates: integer("duplicates").notNull().default(0),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
+    index("cases_project_hash").on(t.projectId, t.inputHash),
     index("cases_project_created").on(t.projectId, t.createdAt),
     index("cases_project_agent").on(t.projectId, t.agent),
     index("cases_tags").using("gin", t.tags),

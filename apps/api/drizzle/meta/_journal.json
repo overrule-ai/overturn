@@ -50,6 +50,13 @@
       "when": 1793500000000,
       "tag": "0006_trained_models",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793600000000,
+      "tag": "0007_case_dedupe",
+      "breakpoints": true
     }
   ]
 }

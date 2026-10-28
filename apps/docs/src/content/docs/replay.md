@@ -35,6 +35,10 @@ Rules run after the scorer. A broken rule fails the case whatever the scorer sai
 
 A case that keeps failing for a reason nobody is going to fix is noise, and noise is how a gate gets ignored. **Suppress** on any report row (or the case page, or `cases.patch(id, { status: "suppressed" })`) takes the case out of the default suite. Suppressed cases stay counted on the cases list — the suite never shrinks silently — and come back with one click.
 
+## Duplicates
+
+The same input corrected to the same answer again is the same test. Overturn merges it into the existing case (the correction is still recorded; the case shows **×N** for how often it was seen) instead of adding a copy that would double-count in every report. Identity is the agent plus the frozen prompt, not the model it ran on. A *different* answer for the same input is kept as a separate case: that is a real disagreement to resolve, not noise. `overturn cases dedupe` (or the link on the cases page) merges duplicates created before this existed.
+
 ## The gate
 
 Every report carries a verdict for CI: `gate.pass` is false on any regression, and on unaccepted new paths unless the project allows them. The CLI and the GitHub Action read that verdict; the PR comment says which.

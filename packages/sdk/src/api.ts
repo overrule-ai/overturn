@@ -1,6 +1,7 @@
 import type {
   ApiError,
   Case,
+  CaseDedupeResult,
   CaseListQuery,
   CasePatch,
   CaseSet,
@@ -119,6 +120,8 @@ export class OverturnApi {
       this.request("GET", "/v1/cases", undefined, q),
     get: (id: string): Promise<Case> => this.request("GET", `/v1/cases/${id}`),
     patch: (id: string, body: CasePatch): Promise<Case> => this.request("PATCH", `/v1/cases/${id}`, body),
+    /** Suite hygiene: merges cases with the same input, kind and answer into the oldest one. */
+    dedupe: (): Promise<CaseDedupeResult> => this.request("POST", "/v1/cases/dedupe"),
   };
 
   readonly replays = {

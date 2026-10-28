@@ -1,7 +1,10 @@
 import type {
   Case,
+  CaseCounts,
+  CaseDedupeResult,
   CaseSet,
   CaseSummary,
+  Correction,
   CorrectionResult,
   IngestPayload,
   Page,
@@ -11,7 +14,8 @@ import type {
 import { toolFingerprint } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { api, startTestApp, type TestContext } from "../test/harness";
+import { createDb } from "../db/client";
+import { api, startTestApp, TEST_DATABASE_URL, type TestContext } from "../test/harness";
 import { FROZEN_INPUT_MAX_BYTES, truncateFrozenInput } from "./corrections.service";
 
 let ctx: TestContext;
@@ -78,7 +82,10 @@ async function recordRun(
         input: {
           messages: [
             { role: "system", content: "triage" },
-            { role: "user", content: "{}" },
+            {
+              role: "user",
+              content: JSON.stringify({ id: opts.externalId ?? "T-1", subject: "Duplicate charge" }),
+            },
           ],
           response_format: { type: "json_schema" },
         },
@@ -177,6 +184,72 @@ describe("POST /v1/corrections", () => {
       expected: decision,
       scorer: "json_match",
     });
+  });
+
+  it("the same input corrected to the same answer again merges into the existing case", async () => {
+    const a = await recordRun({ externalId: "T-dup" });
+    const b = await recordRun({ externalId: "T-dup" });
+    const first = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+      runId: a.runId,
+      stepId: a.llmId,
+      kind: "edit",
+      correctedOutput: { priority: "P1" },
+    });
+    const second = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+      runId: b.runId,
+      stepId: b.llmId,
+      kind: "edit",
+      correctedOutput: { priority: "P1" },
+    });
+    expect(second.status).toBe(201);
+    expect(second.body.deduplicated).toBe(true);
+    expect(second.body.case?.id).toBe(first.body.case?.id);
+    expect(second.body.case?.duplicates).toBe(1);
+    expect(second.body.case?.lastSeenAt).toBeTruthy();
+    // a different answer for the same input is a different test
+    const third = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+      runId: b.runId,
+      stepId: b.llmId,
+      kind: "edit",
+      correctedOutput: { priority: "P0" },
+    });
+    expect(third.body.deduplicated).toBe(false);
+    expect(third.body.case?.id).not.toBe(first.body.case?.id);
+    // both corrections are kept on the runs
+    const list = await api<Correction[]>(ctx, "GET", `/v1/corrections?runId=${b.runId}`);
+    expect(list.body).toHaveLength(2);
+  });
+
+  it("POST /v1/cases/dedupe merges pre-existing duplicates into the oldest case", async () => {
+    const runs = await Promise.all([1, 2, 3].map(() => recordRun({ externalId: "T-old" })));
+    const ids: string[] = [];
+    for (const r of runs) {
+      const res = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+        runId: r.runId,
+        kind: "approve",
+      });
+      ids.push(res.body.case!.id);
+    }
+    // the second and third were merged on creation; simulate legacy duplicates by resetting the hash
+    expect(new Set(ids).size).toBe(1);
+    const extra = await recordRun({ externalId: "T-old" });
+    // a correction row for the fake legacy case to hang off (cases.correction_id is unique + not null)
+    const extraCorrection = (
+      await api<CorrectionResult>(ctx, "POST", "/v1/corrections", { runId: extra.runId, kind: "approve" })
+    ).body.correction.id;
+    const { sql } = createDb(TEST_DATABASE_URL, { max: 1 });
+    await sql`update cases set input_hash = null, duplicates = 0`;
+    await sql`insert into cases (id, project_id, correction_id, run_id, step_id, agent, kind, title, frozen_input, expected, scorer, created_at)
+      select gen_random_uuid(), project_id, ${extraCorrection}::uuid, ${extra.runId}::uuid, step_id, agent, kind, title, frozen_input, expected, scorer, now() from cases where id = ${ids[0]!}::uuid`;
+    await sql.end();
+    const before = await api<CaseCounts>(ctx, "GET", "/v1/cases/counts");
+    const r = await api<CaseDedupeResult>(ctx, "POST", "/v1/cases/dedupe");
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ merged: 1, kept: 1 });
+    const after = await api<CaseCounts>(ctx, "GET", "/v1/cases/counts");
+    expect(after.body.active).toBe(before.body.active - 1);
+    const keeper = await api<Case>(ctx, "GET", `/v1/cases/${ids[0]}`);
+    expect(keeper.body.duplicates).toBe(1);
   });
 
   it("reject and escalate derive expected from the kind", async () => {

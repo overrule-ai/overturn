@@ -31,6 +31,13 @@ function CasesList() {
       qc.invalidateQueries({ queryKey: ["case-counts"] });
     },
   });
+  const dedupe = useMutation({
+    mutationFn: () => client.cases.dedupe(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cases"] });
+      qc.invalidateQueries({ queryKey: ["case-counts"] });
+    },
+  });
   const cases = useQuery({
     queryKey: ["cases", filters],
     queryFn: () =>
@@ -111,6 +118,27 @@ function CasesList() {
           </button>
         </p>
       )}
+      <p className="text-xs text-muted-foreground">
+        The same input corrected to the same answer again merges into one case (shown as “×N”).{" "}
+        <button
+          type="button"
+          className="underline"
+          onClick={() => dedupe.mutate()}
+          disabled={dedupe.isPending}
+          data-testid="dedupe"
+        >
+          {dedupe.isPending ? "Merging…" : "Merge older duplicates"}
+        </button>
+        {dedupe.data && (
+          <span data-testid="dedupe-result">
+            {" "}
+            —{" "}
+            {dedupe.data.merged === 0
+              ? "no duplicates found."
+              : `merged ${dedupe.data.merged} into ${dedupe.data.kept}.`}
+          </span>
+        )}
+      </p>
       <Table>
         <THead>
           <TR>
@@ -132,6 +160,14 @@ function CasesList() {
                   {c.title}
                 </Link>
                 {c.truncated && <span className="ml-2 text-xs text-warning">truncated</span>}
+                {c.duplicates > 0 && (
+                  <span
+                    className="ml-2 text-xs text-muted-foreground"
+                    title={`corrected the same way ${c.duplicates + 1} times`}
+                  >
+                    ×{c.duplicates + 1}
+                  </span>
+                )}
               </TD>
               <TD>
                 <KindBadge kind={c.kind} />

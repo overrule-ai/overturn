@@ -13,6 +13,7 @@ import {
 import {
   type Case,
   type CaseCounts,
+  type CaseDedupeResult,
   type CaseEquivalent,
   type CaseListQuery,
   type CasePatch,
@@ -42,6 +43,12 @@ export class CasesController {
     @Query(zod(caseListQuerySchema)) q: CaseListQuery,
   ): Promise<Page<CaseSummary>> {
     return this.cases.list(auth.projectId, q);
+  }
+
+  @Post("cases/dedupe")
+  @HttpCode(200)
+  dedupe(@Auth() auth: AuthContext): Promise<CaseDedupeResult> {
+    return this.cases.dedupe(auth.projectId);
   }
 
   @Get("cases/counts")

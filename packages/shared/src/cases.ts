@@ -1,3 +1,4 @@
+import { hashJSON } from "./fingerprint.js";
 import type { CorrectionKind, ScorerName, Step } from "./schemas.js";
 
 /**
@@ -197,4 +198,13 @@ export function replayReadiness(steps: ReadinessStep[]): ReplayReadiness {
     };
   }
   return { level: "ready", modelSteps, recordedTools, sideEffects, gaps, summary: parts.join(" · ") };
+}
+
+/**
+ * Identity of a case's input for duplicate detection: the agent and the frozen input minus the
+ * model it happened to run on. The same prompt corrected twice is one test, not two.
+ */
+export function caseInputHash(agent: string, frozenInput: Record<string, unknown>): string {
+  const { model: _m, provider: _p, name: _n, params: _q, ...rest } = frozenInput;
+  return hashJSON({ agent, input: rest });
 }

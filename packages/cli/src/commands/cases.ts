@@ -15,6 +15,20 @@ export function registerCases(program: Command): void {
   const cases = program.command("cases").description("Regression cases made from corrections");
 
   cases
+    .command("dedupe")
+    .description("Merge cases that share input, kind and answer into one (the oldest keeps the count)")
+    .action(async (_opts: Record<string, never>, cmd: Command) => {
+      const global = cmd.optsWithGlobals<CliOptions>();
+      const r = await apiFor(global).cases.dedupe();
+      if (global.json) return printJson(r);
+      console.log(
+        r.merged === 0
+          ? pc.dim("no duplicate cases")
+          : `merged ${r.merged} duplicate case${r.merged === 1 ? "" : "s"} into ${r.kept}`,
+      );
+    });
+
+  cases
     .command("list")
     .description("List cases")
     .option("--agent <name>", "Filter by agent")

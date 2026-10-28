@@ -3,6 +3,7 @@
 import type {
   Case,
   CaseCounts,
+  CaseDedupeResult,
   CaseEquivalent,
   CaseSummary,
   Correction,
@@ -128,6 +129,7 @@ export const client = {
     get: (id: string) => api<Case>("GET", `/v1/cases/${id}`),
     patch: (id: string, body: Record<string, unknown>) => api<Case>("PATCH", `/v1/cases/${id}`, body),
     counts: () => api<CaseCounts>("GET", "/v1/cases/counts"),
+    dedupe: () => api<CaseDedupeResult>("POST", "/v1/cases/dedupe"),
     acceptEquivalent: (id: string, body: CaseEquivalent) =>
       api<Case>("POST", `/v1/cases/${id}/equivalents`, body),
     sets: () => api<Array<{ id: string; name: string; filter: unknown }>>("GET", "/v1/case-sets"),

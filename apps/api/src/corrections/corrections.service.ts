@@ -3,6 +3,7 @@ import {
   type Correction,
   type CorrectionCreate,
   type CorrectionResult,
+  caseInputHash,
   defaultScorer,
   expectedFor,
   extractAnswer,
@@ -126,8 +127,8 @@ export class CorrectionsService {
     }
 
     const correctionId = uuidv7();
-    const result: { correction: Correction; caseId: string | null } = await this.db.transaction(
-      async (tx) => {
+    const result: { correction: Correction; caseId: string | null; deduplicated: boolean } =
+      await this.db.transaction(async (tx) => {
         const [corr] = await tx
           .insert(corrections)
           .values({
@@ -151,7 +152,7 @@ export class CorrectionsService {
           this.logger.warn(
             `run ${run.id} has no llm_call step; correction ${correctionId} recorded without a case`,
           );
-          return { correction: serializeCorrection(corr!), caseId: null };
+          return { correction: serializeCorrection(corr!), caseId: null, deduplicated: false };
         }
 
         const stepInput = (step.input ?? {}) as Record<string, unknown>;
@@ -185,6 +186,20 @@ export class CorrectionsService {
         const config = input.scorerConfig ?? (input.scorer ? {} : auto.config);
         const title = `${input.kind}: ${run.agent} ${run.externalId ?? run.id.slice(-8)}${input.note ? ` — ${input.note.slice(0, 80)}` : ""}`;
 
+        // The same input corrected to the same answer again is the same test: merge, don't add.
+        const existing = await this.casesService.findDuplicate(
+          projectId,
+          { agent: run.agent, frozenInput: frozen.input, kind: input.kind, expected },
+          tx as unknown as Db,
+        );
+        if (existing) {
+          await tx
+            .update(cases)
+            .set({ duplicates: sql`${cases.duplicates} + 1`, lastSeenAt: new Date() })
+            .where(eq(cases.id, existing.id));
+          return { correction: serializeCorrection(corr!), caseId: existing.id, deduplicated: true };
+        }
+
         const [c] = await tx
           .insert(cases)
           .values({
@@ -207,15 +222,16 @@ export class CorrectionsService {
             truncated: frozen.truncated,
             contract: input.contract ?? [],
             recordedModel: step.model,
+            inputHash: caseInputHash(run.agent, frozen.input),
           })
           .returning();
-        return { correction: serializeCorrection(corr!), caseId: c!.id };
-      },
-    );
+        return { correction: serializeCorrection(corr!), caseId: c!.id, deduplicated: false };
+      });
 
     return {
       correction: result.correction,
       case: result.caseId ? await this.casesService.get(projectId, result.caseId) : null,
+      deduplicated: result.deduplicated,
     };
   }
 

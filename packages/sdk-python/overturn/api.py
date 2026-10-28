@@ -65,6 +65,10 @@ class OverturnApi:
     def patch_case(self, case_id: str, body: dict[str, Any]) -> dict[str, Any]:
         return self.request("PATCH", f"/v1/cases/{case_id}", body=body)
 
+    def dedupe_cases(self) -> dict[str, Any]:
+        """Suite hygiene: merge cases with the same input, kind and answer into the oldest one."""
+        return self.request("POST", "/v1/cases/dedupe")
+
     def get_examples(self, params: dict[str, Any]) -> dict[str, Any]:
         """Corrections in the prompt: nearest human-approved cases for an input (see Overturn.examples)."""
         return self.request("GET", "/v1/examples", params=params)
