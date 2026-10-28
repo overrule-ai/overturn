@@ -78,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* icon rail: top bar on phones, left rail from sm */}
       <aside className="flex shrink-0 items-center gap-1 border-b bg-card px-2 sm:w-12 sm:flex-col sm:border-b-0 sm:border-r sm:px-0 sm:py-2">
         <Link href="/runs" className="flex h-11 w-11 items-center justify-center" title="Overturn">
-          <Logo className="h-5 w-5" cutout="fill-card" />
+          <Logo className="h-5 w-5" />
         </Link>
         <nav className="flex items-center gap-1 sm:mt-2 sm:flex-col">
           {NAV.map((n) => {
