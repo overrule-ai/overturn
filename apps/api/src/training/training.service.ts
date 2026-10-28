@@ -2,7 +2,10 @@ import { BadRequestException, Inject, Injectable, Logger, NotFoundException } fr
 import type {
   CaseFilter,
   ExportStats,
+  ModelDeployPlan,
+  ModelDeployRequest,
   ModelGate,
+  ModelServing,
   ShadowStats,
   TrainCreate,
   TrainedModel,
@@ -30,7 +33,7 @@ import { ModelRegistry, parseModel } from "../models/registry";
 import { parseSettings } from "../projects/settings";
 import { callModel } from "../replay/model-call";
 import { ReplayService } from "../replay/replay.service";
-import { TogetherClient } from "./together";
+import { TogetherClient, TogetherServing } from "./together";
 
 const TERMINAL = new Set(["cancelled", "error", "completed"]);
 
@@ -50,6 +53,7 @@ function serialize(r: TrainedModelRow, shadowStats: ShadowStats | null): Trained
     providerJobId: r.providerJobId,
     outputName: r.outputName,
     servedAs: r.servedAs,
+    serving: (r.serving ?? null) as ModelServing | null,
     trainingCostUsd: r.trainingCostUsd,
     gateJobId: r.gateJobId,
     gate: (r.gate ?? null) as ModelGate | null,
@@ -85,6 +89,16 @@ export class TrainingService {
     if (!this.config.TOGETHER_API_KEY)
       throw new BadRequestException("Training needs TOGETHER_API_KEY on the server");
     return new TogetherClient(this.config.TOGETHER_API_KEY, this.config.TOGETHER_BASE_URL);
+  }
+
+  /** Serving is on when TOGETHER_PROJECT_ID is set: trained weights get a dedicated endpoint before the gate. */
+  private serving(): TogetherServing | null {
+    if (!this.config.TOGETHER_API_KEY || !this.config.TOGETHER_PROJECT_ID) return null;
+    return new TogetherServing(
+      this.config.TOGETHER_API_KEY,
+      this.config.TOGETHER_BASE_URL,
+      this.config.TOGETHER_PROJECT_ID,
+    );
   }
 
   // ---------- create ----------
@@ -179,7 +193,8 @@ export class TrainingService {
         servedAs: outputName ? `together/${outputName}` : null,
         trainingCostUsd: ft.total_price != null ? ft.total_price / 100 : null,
       });
-      await this.gate(id);
+      if (this.serving() && outputName) await this.deploy(m.projectId, id, { dryRun: false, replicas: 1 });
+      else await this.gate(id);
     } catch (err) {
       await this.fail(id, err);
     }
@@ -189,9 +204,9 @@ export class TrainingService {
   /** Runs start + polls until terminal (tests and single-process dev); the worker spaces polls out. */
   async runToCompletion(id: string, pollMs = 50, maxPolls = 10_000): Promise<TrainedModel> {
     let m = await this.start(id);
-    for (let i = 0; i < maxPolls && m.status === "training"; i++) {
+    for (let i = 0; i < maxPolls && (m.status === "training" || m.status === "deploying"); i++) {
       await new Promise((r) => setTimeout(r, pollMs));
-      m = await this.poll(id);
+      m = m.status === "training" ? await this.poll(id) : await this.pollDeploy(id);
     }
     return m;
   }
@@ -289,6 +304,170 @@ export class TrainingService {
     };
   }
 
+  // ---------- serving: a dedicated endpoint for the trained weights ----------
+
+  /**
+   * Creates the dedicated endpoint that serves a trained model (Together no longer serves LoRA
+   * fine-tunes serverless): endpoint → deployment of the base model on the cheapest certified
+   * hardware config → the LoRA adapter attached. Provisioning is asynchronous; `pollDeploy` runs
+   * the gate once the deployment is ready. `dryRun` validates and returns the plan without
+   * creating anything (nothing is billed).
+   */
+  async deploy(
+    projectId: string,
+    id: string,
+    input: ModelDeployRequest,
+  ): Promise<TrainedModel | ModelDeployPlan> {
+    const m = await this.row(id, projectId);
+    const tg = this.serving();
+    if (!tg)
+      throw new BadRequestException(
+        "Serving needs TOGETHER_PROJECT_ID (and TOGETHER_API_KEY) on the server; or deploy the model yourself and run `overturn models serve`",
+      );
+    if (!m.outputName)
+      throw new BadRequestException(`Model ${id} has no trained weights yet (status: ${m.status})`);
+    if (m.serving && !input.dryRun)
+      throw new BadRequestException(
+        `Model ${id} already has an endpoint (${(m.serving as ModelServing).endpointId}); retire it first`,
+      );
+    const found = await tg.findModel(m.outputName);
+    if (!found)
+      throw new BadRequestException(
+        `Together project ${tg.projectId} has no model named ${m.outputName}; is the fine-tune in this project?`,
+      );
+    const adapter =
+      found.weights?.type === "WEIGHTS_TYPE_ADAPTER" || Boolean(found.baseModel || found.baseModelId);
+    const deploys = adapter
+      ? (found.baseModel ?? `projects/${found.projectId}/models/${found.baseModelId}`)
+      : `projects/${found.projectId}/models/${found.id}`;
+    const configs = await tg.configsFor(deploys);
+    const cfg = input.config
+      ? (configs.find((c) => c.id === input.config) ?? {
+          id: input.config,
+          projectId: tg.projectId,
+          selectors: [],
+          referenceModel: deploys,
+          certifications: [],
+        })
+      : configs[0];
+    if (!cfg) throw new BadRequestException(`No certified hardware config on Together for ${deploys}`);
+    const configRes = `projects/${cfg.projectId}/configs/${cfg.id}`;
+    const plan: ModelDeployPlan = {
+      dryRun: input.dryRun,
+      projectId: tg.projectId,
+      togetherModel: found.name,
+      adapter,
+      deploys,
+      config: configRes,
+      hardware: cfg.selectors,
+      replicas: input.replicas,
+    };
+    const name = `overturn-${m.name}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .slice(0, 60);
+    const spec = {
+      name,
+      model: deploys,
+      config: configRes,
+      minReplicas: input.replicas,
+      maxReplicas: input.replicas,
+      inactiveTimeout: 60,
+    };
+    if (input.dryRun) {
+      // validateOnly needs an endpoint id; Together validates the body against the project without one existing
+      await tg.createDeployment("validate", spec, true).catch((err: unknown) => {
+        throw new BadRequestException(
+          `Together rejected the deployment: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+      return plan;
+    }
+    await this.set(id, { status: "deploying", error: null });
+    try {
+      const ep = await tg.createEndpoint(name);
+      const dep = await tg.createDeployment(ep.id, spec);
+      const ad = adapter ? await tg.attachAdapter(ep.id, dep.id, found.id) : null;
+      const serving: ModelServing = {
+        provider: "together",
+        projectId: tg.projectId,
+        endpointId: ep.id,
+        deploymentId: dep.id,
+        adapterId: ad?.id ?? null,
+        model: deploys,
+        config: configRes,
+        hardware: dep.hardware ?? null,
+        state: dep.status?.state ?? "DEPLOYMENT_STATE_PROVISIONING",
+        replicas: input.replicas,
+      };
+      // what the chat API answers to: the deployment's fully-qualified name for a full model, the
+      // adapter's model name when a LoRA rides on a base deployment
+      await this.set(id, { serving, servedAs: `together/${adapter ? found.name : dep.name || found.name}` });
+      this.logger.log(`model ${id}: endpoint ${ep.id} provisioning (${deploys} on ${configRes})`);
+    } catch (err) {
+      await this.fail(id, err);
+    }
+    return this.get(projectId, id);
+  }
+
+  /** One poll of a provisioning endpoint; runs the gate when it is ready, fails the model when it is not. */
+  async pollDeploy(id: string): Promise<TrainedModel> {
+    const m = await this.row(id);
+    const serving = m.serving as ModelServing | null;
+    const tg = this.serving();
+    if (m.status !== "deploying" || !serving || !tg) return this.get(m.projectId, id);
+    try {
+      const dep = await tg.getDeployment(serving.endpointId, serving.deploymentId);
+      const state = dep.status?.state ?? "DEPLOYMENT_STATE_PROVISIONING";
+      let adapterReady = true;
+      if (serving.adapterId && state === "DEPLOYMENT_STATE_READY") {
+        const ad = await tg.getAdapter(serving.endpointId, serving.deploymentId, serving.adapterId);
+        const states = ad.perCluster.map((c) => c.state);
+        if (states.includes("ADAPTER_LOAD_STATE_FAILED"))
+          throw new Error(
+            `adapter failed to load: ${ad.perCluster.find((c) => c.message)?.message ?? "no detail"}`,
+          );
+        adapterReady = states.length > 0 && states.every((s) => s === "ADAPTER_LOAD_STATE_READY");
+      }
+      await this.set(id, { serving: { ...serving, state, hardware: dep.hardware ?? serving.hardware } });
+      if (state === "DEPLOYMENT_STATE_FAILED" || state === "DEPLOYMENT_STATE_STOPPED")
+        throw new Error(
+          `endpoint ${serving.endpointId} is ${state.replace("DEPLOYMENT_STATE_", "").toLowerCase()}${dep.status?.message ? `: ${dep.status.message}` : ""}`,
+        );
+      if (state === "DEPLOYMENT_STATE_READY" && adapterReady) {
+        await this.set(id, { status: "trained" });
+        await this.gate(id);
+      }
+    } catch (err) {
+      await this.fail(id, err);
+    }
+    return this.get(m.projectId, id);
+  }
+
+  /** Models whose endpoint is still provisioning (the worker polls them every minute). */
+  async deploying(): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: trainedModels.id })
+      .from(trainedModels)
+      .where(eq(trainedModels.status, "deploying"));
+    return rows.map((r) => r.id);
+  }
+
+  /** Deletes the dedicated endpoint behind a model (stops the bill). Best effort; recorded on the row. */
+  private async teardown(m: TrainedModelRow): Promise<void> {
+    const serving = m.serving as ModelServing | null;
+    const tg = this.serving();
+    if (!serving || !tg) return;
+    try {
+      await tg.deleteEndpoint(serving.endpointId);
+      await this.set(m.id, { serving: { ...serving, state: "DEPLOYMENT_STATE_STOPPED", replicas: 0 } });
+    } catch (err) {
+      this.logger.warn(
+        `model ${m.id}: could not delete endpoint ${serving.endpointId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   // ---------- promote / retire / patch ----------
 
   async promote(projectId: string, id: string): Promise<TrainedModel> {
@@ -318,6 +497,7 @@ export class TrainingService {
   async retire(projectId: string, id: string): Promise<TrainedModel> {
     const m = await this.row(id, projectId);
     await this.set(id, { status: "retired", shadow: false });
+    await this.teardown(m);
     if (m.status === "promoted") {
       const [p] = await this.db
         .select({ settings: projects.settings })

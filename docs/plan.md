@@ -114,6 +114,6 @@ Capture and replay stay open source. Training, gating, hosting and retraining ar
 - [x] challenger scorecard: Together provider, cost/call + p50 latency in summaries, scorecard on the matrix, one-click challengers
 - [x] corrections in the prompt: `GET /v1/examples`, `ov.examples()`, `replay --examples k`, lift on the scorecard
 - [x] train and gate: `overturn train`, Together LoRA fine-tune → gate replay (no regressions, no new paths, pass rate ≥ incumbent) → shadow on live runs → promote by hand; `ov.promotedModel()`
-- [ ] serving: create the Together dedicated endpoint from Overturn (today the user deploys it and runs `models serve`)
+- [x] serving: Overturn creates the Together dedicated endpoint (base + LoRA adapter, cheapest certified config, auto-stop) and gates when ready; `models deploy --dry-run`; retire deletes it
 - [ ] training in the customer's cloud: a managed trainer; today it is export + train anywhere + `models serve`
 - [ ] continuous retraining (opt-in): new corrections past a threshold or a new base model → retrain → gate → shadow → notify

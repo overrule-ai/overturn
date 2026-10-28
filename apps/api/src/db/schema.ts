@@ -406,6 +406,8 @@ export const trainedModels = pgTable(
     outputName: text("output_name"),
     /** The model id Overturn calls it by for inference (provider/name); editable when it needs an endpoint. */
     servedAs: text("served_as"),
+    /** Dedicated endpoint behind servedAs: { endpointId, deploymentId, adapterId?, config, model } */
+    serving: jsonb("serving"),
     trainingCostUsd: doublePrecision("training_cost_usd"),
     gateJobId: uuid("gate_job_id"),
     gate: jsonb("gate"),

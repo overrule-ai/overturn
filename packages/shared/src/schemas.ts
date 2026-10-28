@@ -815,6 +815,7 @@ export const trainedModelStatusSchema = z.enum([
   "uploading",
   "training",
   "trained",
+  "deploying",
   "gating",
   "passed",
   "failed",
@@ -864,6 +865,41 @@ export const shadowStatsSchema = z.object({
 });
 export type ShadowStats = z.infer<typeof shadowStatsSchema>;
 
+export const modelServingSchema = z.object({
+  provider: z.literal("together"),
+  projectId: z.string(),
+  endpointId: z.string(),
+  deploymentId: z.string(),
+  adapterId: z.string().nullable(),
+  /** Model resource deployed (the base model for a LoRA adapter). */
+  model: z.string(),
+  config: z.string(),
+  hardware: z.string().nullable(),
+  state: z.string(),
+  replicas: z.number().int(),
+});
+export type ModelServing = z.infer<typeof modelServingSchema>;
+
+export const modelDeployPlanSchema = z.object({
+  dryRun: z.boolean(),
+  projectId: z.string(),
+  togetherModel: z.string(),
+  adapter: z.boolean(),
+  deploys: z.string(),
+  config: z.string(),
+  hardware: z.array(z.object({ key: z.string(), value: z.string() })),
+  replicas: z.number().int(),
+});
+export type ModelDeployPlan = z.infer<typeof modelDeployPlanSchema>;
+
+export const modelDeployRequestSchema = z.object({
+  dryRun: z.boolean().default(false),
+  /** Config revision id to use instead of the cheapest certified one. */
+  config: z.string().optional(),
+  replicas: z.number().int().min(1).max(8).default(1),
+});
+export type ModelDeployRequest = z.infer<typeof modelDeployRequestSchema>;
+
 export const trainedModelSchema = z.object({
   id: uuidSchema,
   projectId: uuidSchema,
@@ -879,6 +915,8 @@ export const trainedModelSchema = z.object({
   providerJobId: z.string().nullable(),
   outputName: z.string().nullable(),
   servedAs: z.string().nullable(),
+  /** The dedicated endpoint serving the weights, when Overturn created one. */
+  serving: modelServingSchema.nullable(),
   trainingCostUsd: z.number().nullable(),
   gateJobId: uuidSchema.nullable(),
   gate: modelGateSchema.nullable(),

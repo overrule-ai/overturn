@@ -13,7 +13,7 @@ Capture and replay are open source and free. This is the part that turns the sui
 
 ## Serving
 
-Together serves a LoRA fine-tune from a dedicated endpoint, not serverless. After training, deploy the output model in Together (Models → your fine-tune → Deploy) and tell Overturn where it answers from: `overturn models serve <id> together/<endpoint model name>`. The gate re-runs against that endpoint. Weights are downloadable from Together for running in your own cloud or offline; the same export trains anywhere.
+Together serves a LoRA fine-tune from a dedicated endpoint, not serverless. With `TOGETHER_PROJECT_ID` set on the server, Overturn creates that endpoint itself when training finishes — the base model on the cheapest certified hardware config, the LoRA attached as an adapter, one replica, auto-stop after an hour idle — and runs the gate when it is ready; `overturn models deploy <id> --dry-run` shows the plan first, and retiring the model deletes the endpoint (that is the bill). Without a project id, deploy the output model in Together yourself and tell Overturn where it answers from: `overturn models serve <id> together/<endpoint model name>`. The gate re-runs against that endpoint. Weights are downloadable from Together for running in your own cloud or offline; the same export trains anywhere.
 
 ## Cost controls
 

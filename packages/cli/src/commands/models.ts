@@ -157,6 +157,34 @@ export function registerModels(program: Command): void {
       console.log(`${pc.green("✓")} shadow ${m.shadow ? "on" : "off"} for ${m.name}`);
     });
   models
+    .command("deploy <id>")
+    .description(
+      "Create the dedicated endpoint that serves a trained model on Together (needs TOGETHER_PROJECT_ID on the server); the gate runs when it is ready",
+    )
+    .option("--dry-run", "Show the plan (hardware, config) without creating anything")
+    .option("--config <id>", "Together config revision to use instead of the cheapest certified one")
+    .option("--replicas <n>", "Replicas", "1")
+    .action(
+      async (id: string, opts: { dryRun?: boolean; config?: string; replicas: string }, cmd: Command) => {
+        const global = cmd.optsWithGlobals<CliOptions>();
+        const api = apiFor(global);
+        const full = await resolveId(id, () => api.models.list(), "model");
+        const r = await api.models.deploy(full, {
+          dryRun: Boolean(opts.dryRun),
+          config: opts.config,
+          replicas: Number(opts.replicas),
+        });
+        if (global.json) return printJson(r);
+        if ("dryRun" in r) {
+          console.log(
+            `${pc.bold("plan")}  ${r.togetherModel}${r.adapter ? " (LoRA adapter on its base)" : ""}\n  deploys  ${r.deploys}\n  config   ${r.config}\n  hardware ${r.hardware.map((h) => `${h.key}=${h.value}`).join(" ") || "(provider default)"}\n  replicas ${r.replicas}\n${pc.dim("nothing was created; run without --dry-run to provision (billed by Together per GPU-hour)")}`,
+          );
+          return;
+        }
+        printModel(r);
+      },
+    );
+  models
     .command("serve <id> <provider/model>")
     .description(
       "Set where the trained weights answer from (when the provider needs a dedicated endpoint); re-runs the gate",

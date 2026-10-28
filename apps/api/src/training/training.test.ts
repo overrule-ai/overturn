@@ -1,4 +1,4 @@
-import type { CorrectionResult, IngestPayload, TrainedModel } from "@overturn-ai/shared";
+import type { CorrectionResult, IngestPayload, ModelDeployPlan, TrainedModel } from "@overturn-ai/shared";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { echoModel, startFakeOpenAI } from "../test/fake-openai";
@@ -14,6 +14,7 @@ beforeAll(async () => {
   process.env.FAKE_OPENAI_URL = fake.url;
   process.env.TOGETHER_API_KEY = "fake-together-key";
   process.env.TOGETHER_BASE_URL = fake.url;
+  process.env.TOGETHER_PROJECT_ID = "proj_fake";
   ctx = await startTestApp();
   training = ctx.app.get(TrainingService);
 });
@@ -103,6 +104,36 @@ describe("train and gate", () => {
     expect(done.servedAs).toBe(`together/${done.outputName}`);
     expect(done.gate).toMatchObject({ pass: true, regressions: 0, newPaths: 0, passRate: 1 });
     expect(done.gate!.replayJobId).toBeTruthy();
+    // the weights got a dedicated endpoint before the gate: base model on the cheapest certified
+    // config, the LoRA attached as an adapter, provisioning polled until ready
+    expect(done.serving).toMatchObject({
+      provider: "together",
+      projectId: "proj_fake",
+      endpointId: "ep_fake_1",
+      deploymentId: "dep_fake_1",
+      adapterId: "dad_fake_1",
+      model: "projects/proj_fake/models/model_base",
+      config: "projects/proj_public/configs/cfg_1gpu",
+      state: "DEPLOYMENT_STATE_READY",
+      replicas: 1,
+    });
+    const dep = fake.calls.find((c) => c.deployment) as { deployment: Record<string, unknown> };
+    expect(dep.deployment).toMatchObject({
+      autoscaling: { minReplicas: 1, maxReplicas: 1 },
+      inactiveTimeout: 60,
+    });
+    expect(
+      (fake.calls.find((c) => c.adapter) as { adapter: { adapterModelId: string } }).adapter.adapterModelId,
+    ).toBe(`model_${name}`);
+    // a dry run plans without creating anything
+    const plan = await api<ModelDeployPlan>(ctx, "POST", `/v1/models/${done.id}/deploy`, { dryRun: true });
+    expect(plan.status).toBe(200);
+    expect(plan.body).toMatchObject({
+      dryRun: true,
+      adapter: true,
+      config: "projects/proj_public/configs/cfg_1gpu",
+    });
+    expect(plan.body.hardware).toContainEqual({ key: "gpu_count", value: "1" });
     // the upload carried the dataset and the fine-tune request was LoRA SFT
     const ft = fake.calls.find((c) => c.fineTune) as { fineTune: Record<string, unknown> };
     expect(ft.fineTune.model).toBe("meta-llama/Meta-Llama-3.1-8B-Instruct-Reference");
@@ -141,6 +172,9 @@ describe("train and gate", () => {
     expect(after.body.settings.promotedModel).toBe(done.servedAs);
     const retired = await api<TrainedModel>(ctx, "POST", `/v1/models/${done.id}/retire`);
     expect(retired.body.status).toBe("retired");
+    // retiring tears the endpoint down (that is the bill)
+    expect(fake.calls.find((c) => c.deleteEndpoint === "ep_fake_1")).toBeTruthy();
+    expect(retired.body.serving?.state).toBe("DEPLOYMENT_STATE_STOPPED");
     const cleared = await api<{ settings: { promotedModel: string | null } }>(ctx, "GET", "/v1/project");
     expect(cleared.body.settings.promotedModel).toBeNull();
   });

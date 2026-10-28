@@ -15,6 +15,7 @@ export function startFakeOpenAI(): Promise<{
 }> {
   const calls: Array<Record<string, unknown>> = [];
   const fineTunes = new Map<string, { polls: number; model: string; suffix: string }>();
+  const deployments = new Map<string, { polls: number }>();
   let failed = false;
   const server = createServer((req, res) => {
     let data = "";
@@ -27,6 +28,103 @@ export function startFakeOpenAI(): Promise<{
         res.end(JSON.stringify(o));
       };
       const url = req.url ?? "";
+      // ---- a fake Together v2 serving API: project models, configs, endpoint, deployment (ready on 2nd poll), adapter ----
+      if (url.startsWith("/v2/projects/")) {
+        const rest = url.slice("/v2/projects/".length).split("?")[0]!;
+        const [projectId, ...parts] = rest.split("/");
+        const sub = parts.join("/");
+        if (sub === "models" && req.method === "GET") {
+          // every completed fine-tune is a LoRA adapter model on its base
+          const models = [...fineTunes.entries()]
+            .filter(([, ft]) => ft.polls >= 2)
+            .map(([, ft]) => ({
+              id: `model_${ft.suffix}`,
+              name: `fake-org/${ft.model.split("/").pop()}-${ft.suffix}`,
+              projectId,
+              baseModel: `projects/${projectId}/models/model_base`,
+              weights: { type: "WEIGHTS_TYPE_ADAPTER" },
+            }));
+          return json({ models: [{ id: "model_base", name: "meta-llama/Base", projectId }, ...models] });
+        }
+        if (sub === "configs" && req.method === "GET")
+          return json({
+            configs: [
+              {
+                id: "cfg_2gpu",
+                projectId: "proj_public",
+                referenceModel: `projects/${projectId}/models/model_base`,
+                selectors: [
+                  { key: "gpu_type", value: "h100" },
+                  { key: "gpu_count", value: "2" },
+                ],
+                certifications: [{ certificationType: "CERTIFICATION_TYPE_CERTIFIED" }],
+              },
+              {
+                id: "cfg_1gpu",
+                projectId: "proj_public",
+                referenceModel: `projects/${projectId}/models/model_base`,
+                selectors: [
+                  { key: "gpu_type", value: "h100" },
+                  { key: "gpu_count", value: "1" },
+                ],
+                certifications: [{ certificationType: "CERTIFICATION_TYPE_CERTIFIED" }],
+              },
+            ],
+          });
+        if (sub === "endpoints" && req.method === "POST") {
+          const body = JSON.parse(data || "{}") as Record<string, unknown>;
+          calls.push({ endpoint: body });
+          return json({ id: "ep_fake_1", name: body.name, projectId, deployments: [] });
+        }
+        if (/^endpoints\/[^/]+$/.test(sub) && req.method === "DELETE") {
+          calls.push({ deleteEndpoint: sub.split("/")[1] });
+          return json({});
+        }
+        if (/^endpoints\/[^/]+\/deployments$/.test(sub) && req.method === "POST") {
+          const body = JSON.parse(data || "{}") as Record<string, unknown>;
+          calls.push({ deployment: body, validateOnly: url.includes("validateOnly=true") });
+          if (url.includes("validateOnly=true")) return json({});
+          deployments.set("dep_fake_1", { polls: 0 });
+          return json({
+            id: "dep_fake_1",
+            name: `${body.name}-a1b2c3`,
+            endpointId: sub.split("/")[1],
+            model: body.model,
+            hardware: "1x-h100",
+            status: { state: "DEPLOYMENT_STATE_PROVISIONING" },
+          });
+        }
+        const depGet = sub.match(/^endpoints\/([^/]+)\/deployments\/([^/]+)$/);
+        if (depGet && req.method === "GET") {
+          const d = deployments.get(depGet[2]!);
+          if (!d) return json({ error: { message: "not found" } }, 404);
+          d.polls++;
+          return json({
+            id: depGet[2],
+            name: "overturn-x-a1b2c3",
+            endpointId: depGet[1],
+            model: "m",
+            hardware: "1x-h100",
+            status: { state: d.polls >= 2 ? "DEPLOYMENT_STATE_READY" : "DEPLOYMENT_STATE_PROVISIONING" },
+          });
+        }
+        if (/^endpoints\/[^/]+\/deployments\/[^/]+\/adapters$/.test(sub) && req.method === "POST") {
+          const body = JSON.parse(data || "{}") as Record<string, unknown>;
+          calls.push({ adapter: body });
+          return json({
+            id: "dad_fake_1",
+            adapterModelId: body.adapterModelId,
+            perCluster: [{ state: "ADAPTER_LOAD_STATE_PENDING", readyPodCount: 0, totalPodCount: 1 }],
+          });
+        }
+        if (/^endpoints\/[^/]+\/deployments\/[^/]+\/adapters\/[^/]+$/.test(sub) && req.method === "GET")
+          return json({
+            id: "dad_fake_1",
+            adapterModelId: "x",
+            perCluster: [{ state: "ADAPTER_LOAD_STATE_READY", readyPodCount: 1, totalPodCount: 1 }],
+          });
+        return json({ error: { message: `fake together: no route for ${req.method} ${url}` } }, 404);
+      }
       // ---- a fake Together fine-tuning API: upload, create, poll (completes on the second poll) ----
       if (url.startsWith("/v1/files/upload")) {
         calls.push({ upload: data.length });

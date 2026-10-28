@@ -92,6 +92,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         const m = await this.training.poll(id);
         if (m.status !== "training") this.logger.log(`training ${id}: ${m.status}`);
       }
+      for (const id of await this.training.deploying()) {
+        const m = await this.training.pollDeploy(id);
+        if (m.status !== "deploying") this.logger.log(`deploying ${id}: ${m.status}`);
+      }
     });
     await this.boss.schedule(TRAIN_POLL_JOB, "* * * * *", undefined, { tz: "UTC" });
     await this.boss.work(SHADOW_JOB, async () => {

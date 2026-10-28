@@ -15,6 +15,8 @@ import type {
   ExportQuery,
   ExportStats,
   MeResponse,
+  ModelDeployPlan,
+  ModelDeployRequest,
   Page,
   Project,
   ProjectPatch,
@@ -153,6 +155,9 @@ export class OverturnApi {
       this.request("PATCH", `/v1/models/${id}`, body),
     promote: (id: string): Promise<TrainedModel> => this.request("POST", `/v1/models/${id}/promote`),
     retire: (id: string): Promise<TrainedModel> => this.request("POST", `/v1/models/${id}/retire`),
+    /** Create the dedicated endpoint that serves a trained model (Together); dryRun returns the plan only. */
+    deploy: (id: string, body: Partial<ModelDeployRequest> = {}): Promise<TrainedModel | ModelDeployPlan> =>
+      this.request("POST", `/v1/models/${id}/deploy`, body),
   };
 
   /** Corrections in the prompt: the nearest human-approved cases for an input, as a prompt block. */

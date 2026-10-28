@@ -1,5 +1,8 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import {
+  type ModelDeployPlan,
+  type ModelDeployRequest,
+  modelDeployRequestSchema,
   type TrainCreate,
   type TrainedModel,
   type TrainedModelPatch,
@@ -57,6 +60,16 @@ export class TrainingController {
   @Post("models/:id/promote")
   promote(@Auth() auth: AuthContext, @Param("id", zod(z.uuid())) id: string): Promise<TrainedModel> {
     return this.training.promote(auth.projectId, id);
+  }
+
+  @Post("models/:id/deploy")
+  @HttpCode(200)
+  deploy(
+    @Auth() auth: AuthContext,
+    @Param("id", zod(z.uuid())) id: string,
+    @Body(zod(modelDeployRequestSchema)) body: ModelDeployRequest,
+  ): Promise<TrainedModel | ModelDeployPlan> {
+    return this.training.deploy(auth.projectId, id, body);
   }
 
   @Post("models/:id/retire")

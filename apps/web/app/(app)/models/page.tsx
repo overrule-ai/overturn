@@ -255,7 +255,14 @@ export default function ModelsPage() {
             {m.servedAs && (
               <p className="mt-2 font-mono text-xs text-muted-foreground">
                 served as {m.servedAs}
+                {m.serving &&
+                  ` · endpoint ${m.serving.endpointId} · ${m.serving.hardware ?? m.serving.config.split("/").pop()} ×${m.serving.replicas} · ${m.serving.state.replace("DEPLOYMENT_STATE_", "").toLowerCase()}`}
                 {m.status === "promoted" && " · ov.promotedModel() returns this"}
+              </p>
+            )}
+            {m.status === "deploying" && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Provisioning the dedicated endpoint; the gate runs when it is ready.
               </p>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
