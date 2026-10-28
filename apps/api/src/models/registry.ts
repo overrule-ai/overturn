@@ -79,7 +79,10 @@ export class ModelRegistry {
     const { provider, model } = parseModel(id);
     switch (provider) {
       case "openai":
-        return createOpenAI({ apiKey: this.required("openai", this.config.OPENAI_API_KEY) }).chat(model);
+        return createOpenAI({
+          apiKey: this.required("openai", this.config.OPENAI_API_KEY),
+          baseURL: this.config.OPENAI_BASE_URL,
+        }).chat(model);
       case "anthropic":
         return createAnthropic({ apiKey: this.required("anthropic", this.config.ANTHROPIC_API_KEY) })(model);
       case "google":
@@ -140,7 +143,10 @@ export class ModelRegistry {
     const { provider, model } = parseModel(id);
     switch (provider) {
       case "openai":
-        return createOpenAI({ apiKey: this.required("openai", this.config.OPENAI_API_KEY) }).embedding(model);
+        return createOpenAI({
+          apiKey: this.required("openai", this.config.OPENAI_API_KEY),
+          baseURL: this.config.OPENAI_BASE_URL,
+        }).embedding(model);
       case "google":
         return createGoogleGenerativeAI({
           apiKey: this.required("google", this.config.GOOGLE_GENERATIVE_AI_API_KEY),

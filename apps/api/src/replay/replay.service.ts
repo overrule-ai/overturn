@@ -124,9 +124,14 @@ export function applyContract(
   return violations;
 }
 
+/**
+ * Regression: the baseline (the recorded run, or the previous replay) had this right and the
+ * target gets it wrong — for an edit case that means the fix a human made was passing and is
+ * not any more. Fixed: a correction the baseline failed that the target now gets right.
+ */
 export function verdictFor(c: Pick<Case, "kind">, passed: boolean, baselinePassed: boolean | null): Verdict {
   if (baselinePassed !== null) {
-    if (c.kind === "approve" && baselinePassed && !passed) return "regression";
+    if (baselinePassed && !passed) return "regression";
     if (c.kind !== "approve" && !baselinePassed && passed) return "fixed";
   }
   return passed ? "pass" : "fail";

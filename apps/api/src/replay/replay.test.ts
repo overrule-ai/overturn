@@ -163,6 +163,8 @@ describe("verdictFor", () => {
     expect(verdictFor({ kind: "approve" }, true, true)).toBe("pass");
     expect(verdictFor({ kind: "edit" }, true, false)).toBe("fixed");
     expect(verdictFor({ kind: "edit" }, false, false)).toBe("fail");
+    // a fix that the previous replay got right and this one gets wrong is a regression too
+    expect(verdictFor({ kind: "edit" }, false, true)).toBe("regression");
     expect(verdictFor({ kind: "reject" }, true, null)).toBe("pass");
   });
 });

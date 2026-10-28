@@ -14,6 +14,8 @@ const configSchema = z.object({
   OPENROUTER_API_KEY: z.string().optional(),
   /** Together AI: open-weight models for challenger replays, fine-tuning and hosting. */
   TOGETHER_API_KEY: z.string().optional(),
+  /** Optional OpenAI-compatible gateway/proxy for the openai/ provider (Helicone, LiteLLM, a mock). */
+  OPENAI_BASE_URL: z.string().optional(),
   TOGETHER_BASE_URL: z.string().default("https://api.together.xyz/v1"),
   /** Any OpenAI-compatible server (vLLM, Ollama, TGI, LM Studio): models are `local/<name>`. Air-gapped replay. */
   LOCAL_MODEL_BASE_URL: z.string().optional(),
