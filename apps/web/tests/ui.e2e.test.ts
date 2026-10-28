@@ -207,6 +207,10 @@ describe("web UI", () => {
     await fresh.getByTestId("onboarding-create-key").click();
     const key = (await fresh.getByTestId("onboarding-key").textContent())!.trim();
     expect(key).toMatch(/^ov_live_/);
+    // The first tab is the Zendesk app (no code): the key goes in the app settings.
+    expect(await fresh.locator("pre").textContent()).toContain(`overturn_api_key   = ${key}`);
+    // The SDK tabs carry the same key as an env var.
+    await fresh.getByRole("button", { name: /TypeScript/ }).click();
     expect(await fresh.locator("pre").textContent()).toContain(`OVERTURN_API_KEY=${key}`);
     // record a run with that key, as the snippet would
     const res = await fetch(`${ctx.baseUrl}/v1/ingest`, {
