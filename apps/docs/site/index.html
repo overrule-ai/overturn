@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Overturn — Your AI Agent Never Makes the Same Mistake Twice</title>
-<meta name="description" content="Overturn captures every time a human fixes your AI agent and turns the fix into a check that runs on any model. Open source. Your correction log, portable.">
+<title>Overturn — The system of record for how your company corrects AI</title>
+<meta name="description" content="Your experts already fix the AI's work. Overturn captures every fix where it happens, replays it as a test before any model or prompt change, and trains a model you own on it. Open source.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/media/apple-touch-icon.png">
 <meta property="og:title" content="Overturn — Your AI Agent Never Makes the Same Mistake Twice">
-<meta property="og:description" content="Overturn captures every time a human fixes your AI agent and turns the fix into a check that runs on any model. Open source. Your correction log, portable.">
+<meta property="og:description" content="Your experts already fix the AI's work. Overturn captures every fix where it happens, replays it as a test before any model or prompt change, and trains a model you own on it. Open source.">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://docs.overturn.run/media/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -333,16 +333,16 @@
 <main class="wrap">
 <div class="hero">
   <div>
-    <div class="pill">Open beta · Apache-2.0 · self-host on one Postgres</div>
-    <h1>Every time a human fixes your agent, Overturn keeps&nbsp;it.</h1>
-    <p class="lede">Capture the fix where it happens: in your own review screen, in Slack, or from your code. <b>Overturn</b> stores the wrong answer, the right answer and the reason as a correction. Replay the whole log against any model or prompt and see which old fixes broke. Nothing is locked in; export the log anywhere.</p>
+    <div class="pill">Open beta · Apache-2.0 · insurance claims first</div>
+    <h1>Your experts fix the AI every day. Overturn keeps every&nbsp;fix.</h1>
+    <p class="lede">When an adjuster rewrites the AI's coverage letter in Zendesk, <b>Overturn</b> captures what the AI drafted, what the expert sent and why. Every fix becomes a test that runs before any model or prompt change, and training data for a model you own. Juniors and agents handle more cases on their own; your experts only see the new ones.</p>
     <p class="sor">Overturn is the system of record for how your company corrects&nbsp;AI.</p>
     <div class="install"><div class="cmd"><span class="logos"><span style="background:#111">TS</span><span style="background:#3572a5">Py</span><span style="background:#f5a623">OT</span></span><code id="cmd">npm i @overturn-ai/sdk</code></div><button type="button" aria-label="Copy" data-copy="cmd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
-    <div class="ctas"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="/docs/quickstart/">Read the docs</a></div>
-    <div class="stats"><div class="cap">What a replay costs you.</div><div class="row">
-      <div><div class="n">25</div><div class="l">cases replayed from real corrections</div></div>
-      <div><div class="n">2</div><div class="l">regressions caught before merge</div></div>
-      <div><div class="n">$0.03</div><div class="l">model spend for the whole replay</div></div>
+    <div class="ctas"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="/docs/capture/">Zendesk app · no code</a><a class="btn" href="/docs/quickstart/">Read the docs</a></div>
+    <div class="stats"><div class="cap">What one week of captured fixes buys.</div><div class="row">
+      <div><div class="n">25</div><div class="l">expert fixes captured where they happened</div></div>
+      <div><div class="n">2</div><div class="l">regressions caught before the model change</div></div>
+      <div><div class="n">$0.03</div><div class="l">to replay all of them on a cheaper model</div></div>
     </div></div>
   </div>
 
@@ -350,30 +350,30 @@
     <div class="floor"></div>
     <div class="fade"></div>
     <div class="deck">
-      <div class="card ghost2" style="left:4%;top:10%"><div class="t"><span>run · 09:12</span><span>ticket-triage</span></div><div class="ln m"></div><div class="ln"></div><div class="ln s"></div></div>
-      <div class="card ghost" style="left:12%;top:4%"><div class="t"><span>run · 09:40</span><span>ticket-triage</span></div><div class="ln"></div><div class="ln s"></div><div class="ln m"></div></div>
-      <div class="card" id="c-1020" style="left:20%;top:0"><div class="t"><span>run · 10:05</span><span>T-1020</span></div>Hi Jo, thanks for flagging this. We've escalated it to the mobile team…<div class="ln s"></div><span class="tag approve">approve</span></div>
-      <div class="card ghost2" style="left:30%;top:42%"><div class="t"><span>run · 10:31</span><span>T-1003</span></div><div class="ln m"></div><div class="ln"></div></div>
-      <div class="card ghost" style="left:40%;top:36%"><div class="t"><span>run · 10:33</span><span>T-1004</span></div><div class="ln"></div><div class="ln s"></div></div>
-      <div class="card" id="c-1015" style="left:50%;top:30%"><div class="t"><span>run · 10:52</span><span>T-1015</span></div>Routed to <b>infrastructure</b>, priority P1<div class="ln s"></div><span class="tag edit">edit · priority → P0</span></div>
-      <div class="card ghost" style="left:62%;top:62%"><div class="t"><span>run · 11:07</span><span>T-1022</span></div><div class="ln"></div><div class="ln m"></div></div>
-      <div class="card" id="c-1030" style="left:70%;top:56%"><div class="t"><span>run · 11:20</span><span>T-1030</span></div>Refund issued — $120<div class="ln s"></div><span class="tag reject">reject · never refund without approval</span></div>
-      <div class="card" id="c-rep" style="left:36%;top:76%;width:210px"><div class="t"><span>replay · 11:41</span><span>claude-sonnet-4-5</span></div>25 cases · <span style="color:#b03030">2 regressions</span> · 7 fixed<div class="ln m"></div><span class="tag esc">regressions first</span></div>
+      <div class="card ghost2" style="left:4%;top:10%"><div class="t"><span>run · 09:12</span><span>claims-reply</span></div><div class="ln m"></div><div class="ln"></div><div class="ln s"></div></div>
+      <div class="card ghost" style="left:12%;top:4%"><div class="t"><span>run · 09:40</span><span>claims-reply</span></div><div class="ln"></div><div class="ln s"></div><div class="ln m"></div></div>
+      <div class="card" id="c-1020" style="left:20%;top:0"><div class="t"><span>run · 10:05</span><span>zd:48102</span></div>Hi Dana, the storm damage is covered under your HO-3 policy. An adjuster will…<div class="ln s"></div><span class="tag approve">approve</span></div>
+      <div class="card ghost2" style="left:30%;top:42%"><div class="t"><span>run · 10:31</span><span>zd:48110</span></div><div class="ln m"></div><div class="ln"></div></div>
+      <div class="card ghost" style="left:40%;top:36%"><div class="t"><span>run · 10:33</span><span>zd:48131</span></div><div class="ln"></div><div class="ln s"></div></div>
+      <div class="card" id="c-1015" style="left:50%;top:30%"><div class="t"><span>run · 10:52</span><span>zd:48213</span></div>Covered · reserve <b>$4,000</b> · repair<div class="ln s"></div><span class="tag edit">edit · reserve → $6,500</span></div>
+      <div class="card ghost" style="left:62%;top:62%"><div class="t"><span>run · 11:07</span><span>zd:48290</span></div><div class="ln"></div><div class="ln m"></div></div>
+      <div class="card" id="c-1030" style="left:70%;top:56%"><div class="t"><span>run · 11:20</span><span>zd:48377</span></div>Payout approved — $12,400<div class="ln s"></div><span class="tag reject">reject · never pay before inspection</span></div>
+      <div class="card" id="c-rep" style="left:36%;top:76%;width:210px"><div class="t"><span>replay · 11:41</span><span>deepseek-v4.1-flash</span></div>25 cases · <span style="color:#b03030">2 regressions</span> · 7 fixed<div class="ln m"></div><span class="tag esc">regressions first</span></div>
     </div>
     <div class="now" style="left:46%;top:9%"><span class="av"></span>NOW · <span id="now">11:41</span> · Sam ▾</div>
     <span class="yr" style="left:30%;top:14%">09:00</span><span class="yr" style="left:30%;top:88%">12:00</span>
     <svg class="wires" id="wires"></svg>
-    <div class="lab blue phase on" data-p="0" data-card="c-1020" data-c="#3b5bdb" style="left:0;top:22%">approve <i>T-1020 · 10:05</i></div>
-    <div class="lab amber phase on" data-p="0" data-card="c-1015" data-c="#e8960c" style="left:0;top:50%">priority → P0 <i>T-1015 · 10:52</i></div>
-    <div class="lab red phase on" data-p="0" data-card="c-1030" data-c="#d9480f" style="left:0;top:36%">reject · refund <i>T-1030 · 11:20</i></div>
-    <div class="lab purple phase" data-p="1" data-card="c-rep" data-c="#7048e8" style="left:0;top:82%">2 regressions <i>claude-sonnet-4-5 · 11:41</i></div>
-    <div class="lab dark phase" data-p="2" data-card="c-1015" data-c="#333" style="left:0;top:62%">CASE · T-1015 · tools answered from the recording</div>
-    <div class="lab dark phase" data-p="3" data-card="c-rep" data-c="#333" style="left:0;top:44%">PROMPT · ticket-triage@v3 · 25/25 passed</div>
+    <div class="lab blue phase on" data-p="0" data-card="c-1020" data-c="#3b5bdb" style="left:0;top:22%">approve <i>zd:48102 · 10:05</i></div>
+    <div class="lab amber phase on" data-p="0" data-card="c-1015" data-c="#e8960c" style="left:0;top:50%">reserve → $6,500 <i>zd:48213 · 10:52</i></div>
+    <div class="lab red phase on" data-p="0" data-card="c-1030" data-c="#d9480f" style="left:0;top:36%">reject · payout <i>zd:48377 · 11:20</i></div>
+    <div class="lab purple phase" data-p="1" data-card="c-rep" data-c="#7048e8" style="left:0;top:82%">2 regressions <i>deepseek-v4.1-flash · 11:41</i></div>
+    <div class="lab dark phase" data-p="2" data-card="c-1015" data-c="#333" style="left:0;top:62%">CASE · zd:48213 · tools answered from the recording</div>
+    <div class="lab dark phase" data-p="3" data-card="c-rep" data-c="#333" style="left:0;top:44%">MODEL · claims-lora-v1 · 25/25 passed · promoted</div>
   </div>
 </div>
 </main>
 
-<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#product">Product</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#next">Coming next</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
+<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#product">Product</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#next">Design partners</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
 
 <main class="wrap">
 
@@ -381,62 +381,67 @@
   <div class="qs">
     <div>
       <div class="steps" id="steps">
-        <div class="step on" data-i="0"><div class="n">1</div><div><h3>Record</h3><p>Wrap the OpenAI, Anthropic or Vercel AI SDK client you already have, or point an OpenTelemetry exporter at <code>/v1/traces</code>. Plumbing: every prompt, tool call and answer is recorded with a fingerprint.</p></div><span class="bar"></span></div>
-        <div class="step" data-i="1"><div class="n">2</div><div><h3>Correct where the human already works</h3><p>Approve, edit or reject in Slack, with <code>&lt;CorrectButton&gt;</code> inside your own product, or from code with <code>ov.correct()</code>. The case freezes with the agent's original output, the human's fixed output, and a short reason.</p></div><span class="bar"></span></div>
-        <div class="step" data-i="2"><div class="n">3</div><div><h3>Replay, regressions first</h3><p>Replay the whole log against any model or prompt from the CLI, the app, or CI. Tools are answered from the recording, and the report leads with the old fixes that broke.</p></div><span class="bar"></span></div>
+        <div class="step on" data-i="0"><div class="n">1</div><div><h3>Capture where the expert works</h3><p>Install the Zendesk app: it watches the reply box for the AI draft, diffs it against what the expert sends, and asks for a one-line reason. Any other tool posts the same thing to <code>/v1/capture</code>. No SDK, nothing to instrument.</p></div><span class="bar"></span></div>
+        <div class="step" data-i="1"><div class="n">2</div><div><h3>Or record the agent itself</h3><p>Wrap the OpenAI, Anthropic or Vercel AI SDK client you already have, or point an OpenTelemetry exporter at <code>/v1/traces</code>; then approve, edit or reject in Slack, with <code>&lt;CorrectButton&gt;</code>, or from code. Either way the case freezes the original, the fix and the reason.</p></div><span class="bar"></span></div>
+        <div class="step" data-i="2"><div class="n">3</div><div><h3>Replay, then train</h3><p>Replay the whole log against any model or prompt before you ship; the report leads with the old fixes that broke. Export the same log as training data, fine-tune an open model, and promote it only when it passes the suite.</p></div><span class="bar"></span></div>
       </div>
       <div class="foot"><a class="btn primary" href="https://app.overturn.run/login">Get API key</a><a class="link" href="/docs/quickstart/">Full quickstart →</a><button class="pp" id="qs-pp" type="button" aria-label="Pause"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button></div>
     </div>
     <div class="panel">
-      <div class="ph" id="ph">agent.ts</div>
+      <div class="ph" id="ph">zendesk · ticket #48213</div>
       <div class="pb">
         <div class="view on" data-v="0">
+<pre><span class="c">// what the Zendesk app sends when Ray hits Submit</span>
+<span class="k">POST</span> /v1/capture
+{
+  source: <span class="s">"zendesk"</span>, externalId: <span class="s">"zd:48213"</span>,
+  agent: <span class="s">"claims-reply"</span>, actor: <span class="s">"ray@carrier.com"</span>,
+  context: [
+    { role: <span class="s">"customer"</span>, content: <span class="s">"Water came through the ceiling…"</span> },
+    { role: <span class="s">"note"</span>, content: <span class="s">"HO-3, $1,000 deductible, no prior claims."</span> }
+  ],
+  draft: { text: <span class="s">"…adjuster will contact you within 5 days…"</span>,
+           fields: { status: <span class="s">"covered"</span>, reserve: 4000 } },
+  sent:  { text: <span class="s">"…adjuster will contact you within 2 days…"</span>,
+           fields: { status: <span class="s">"covered"</span>, reserve: 6500 } },
+  reason: <span class="s">"Storm claims: 2-day contact; roof replaced, not repaired"</span>
+}
+<span class="c">// → kind "edit" · changedFields ["reserve"] · one new case</span></pre>
+          <div class="hint">Sent as drafted is an approve, silently. Changed is an edit, with the reason as the case title. Decision fields are scored exactly; the prose is scored by a judge, so rewording is not a regression and a changed reserve is.</div>
+        </div>
+        <div class="view" data-v="1">
 <pre><span class="k">import</span> { Overturn } <span class="k">from</span> <span class="s">"@overturn-ai/sdk"</span>;
-<span class="k">import</span> OpenAI <span class="k">from</span> <span class="s">"openai"</span>;
-
-<span class="k">const</span> ov = <span class="k">new</span> Overturn();                   <span class="c">// reads the two env vars</span>
+<span class="k">const</span> ov = <span class="k">new</span> Overturn();
 <span class="k">const</span> openai = ov.wrapOpenAI(<span class="k">new</span> OpenAI());  <span class="c">// every call recorded</span>
 
-<span class="k">const</span> run = ov.startRun({ agent: <span class="s">"ticket-triage"</span>, input: ticket });
+<span class="k">const</span> run = ov.startRun({ agent: <span class="s">"claims-reply"</span>, externalId: <span class="s">"zd:48213"</span>, input: ticket });
 <span class="k">await</span> run.context(<span class="k">async</span> () => {
-  <span class="k">const</span> customer = <span class="k">await</span> ov.tool(<span class="s">"lookup_customer"</span>, lookup, ticket.email);
+  <span class="k">const</span> policy = <span class="k">await</span> ov.tool(<span class="s">"lookup_policy"</span>, lookup, ticket.policyNo);
   <span class="k">const</span> res = <span class="k">await</span> openai.chat.completions.create({ model, messages });
   run.end({ output: res.choices[0].message.content });
 });
-<span class="k">await</span> ov.flush();</pre>
-          <div class="hint">Python is the same shape: <code>ov.wrap_openai(OpenAI())</code>, <code>with ov.run(...)</code>. OpenTelemetry users point their exporter at <code>/v1/traces</code> and change nothing else.</div>
-        </div>
-        <div class="view" data-v="1">
-<pre><span class="c">// review.tsx — next to the answer your team already checks</span>
-<span class="k">import</span> { CorrectButton } <span class="k">from</span> <span class="s">"@overturn-ai/sdk/react"</span>;
 
-&lt;CorrectButton endpoint=<span class="s">"/api/overturn/correct"</span> runId={runId} original={output} /&gt;
-
-<span class="c">// app/api/overturn/correct/route.ts — key stays on the server</span>
-<span class="k">export const</span> POST = ov.correctionHandler();
-
-<span class="c">// or straight from your code</span>
-<span class="k">await</span> ov.correct({
-  runId, kind: <span class="s">"edit"</span>,
-  correctedOutput: { priority: <span class="s">"P0"</span> },
-  note: <span class="s">"outage keyword means P0"</span>,
-  actor: <span class="s">"maya@acme.com"</span>,
-});</pre>
-          <div class="hint">Slack works with no code: each completed run posts to a channel with Review and Approve buttons. One click, one correction.</div>
+<span class="c">// the expert's fix, from your own review screen</span>
+<span class="k">await</span> ov.correct({ runId, kind: <span class="s">"edit"</span>, correctedOutput: { reserve: 6500 },
+  note: <span class="s">"roof replacement, not repair"</span>, actor: <span class="s">"ray@carrier.com"</span> });</pre>
+          <div class="hint">Python is the same shape. OpenTelemetry users point their exporter at <code>/v1/traces</code>. When the drafting agent recorded its run, a Zendesk capture attaches to it instead of creating one.</div>
         </div>
         <div class="view" data-v="2">
-<div class="term"><span class="p">$</span> overturn replay --model claude-sonnet-4-5 --prompt ticket-triage@v3
-<span class="d">25 cases · tools answered from the recording · ~40s</span>
+<div class="term"><span class="p">$</span> overturn replay --model together/deepseek-ai/DeepSeek-V4.1-Flash --agent claims-reply
+<span class="d">25 cases · tools answered from the recording · ~40s · $0.03</span>
 
 <span class="g">passed</span>      23/25
-<span class="r">regression</span>  approve  ticket-triage T-1020   1/2 fields match
-<span class="r">regression</span>  approve  ticket-triage T-1022   1/2 fields match
-<span class="y">fixed</span>       edit     ticket-triage T-1004   expected fields match
-<span class="y">fixed</span>       reject   ticket-triage T-1030   refund tool not called
+<span class="r">regression</span>  edit     claims-reply zd:48213   reserve 4000 ≠ 6500
+<span class="r">regression</span>  edit     claims-reply zd:48377   status covered ≠ denied
+<span class="y">fixed</span>       edit     claims-reply zd:48102   expected fields match
+<span class="y">fixed</span>       reject   claims-reply zd:48290   payout tool not called
 
 <span class="d">report</span>  https://app.overturn.run/replays/01a156ea
+<span class="p">$</span> overturn train --base meta-llama/Meta-Llama-3.1-8B-Instruct-Reference --agent claims-reply
+<span class="d">312 rows · LoRA on Together · gate: no regressions, pass rate ≥ incumbent</span>
+<span class="g">passed</span>      gate 25/25 · shadow on · promote when you're ready
 <span class="p">$</span><span class="cursor"></span></div>
-          <div class="hint">Regressions are listed first — approved cases that now fail. The same command runs in the GitHub Action and blocks the pull request.</div>
+          <div class="hint">Regressions are listed first. The same replay runs in the GitHub Action and blocks the pull request; the same log trains the model, and nothing is promoted that fails the suite.</div>
         </div>
       </div>
     </div>
@@ -446,25 +451,25 @@
 <section id="product" class="band">
   <div class="flow">
     <div>
-      <h2>From a human fix<br>to a check that never forgets.</h2>
+      <h2>From an expert's fix<br>to a model that remembers it.</h2>
       <div class="fsteps" id="fsteps">
-        <div class="fstep on" data-i="0"><h3>Record</h3><p>Wrap the model client you already have. Every prompt, tool call and answer is recorded with a fingerprint.</p></div>
-        <div class="fstep" data-i="1"><h3>Correct</h3><p>A human approves, edits, rejects or escalates where they already work: inside your own product, in Slack, or from code. The case freezes with the agent's original output, the human's fixed output, and a short reason.</p></div>
+        <div class="fstep on" data-i="0"><h3>Record</h3><p>The Zendesk app records the AI draft and the thread the expert saw; or wrap the model client you already have and every prompt, tool call and answer is recorded with a fingerprint.</p></div>
+        <div class="fstep" data-i="1"><h3>Correct</h3><p>The expert sends the reply, rewrites the decision, or rejects it, in the tool they already use. The case freezes with the AI's original output, the expert's fix, and one line on why.</p></div>
         <div class="fstep" data-i="2"><h3>Replay</h3><p>Run every case against a new model or prompt from the CLI, the app, or CI. Tools are answered from the recording; nothing fires twice.</p></div>
-        <div class="fstep" data-i="3"><h3>Report</h3><p>Regressions first — approved cases that now fail — then fixed and still-wrong, with the baseline beside the new answer.</p></div>
+        <div class="fstep" data-i="3"><h3>Report, then train</h3><p>Regressions first, with the baseline beside the new answer. The same log trains an open model you own; it is promoted only when it passes the suite, and shadows production first.</p></div>
       </div>
     </div>
     <div class="fpanel" id="fpanel">
       <div class="fv on"><img src="/media/light/record.png" width="1440" height="900" alt="A recorded run: input, output and the trajectory of tool calls and model steps" loading="lazy"></div>
       <div class="fv"><video muted playsinline loop preload="metadata" poster="/media/light/correct-poster.png"><source src="/media/light/correct.mp4" type="video/mp4"></video></div>
-      <div class="fv"><div class="term"><span class="p">$</span> overturn replay --model claude-sonnet-4-5 --prompt ticket-triage@v3
-<span class="d">25 cases · tools answered from the recording · ~40s</span>
+      <div class="fv"><div class="term"><span class="p">$</span> overturn replay --model together/deepseek-ai/DeepSeek-V4.1-Flash --agent claims-reply
+<span class="d">25 cases · tools answered from the recording · ~40s · $0.03</span>
 
 <span class="g">passed</span>      23/25
-<span class="r">regression</span>  approve  ticket-triage T-1020   1/2 fields match
-<span class="r">regression</span>  approve  ticket-triage T-1022   1/2 fields match
-<span class="y">fixed</span>       edit     ticket-triage T-1004   expected fields match
-<span class="y">fixed</span>       reject   ticket-triage T-1030   refund tool not called
+<span class="r">regression</span>  edit     claims-reply zd:48213   reserve 4000 ≠ 6500
+<span class="r">regression</span>  edit     claims-reply zd:48377   status covered ≠ denied
+<span class="y">fixed</span>       edit     claims-reply zd:48102   expected fields match
+<span class="y">fixed</span>       reject   claims-reply zd:48290   payout tool not called
 
 <span class="d">report</span>  https://app.overturn.run/replays/01a156ea
 <span class="p">$</span><span class="cursor"></span></div></div>
@@ -520,11 +525,11 @@
 <section id="capabilities" class="band">
   <h2 style="margin-bottom:40px">What Overturn handles</h2>
   <div class="feat">
-    <div><h4>Capture at the point of fix</h4><p>No one opens another dashboard to mark a case. Approve, edit or reject in Slack or inside your own product. The correction is recorded with the reason attached.</p></div>
+    <div><h4>Capture at the point of fix</h4><p>No one opens another dashboard. The Zendesk app diffs the AI draft against what the expert sent and asks for one line on why; Slack, <code>&lt;CorrectButton&gt;</code> and <code>/v1/capture</code> cover everything else. The fix is recorded with the reason attached.</p></div>
     <div><h4>The correction is the record</h4><p>Not a score on a trace. Every approve, edit, reject or escalate is stored as the agent's answer, the human's fix, the reason and who made it, and becomes a case automatically.</p></div>
     <div><h4>Safe replay</h4><p>Tool calls are matched to recordings by fingerprint, so a model that takes a different path still gets the right answers. Nothing is emailed, refunded or written twice.</p></div>
     <div><h4>Can a cheaper model do the job?</h4><p>Replay the same suite against several models at once and read them side by side: pass rate, regressions and cost per run, scored on your team's own corrections.</p></div>
-    <div><h4>Your log, portable</h4><p>Export every correction as SFT or DPO JSONL that OpenAI, Together and Hugging Face accept as-is, or pull the closest ones into your prompt with <code>ov.examples()</code>. Open format, self-hostable.</p></div>
+    <div><h4>A model you own</h4><p>Export every correction as SFT or DPO JSONL, fine-tune an open model on Together or in your own cloud, gate it against the suite, shadow it on live traffic, promote it by hand. Or pull the closest fixes into your prompt with <code>ov.examples()</code> today.</p></div>
     <div><h4>Decision fields</h4><p>Scoring looks at the fields the human changed, not the phrasing. A judge model handles free text, and says which model it used.</p></div>
   </div>
   <div class="cards">
@@ -550,10 +555,10 @@
 
 <section id="next" class="band">
   <div class="next">
-    <div class="pill">Coming next</div>
-    <h2>Next: models trained on your corrections</h2>
-    <p>Every correction is also training data: the agent's answer is the wrong one, your team's fix is the right one. We're building the next step: fine-tune an open model on your corrections, prove it passes your suite, and run it wherever you want. Looking for design partners with high-volume agents.</p>
-    <a class="btn primary" href="mailto:shireen@overturn.run?subject=Design%20partner">Become a design partner</a>
+    <div class="pill">Design partners · insurance claims</div>
+    <h2>Your experts' judgment, compounding in a model you control.</h2>
+    <p>Senior adjusters, underwriters and reviewers already fix the AI's first pass; the fixes disappear into tickets. With Overturn in the inbox, every fix is a test and a training row. The model learns the team's decisions, juniors and agents handle more cases unaided, experts see only the new edge cases, and those get captured too. We're working with a small number of claims teams on Zendesk first. If that's you, write to us.</p>
+    <a class="btn primary" href="mailto:shireen@overturn.run?subject=Claims%20design%20partner">Talk to us about your claims team</a>
   </div>
 </section>
 
@@ -570,20 +575,22 @@
   <div class="faq">
     <h2>Frequently<br>asked questions</h2>
     <div>
-      <details><summary><span class="i">01</span>What do I send?<span class="ch">⌄</span></summary><div class="a">Runs. A run is the input, every prompt and model answer, every tool call with its result, and the final output. The SDK records all of it with one wrapper; OpenTelemetry users send the spans they already have.</div></details>
-      <details><summary><span class="i">02</span>What comes back?<span class="ch">⌄</span></summary><div class="a">A report per replay: regressions first (approved cases that now fail), then fixed cases, then still-wrong ones, each with the baseline, the new answer and the human's decision side by side, plus a receipt listing exactly which tool calls were answered from the recording.</div></details>
-      <details><summary><span class="i">03</span>How is this different from Braintrust or LangSmith?<span class="ch">⌄</span></summary><div class="a">Eval tools start from traces and let you promote a reviewed failure into a dataset later. Overturn starts from the correction itself: the moment a human rewrites the answer in the tool they already use. The correction (wrong output, fixed output, reason, model and prompt version) is the stored object. Tests, exports and, later, training are built on that log. You can export the same cases as JSONL and keep using your eval tool; Overturn is the system of record for the fixes.</div></details>
-      <details><summary><span class="i">04</span>What happens to tools with side effects?<span class="ch">⌄</span></summary><div class="a">They're answered from the recording when the call matches a recorded fingerprint, and refused when it doesn't. Nothing is emailed, refunded or written during a replay. The receipt says which calls were refused so you can tell what wasn't tested.</div></details>
-      <details><summary><span class="i">05</span>Which models and frameworks?<span class="ch">⌄</span></summary><div class="a">Recording: OpenAI, Anthropic and the Vercel AI SDK in TypeScript; OpenAI and Anthropic in Python; anything that emits OpenTelemetry gen_ai spans. Replay: OpenAI, Anthropic, Google, OpenRouter, or any OpenAI-compatible endpoint, including local models.</div></details>
-      <details><summary><span class="i">06</span>How much does it cost?<span class="ch">⌄</span></summary><div class="a">Nothing during the open beta. Self-hosting is free forever under Apache-2.0. Replays call the model providers with your own keys, so you pay them directly — a 25-case replay on a small model costs a few cents.</div></details>
-      <details><summary><span class="i">07</span>Where does my data live?<span class="ch">⌄</span></summary><div class="a">Hosted: in one Postgres on Railway (US), encrypted at rest, raw runs purged after 30 days unless a case depends on them. Self-hosted: wherever you put it. Model calls during replay go straight from the replay worker to the provider.</div></details>
+      <details><summary><span class="i">01</span>Who is this for?<span class="ch">⌄</span></summary><div class="a">Teams whose expensive experts check and fix AI (or junior) first-pass work: claims adjusters, underwriters, compliance reviewers, field technicians. If the fixes are disappearing into tickets and you are paying a frontier lab for work your team already knows how to do, this is for you. Engineers get the same thing as an open-source SDK.</div></details>
+      <details><summary><span class="i">02</span>What do I send?<span class="ch">⌄</span></summary><div class="a">From Zendesk, nothing: the app captures the draft, the thread, what was sent and the reason. From code, runs: the input, every prompt and model answer, every tool call with its result, and the final output. OpenTelemetry users send the spans they already have.</div></details>
+      <details><summary><span class="i">03</span>What comes back?<span class="ch">⌄</span></summary><div class="a">A report per replay: regressions first (approved cases that now fail), then fixed cases, then still-wrong ones, each with the baseline, the new answer and the human's decision side by side, plus a receipt listing exactly which tool calls were answered from the recording.</div></details>
+      <details><summary><span class="i">04</span>How is this different from Braintrust or LangSmith?<span class="ch">⌄</span></summary><div class="a">Eval tools start from traces and need an engineer to write the test set. Overturn starts from the correction itself: the moment an expert rewrites the answer in the tool they already use. The correction (wrong output, fixed output, reason, model and prompt version) is the stored object; tests, exports and the model you own are built on that log. You can export the same cases as JSONL and keep using your eval tool; Overturn is the system of record for the fixes.</div></details>
+      <details><summary><span class="i">05</span>Does the model really learn how my experts decide?<span class="ch">⌄</span></summary><div class="a">It reflects the decisions your experts already made: house rules, thresholds, wording, which cases get escalated. It does not learn underwriting. That is why the model and the suite ship together: nothing is promoted that fails the replay of your own experts' fixes, and it shadows production before it serves anything.</div></details>
+      <details><summary><span class="i">06</span>What happens to tools with side effects?<span class="ch">⌄</span></summary><div class="a">They're answered from the recording when the call matches a recorded fingerprint, and refused when it doesn't. Nothing is emailed, refunded or written during a replay. The receipt says which calls were refused so you can tell what wasn't tested.</div></details>
+      <details><summary><span class="i">07</span>Which models and frameworks?<span class="ch">⌄</span></summary><div class="a">Recording: OpenAI, Anthropic and the Vercel AI SDK in TypeScript; OpenAI and Anthropic in Python; anything that emits OpenTelemetry gen_ai spans. Replay: OpenAI, Anthropic, Google, OpenRouter, or any OpenAI-compatible endpoint, including local models.</div></details>
+      <details><summary><span class="i">08</span>How much does it cost?<span class="ch">⌄</span></summary><div class="a">Nothing during the open beta. Self-hosting is free forever under Apache-2.0. Replays call the model providers with your own keys, so you pay them directly — a 25-case replay on a small model costs a few cents.</div></details>
+      <details><summary><span class="i">09</span>Where does my data live?<span class="ch">⌄</span></summary><div class="a">Hosted: in one Postgres on Railway (US), encrypted at rest, raw runs purged after 30 days unless a case depends on them. Self-hosted: wherever you put it. Model calls during replay go straight from the replay worker to the provider.</div></details>
     </div>
   </div>
 </section>
 
 <div class="cta">
-  <h2>Try Overturn on your agent</h2>
-  <p>Sign in, wrap the client you already have, fix one answer and watch it become a check. Ten minutes end to end with the example agent.</p>
+  <h2>Start with one inbox</h2>
+  <p>Install the Zendesk app, send one reply, and watch the first fix become a case. Engineers: wrap the client you already have; ten minutes end to end with the example agent.</p>
   <div class="ctas" style="justify-content:center;margin:0"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="https://github.com/overrule-ai/overturn">GitHub</a></div>
 </div>
 </main>
@@ -620,7 +627,7 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // quickstart
 (()=>{const steps=[...document.querySelectorAll('#steps .step')];const views=[...document.querySelectorAll('.panel .view')];const ph=document.getElementById('ph');
-  const heads=['agent.ts','review.tsx','$ overturn replay'];let i=0,timer=null,paused=reduce;
+  const heads=['zendesk · ticket #48213','agent.ts','$ overturn replay'];let i=0,timer=null,paused=reduce;
   function go(n){i=n;steps.forEach((s,k)=>{s.classList.toggle('on',k===n);const b=s.querySelector('.bar');b.style.animation='none';void b.offsetWidth;b.style.animation='';});views.forEach((v,k)=>v.classList.toggle('on',k===n));ph.textContent=heads[n];}
   function tick(){if(!paused)go((i+1)%3);}
   steps.forEach(s=>s.addEventListener('click',()=>{go(+s.dataset.i);clearInterval(timer);timer=setInterval(tick,7000);}));
@@ -629,7 +636,7 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // flow: steps ↔ panel, auto-advance, hover pauses, clicking a step jumps
 (()=>{const steps=[...document.querySelectorAll('#fsteps .fstep')],views=[...document.querySelectorAll('#fpanel .fv')],cl=document.getElementById('fcl'),panel=document.getElementById('fpanel');
-  const labels=['Every prompt and tool call, recorded','One click. The case freezes with the fix','Tools answered from the recording','Regressions first, side by side'];let i=0,timer,paused=reduce;
+  const labels=['The draft and the thread, recorded','The expert hits Submit. The case freezes with the fix','Tools answered from the recording','Regressions first; the model that passes gets promoted'];let i=0,timer,paused=reduce;
   function go(n){i=n;steps.forEach((s,k)=>{s.classList.remove('paused');s.classList.toggle('on',k===n);});views.forEach((v,k)=>{v.classList.toggle('on',k===n);const vid=v.querySelector('video');if(vid){if(k===n){vid.currentTime=0;vid.play().catch(()=>{});}else vid.pause();}});cl.textContent=labels[n];}
   function restart(){clearInterval(timer);timer=setInterval(()=>{if(!paused)go((i+1)%steps.length);},7000);}
   steps.forEach(s=>s.addEventListener('click',()=>{go(+s.dataset.i);restart();}));
@@ -639,15 +646,15 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // comparison
 (()=>{const data=[
-  {ask:'Swap claude-sonnet-4-5 for a cheaper model on ticket triage.',who:'Priya · 25 cases from last week',
-   a:[['overturn replay --model gpt-5-mini','40 s · $0.03'],['2 regressions · T-1020, T-1022','approved, now routed wrong'],['keep sonnet for P0 tickets','ships Tuesday']],ares:'<b>Known before merge.</b> Both regressions are approved cases; the report shows the baseline next to the new answer.',
-   b:[['deploy, watch the queue','3 days'],['two escalations from support','Thursday'],['revert, write a postmortem','Friday']],bres:'<b>Found by customers.</b> The two wrong routes were the same two tickets.'},
-  {ask:'Tighten the refund rule in the prompt: never refund without manager approval.',who:'Sam · prompt ticket-triage@v3',
-   a:[['overturn replay --prompt ticket-triage@v3','38 s · $0.02'],['T-1030 fixed · refund tool not called','was rejected last week'],['0 regressions','25/25 approved cases hold']],ares:'<b>The rejection became the test.</b> The case the reviewer rejected is the one that proves the fix.',
-   b:[['deploy the prompt','—'],['hope nobody hits the refund path','?'],['re-read 200 transcripts to be sure','afternoon']],bres:'<b>No proof.</b> Nothing tells you the other 24 cases still pass.'},
-  {ask:'Try three models and pick one.',who:'Jo · matrix',
-   a:[['overturn replay --model a,b,c','90 s · $0.08'],['one table: pass rate, regressions, cost','side by side'],['tools answered from the recording','0 side effects']],ares:'<b>One decision, one screen.</b> Regressions per model, same cases, same corrections.',
-   b:[['three branches, three manual runs','a day'],['tool calls fire for real','emails sent, refunds issued'],['compare by eye','spreadsheet']],bres:'<b>Not safe to run.</b> Side-effect tools can\'t be exercised against production data.'}];
+  {ask:'Move claims replies from GPT-5 to a cheaper open model.',who:'Priya · 25 adjuster fixes from last week',
+   a:[['overturn replay --model deepseek-v4.1-flash','40 s · $0.03'],['2 regressions · zd:48213, zd:48377','reserve and coverage wrong again'],['keep GPT-5 for total-loss claims','ships Tuesday']],ares:'<b>Known before the switch.</b> Both regressions are fixes an adjuster made last week; the report shows them side by side.',
+   b:[['switch, watch the queue','3 days'],['two complaints reach the claims manager','Thursday'],['revert, write a postmortem','Friday']],bres:'<b>Found by policyholders.</b> The two wrong letters were the same two fixes.'},
+  {ask:'Tighten the prompt: never approve a payout before the inspection report.',who:'Sam · prompt claims-reply@v3',
+   a:[['overturn replay --prompt claims-reply@v3','38 s · $0.02'],['zd:48377 fixed · payout tool not called','rejected by Ray last week'],['0 regressions','25/25 expert fixes hold']],ares:'<b>The rejection became the test.</b> The case the senior adjuster rejected is the one that proves the fix.',
+   b:[['deploy the prompt','—'],['hope nobody hits the payout path','?'],['re-read 200 tickets to be sure','afternoon']],bres:'<b>No proof.</b> Nothing tells you the other 24 cases still pass.'},
+  {ask:'Train on 300 adjuster fixes and see if the model can take the first pass.',who:'Jo · owned model',
+   a:[['overturn train --base llama-3.1-8b','20 min · gate 25/25'],['shadow on live tickets for a week','agrees with adjusters 91%'],['promote; juniors handle it unaided','experts see the new 9%']],ares:'<b>Judgment that compounds.</b> The next 9% get captured too.',
+   b:[['keep renting the frontier model','$ per call, forever'],['fixes vanish into tickets','nothing learns'],['experts re-check every case','headcount']],bres:'<b>Nothing improves.</b> The same mistakes, corrected by the same people, every week.'}];
   const el=document.getElementById('cmp'),dots=document.getElementById('cmp-dots');let i=0,paused=reduce,timer;
   const row=(l)=>`<div class="line"><span class="w">${l[0].split(' ')[0]}</span><span>${l[0].split(' ').slice(1).join(' ')}</span><span class="m">${l[1]}</span></div>`;
   function render(n){i=n;const d=data[n];el.innerHTML=`<div class="ask"><span class="av"></span><div><div class="who">${d.who}</div><div class="bub">${d.ask}</div></div></div>
