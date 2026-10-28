@@ -707,6 +707,17 @@ describe("replay jobs (step mode)", () => {
     expect(loo.body.examples.map((e) => e.caseId)).toContain(d.c.id);
     void b;
 
+    // with no embedding provider, retrieval is lexical and still finds the billing cases
+    await api(ctx, "PATCH", "/v1/project", { settings: { embeddingModel: "openai/text-embedding-3-small" } });
+    const lex = await api<{ examples: { caseId: string }[]; embeddingModel: string }>(
+      ctx,
+      "GET",
+      `/v1/examples?input=${encodeURIComponent("duplicate billing invoice refund")}&k=2&agent=ex-agent`,
+    );
+    expect(lex.body.embeddingModel).toBe("lexical");
+    expect(lex.body.examples.map((e) => e.caseId).sort()).toEqual([a.c.id, d.c.id].sort());
+    await api(ctx, "PATCH", "/v1/project", { settings: { embeddingModel: "fake/bag-of-words" } });
+
     // a replay with examples carries the option and runs
     const created = await api<{ job: ReplayJob }>(ctx, "POST", "/v1/replays", {
       model: echoModel({ priority: "P2" }),

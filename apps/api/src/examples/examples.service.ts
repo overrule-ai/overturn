@@ -93,13 +93,75 @@ export class ExamplesService {
         await this.db.update(cases).set({ inputText: text, inputEmbedding: vec }).where(eq(cases.id, r.id));
         n++;
       } catch (err) {
-        this.logger.warn(
-          `embedding case ${r.id} failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        throw err;
+        throw new Error(`embedding case ${r.id} failed: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
     return n;
+  }
+
+  /** Makes sure every eligible case has its input text stored (no embedding needed). */
+  async ensureInputText(projectId: string, limit = 2000): Promise<number> {
+    const rows = await this.db
+      .select({ id: cases.id, frozenInput: cases.frozenInput })
+      .from(cases)
+      .where(and(this.eligible(projectId), isNull(cases.inputText)))
+      .limit(limit);
+    for (const r of rows)
+      await this.db
+        .update(cases)
+        .set({ inputText: inputTextOf({ frozenInput: r.frozenInput as Case["frozenInput"] }) })
+        .where(eq(cases.id, r.id));
+    return rows.length;
+  }
+
+  /**
+   * Lexical retrieval when no embedding provider is configured: Postgres full-text ranking over
+   * the case inputs. Weaker than embeddings on paraphrase, but it needs no key and no network.
+   */
+  async nearestLexical(
+    projectId: string,
+    input: string,
+    q: { k: number; agent?: string; tag?: string; excludeCaseId?: string; excludeRunId?: string },
+  ): Promise<Example[]> {
+    const terms = [...new Set(input.toLowerCase().match(/[a-z0-9][a-z0-9'-]{1,}/g) ?? [])]
+      .filter((t) => t.length > 2)
+      .slice(0, 40);
+    if (terms.length === 0) return [];
+    const tsquery = terms
+      .map((t) => t.replace(/[^a-z0-9]/g, ""))
+      .filter(Boolean)
+      .join(" | ");
+    const conds = [
+      this.eligible(projectId),
+      sql`${cases.inputText} is not null and ${cases.inputText} <> ''`,
+    ];
+    if (q.agent) conds.push(eq(cases.agent, q.agent));
+    if (q.tag) conds.push(sql`${q.tag} = any(${cases.tags})`);
+    if (q.excludeCaseId) conds.push(sql`${cases.id} <> ${q.excludeCaseId}`);
+    if (q.excludeRunId) conds.push(sql`${cases.runId} <> ${q.excludeRunId}`);
+    const rank = sql<number>`ts_rank_cd(to_tsvector('english', ${cases.inputText}), to_tsquery('english', ${tsquery}))`;
+    const rows = await this.db
+      .select({
+        id: cases.id,
+        kind: cases.kind,
+        inputText: cases.inputText,
+        originalOutput: cases.originalOutput,
+        expected: cases.expected,
+        rank,
+        note: sql<string | null>`(select note from corrections where corrections.id = ${cases.correctionId})`,
+      })
+      .from(cases)
+      .where(and(...conds, sql`${rank} > 0`))
+      .orderBy(sql`${rank} desc`)
+      .limit(q.k);
+    return rows.map((r) => ({
+      caseId: r.id,
+      kind: r.kind,
+      input: r.inputText ?? "",
+      answer: r.kind === "approve" ? (r.originalOutput ?? r.expected) : r.expected,
+      note: r.note,
+      similarity: Math.round(Math.min(1, Number(r.rank)) * 1000) / 1000,
+    }));
   }
 
   /** Nearest eligible cases to a vector, by cosine distance; leave-one-out by case and by run. */
@@ -138,14 +200,12 @@ export class ExamplesService {
     }));
   }
 
-  /** Examples for an input, ready to put in a prompt. */
+  /** Examples for an input, ready to put in a prompt. Lexical when there is no embedder. */
   async forInput(
     projectId: string,
     q: ExamplesQuery,
-    ctx: { embed: NonNullable<ScorerContext["embed"]>; model: string },
+    ctx: { embed: NonNullable<ScorerContext["embed"]>; model: string } | null,
   ): Promise<ExamplesResponse> {
-    await this.ensureEmbedded(projectId, ctx.embed);
-    const vector = await ctx.embed(q.input.slice(0, MAX_INPUT_CHARS));
     const excludeRunId = q.excludeCaseId
       ? (
           await this.db
@@ -155,13 +215,25 @@ export class ExamplesService {
             .limit(1)
         )[0]?.runId
       : undefined;
-    const examples = await this.nearest(projectId, vector, {
-      k: q.k,
-      agent: q.agent,
-      tag: q.tag,
-      excludeCaseId: q.excludeCaseId,
-      excludeRunId,
-    });
-    return { examples, promptBlock: promptBlock(examples), embeddingModel: ctx.model };
+    const sel = { k: q.k, agent: q.agent, tag: q.tag, excludeCaseId: q.excludeCaseId, excludeRunId };
+    if (!ctx) {
+      await this.ensureInputText(projectId);
+      const examples = await this.nearestLexical(projectId, q.input, sel);
+      return { examples, promptBlock: promptBlock(examples), embeddingModel: "lexical" };
+    }
+    try {
+      await this.ensureEmbedded(projectId, ctx.embed);
+      const vector = await ctx.embed(q.input.slice(0, MAX_INPUT_CHARS));
+      const examples = await this.nearest(projectId, vector, sel);
+      return { examples, promptBlock: promptBlock(examples), embeddingModel: ctx.model };
+    } catch (err) {
+      // a configured provider that refuses (model not serverless, quota) must not take examples down
+      this.logger.warn(
+        `embeddings unavailable (${err instanceof Error ? err.message : String(err)}); using lexical retrieval`,
+      );
+      await this.ensureInputText(projectId);
+      const examples = await this.nearestLexical(projectId, q.input, sel);
+      return { examples, promptBlock: promptBlock(examples), embeddingModel: "lexical" };
+    }
   }
 }

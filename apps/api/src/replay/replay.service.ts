@@ -178,12 +178,9 @@ export class ReplayService {
   examplesContext(
     settings: { embeddingModel: string },
     ctx: ScorerContext,
-  ): { embed: NonNullable<ScorerContext["embed"]>; model: string } {
+  ): { embed: NonNullable<ScorerContext["embed"]>; model: string } | null {
     const model = this.registry.resolveEmbeddingModel(settings.embeddingModel);
-    if (!model || !ctx.embed)
-      throw new BadRequestException(
-        "Examples need an embedding provider: set OPENAI_API_KEY, TOGETHER_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY on the server",
-      );
+    if (!model || !ctx.embed) return null; // lexical retrieval
     return { embed: ctx.embed, model };
   }
 
