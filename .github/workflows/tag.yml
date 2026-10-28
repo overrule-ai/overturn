@@ -1,0 +1,25 @@
+# Create or move a release tag at a commit on main (for retagging after a history rewrite).
+name: Tag
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name, e.g. v0.1.4"
+        required: true
+      sha:
+        description: "Commit sha on main to tag"
+        required: true
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: |
+          git branch --contains "$SHA" | grep -q main || { echo "$SHA is not on main"; exit 1; }
+          git tag -f "$TAG" "$SHA" && git push -f origin "refs/tags/$TAG"
+        env:
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ inputs.sha }}
