@@ -8,6 +8,8 @@
 <a href="https://overturn.run"><img alt="overturn.run" src="https://img.shields.io/badge/site-overturn.run-black"></a>
 </p>
 
+[Site](https://overturn.run) · [Docs](https://docs.overturn.run) · [Wiki](https://github.com/overrule-ai/overturn/wiki) · [Discussions](https://github.com/overrule-ai/overturn/discussions) · [Hosted app](https://app.overturn.run) · [Contributing](CONTRIBUTING.md)
+
 **Overturn captures every time a human fixes your agent and makes sure it never makes that mistake again, on any model.**
 
 Overturn records your agent's runs, turns every human correction into a replayable case, and replays those cases against any supported model or prompt with tools answered from the recording, so nothing fires twice. Open source, Apache-2.0, self-hosted on one Postgres.
