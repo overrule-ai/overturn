@@ -1,6 +1,6 @@
 {
   "name": "@overturn-ai/sdk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Overturn SDK: record agent runs, turn human corrections into regression cases, replay safely",
   "license": "Apache-2.0",
   "repository": {

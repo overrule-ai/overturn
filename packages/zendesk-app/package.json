@@ -1,6 +1,6 @@
 {
   "name": "@overturn-ai/zendesk-app",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "Overturn for Zendesk: captures what the AI drafted, what the agent sent, and why, as a replayable case",
   "license": "Apache-2.0",

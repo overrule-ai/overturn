@@ -1,6 +1,6 @@
 {
   "name": "overturn-cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Overturn CLI: list runs and cases, replay corrections against any model, report regressions",
   "license": "Apache-2.0",
   "repository": {
