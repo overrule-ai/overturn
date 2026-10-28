@@ -160,13 +160,27 @@ export function renderMatrixMarkdown(m: ReplayMatrix): string {
   const lines = [
     `## Overturn replay matrix: ${m.cases.length} cases × ${m.jobs.length} models`,
     "",
-    `| Model | Pass rate | Regressions | Fixed | Cost |`,
-    `|---|---|---|---|---|`,
+    `| Model | Pass rate | Regressions | Fixed | Cost | Cost / call | p50 latency | vs incumbent |`,
+    `|---|---|---|---|---|---|---|---|`,
   ];
+  const card = new Map((m.scorecard ?? []).map((r) => [r.jobId, r]));
   for (const j of m.jobs) {
     const s = j.summary;
+    const r = card.get(j.id);
+    const vs = r?.incumbent
+      ? "incumbent"
+      : r?.vsIncumbent
+        ? [
+            r.vsIncumbent.passRatePoints != null
+              ? `${r.vsIncumbent.passRatePoints >= 0 ? "+" : ""}${r.vsIncumbent.passRatePoints} pts`
+              : null,
+            r.vsIncumbent.costRatio != null ? `${r.vsIncumbent.costRatio}× cost` : null,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : "—";
     lines.push(
-      `| \`${j.targetModel}\` | ${s ? pct(s.passRate) : j.status} | ${s?.verdicts.regression ?? 0} | ${s?.verdicts.fixed ?? 0} | ${money(j.costUsd)} |`,
+      `| \`${j.targetModel}\` | ${s ? pct(s.passRate) : j.status} | ${s?.verdicts.regression ?? 0} | ${s?.verdicts.fixed ?? 0} | ${money(j.costUsd)} | ${s?.costPerCallUsd != null ? `$${s.costPerCallUsd.toFixed(4)}` : "—"} | ${s?.latencyP50Ms != null ? `${Math.round(s.latencyP50Ms)} ms` : "—"} | ${vs} |`,
     );
   }
   lines.push(

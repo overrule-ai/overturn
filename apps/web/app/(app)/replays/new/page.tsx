@@ -15,7 +15,17 @@ const SUGGESTED = [
   "anthropic/claude-haiku-4-5",
   "anthropic/claude-sonnet-4-5",
   "google/gemini-2.5-flash",
+  "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  "together/Qwen/Qwen2.5-72B-Instruct-Turbo",
+  "together/meta-llama/Llama-3.1-8B-Instruct-Turbo",
   "fake/fake-triage-weak",
+];
+
+/** Open-weight challengers: replayed next to the incumbent, the scorecard shows who matches it for less. */
+const CHALLENGERS = [
+  "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  "together/Qwen/Qwen2.5-72B-Instruct-Turbo",
+  "together/meta-llama/Llama-3.1-8B-Instruct-Turbo",
 ];
 
 export default function NewReplayPage() {
@@ -105,6 +115,17 @@ export default function NewReplayPage() {
                 <option key={m} value={m} />
               ))}
             </datalist>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              onClick={() => {
+                const current = models.filter((m) => !CHALLENGERS.includes(m));
+                setModel([...current, ...CHALLENGERS].join(", "));
+              }}
+              data-testid="add-challengers"
+            >
+              + Challenge with open-weight models (Llama 3.3 70B, Qwen 2.5 72B, Llama 3.1 8B on Together)
+            </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">

@@ -24,6 +24,7 @@ export const PROVIDER_CONCURRENCY: Record<string, number> = {
   anthropic: 4,
   google: 4,
   openrouter: 4,
+  together: 6,
   fake: 16,
 };
 
@@ -63,6 +64,8 @@ export class ModelRegistry {
         return Boolean(this.config.GOOGLE_GENERATIVE_AI_API_KEY);
       case "openrouter":
         return Boolean(this.config.OPENROUTER_API_KEY);
+      case "together":
+        return Boolean(this.config.TOGETHER_API_KEY);
       case "fake":
         return true;
       default:
@@ -85,6 +88,12 @@ export class ModelRegistry {
         return createOpenRouter({ apiKey: this.required("openrouter", this.config.OPENROUTER_API_KEY) }).chat(
           model,
         );
+      case "together":
+        return createOpenAICompatible({
+          name: "together",
+          baseURL: this.config.TOGETHER_BASE_URL,
+          apiKey: this.required("together", this.config.TOGETHER_API_KEY),
+        }).chatModel(model);
       case "fake":
         return createOpenAICompatible({
           name: "fake",
@@ -93,7 +102,7 @@ export class ModelRegistry {
         }).chatModel(model);
       default:
         throw new Error(
-          `Unknown provider "${provider}". Use openai/, anthropic/, google/, openrouter/ or fake/.`,
+          `Unknown provider "${provider}". Use openai/, anthropic/, google/, openrouter/, together/ or fake/.`,
         );
     }
   }

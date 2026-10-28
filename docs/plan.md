@@ -103,3 +103,13 @@ A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. 
 - [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
 - [ ] replay audit log, latency column, "what changed" narrative for the PR
 
+
+## Owned models (Oct 27 →)
+
+Capture and replay stay open source. Training, gating, hosting and retraining are the cloud product.
+
+- [x] export: `overturn export --format sft|dpo`, `GET /v1/export`
+- [x] challenger scorecard: Together provider, cost/call + p50 latency in summaries, scorecard on the matrix, one-click challengers
+- [ ] train and gate: training job → export → Together fine-tune → replay the suite on the result → promote only if the gate is green and pass rate ≥ incumbent
+- [ ] continuous retraining: threshold of new corrections or a new base model → retrain → gate → promote
+- [ ] deploy anywhere: hosted endpoint for the promoted model; weights download

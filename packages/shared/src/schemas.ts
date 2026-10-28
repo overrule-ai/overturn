@@ -518,6 +518,10 @@ export const replaySummarySchema = z.object({
     .object({ kind: z.enum(["job", "recorded"]), jobId: uuidSchema.nullable(), model: z.string().nullable() })
     .nullable(),
   stoppedByCostCap: z.boolean().default(false),
+  /** Median model-call latency across cases, when results carry it. */
+  latencyP50Ms: z.number().nullable().optional(),
+  /** Spend divided by cases that ran (null when the model is unpriced). */
+  costPerCallUsd: z.number().nullable().optional(),
 });
 export type ReplaySummary = z.infer<typeof replaySummarySchema>;
 
@@ -550,10 +554,31 @@ export const replayMatrixCellSchema = z.object({
   score: z.number().nullable(),
   reason: z.string().nullable(),
 });
+/** One row of the challenger scorecard: a model against the incumbent on the same cases. */
+export const scorecardRowSchema = z.object({
+  jobId: uuidSchema,
+  model: z.string(),
+  incumbent: z.boolean(),
+  status: replayStatusSchema,
+  passRate: z.number().nullable(),
+  regressions: z.number().int(),
+  costPerCallUsd: z.number().nullable(),
+  latencyP50Ms: z.number().nullable(),
+  /** USD per 1M tokens [input, output], when known. */
+  pricePerMTokens: z.tuple([z.number(), z.number()]).nullable(),
+  /** Relative to the incumbent: pass-rate points and cost ratio (0.25 = a quarter of the cost). */
+  vsIncumbent: z
+    .object({ passRatePoints: z.number().nullable(), costRatio: z.number().nullable() })
+    .nullable(),
+});
+export type ScorecardRow = z.infer<typeof scorecardRowSchema>;
+
 /** One replay across several models: cases as rows, jobs (models) as columns. */
 export const replayMatrixSchema = z.object({
   groupId: uuidSchema,
   jobs: z.array(replayJobSchema),
+  /** The same jobs as a scorecard against the incumbent (the model the cases were recorded with, else the first job). */
+  scorecard: z.array(scorecardRowSchema).optional(),
   cases: z.array(
     z.object({
       caseId: uuidSchema,

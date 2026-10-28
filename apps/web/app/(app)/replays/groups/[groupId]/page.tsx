@@ -34,6 +34,105 @@ export default function ReplayMatrixPage() {
         </p>
       </div>
 
+      {m.scorecard && m.scorecard.length > 1 && (
+        <div className="rounded-md border" data-testid="scorecard">
+          <div className="border-b px-4 py-3">
+            <h2 className="text-base font-medium">Challenger scorecard</h2>
+            <p className="text-xs text-muted-foreground">
+              Same cases, same corrections. The incumbent is the model the cases were recorded with; every
+              other row is measured against it.
+            </p>
+          </div>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Model</TH>
+                <TH>Pass rate</TH>
+                <TH>Regressions</TH>
+                <TH>Cost / call</TH>
+                <TH>p50 latency</TH>
+                <TH>vs incumbent</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {m.scorecard.map((r) => (
+                <TR key={r.jobId}>
+                  <TD className="font-mono text-xs">
+                    <Link className="underline-offset-2 hover:underline" href={`/replays/${r.jobId}`}>
+                      {r.model}
+                    </Link>
+                    {r.incumbent && <span className="ml-2 text-muted-foreground">incumbent</span>}
+                  </TD>
+                  <TD className="font-mono tabular-nums">
+                    {r.passRate != null ? pct(r.passRate) : r.status}
+                  </TD>
+                  <TD className={r.regressions ? "font-medium text-danger" : ""}>{r.regressions}</TD>
+                  <TD className="font-mono tabular-nums">
+                    {r.costPerCallUsd != null
+                      ? `$${r.costPerCallUsd.toFixed(4)}`
+                      : r.pricePerMTokens
+                        ? `$${r.pricePerMTokens[0]}/$${r.pricePerMTokens[1]} per M`
+                        : "—"}
+                  </TD>
+                  <TD className="font-mono tabular-nums">
+                    {r.latencyP50Ms != null ? `${Math.round(r.latencyP50Ms)} ms` : "—"}
+                  </TD>
+                  <TD className="text-xs">
+                    {r.incumbent || !r.vsIncumbent ? (
+                      "—"
+                    ) : (
+                      <span>
+                        {r.vsIncumbent.passRatePoints != null && (
+                          <span
+                            className={
+                              r.vsIncumbent.passRatePoints >= 0
+                                ? "text-success"
+                                : r.vsIncumbent.passRatePoints > -5
+                                  ? "text-warning"
+                                  : "text-danger"
+                            }
+                          >
+                            {r.vsIncumbent.passRatePoints >= 0 ? "+" : ""}
+                            {r.vsIncumbent.passRatePoints} pts
+                          </span>
+                        )}
+                        {r.vsIncumbent.costRatio != null && (
+                          <span className="ml-2 text-muted-foreground">
+                            {r.vsIncumbent.costRatio < 1
+                              ? `${Math.round((1 / r.vsIncumbent.costRatio) * 10) / 10}× cheaper`
+                              : `${r.vsIncumbent.costRatio}× the cost`}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+          {(() => {
+            const inc = m.scorecard.find((r) => r.incumbent);
+            const best = m.scorecard
+              .filter(
+                (r) =>
+                  !r.incumbent &&
+                  r.vsIncumbent?.costRatio != null &&
+                  r.vsIncumbent.costRatio < 1 &&
+                  r.regressions === 0 &&
+                  (r.vsIncumbent.passRatePoints ?? -1) >= -2,
+              )
+              .sort((a, b) => (a.vsIncumbent!.costRatio ?? 1) - (b.vsIncumbent!.costRatio ?? 1))[0];
+            return best && inc ? (
+              <p className="border-t px-4 py-3 text-sm" data-testid="scorecard-verdict">
+                <span className="font-medium">{best.model}</span> holds your pass rate with no regressions at{" "}
+                {Math.round((1 / (best.vsIncumbent!.costRatio ?? 1)) * 10) / 10}× less than {inc.model}.
+                Fine-tune it on your corrections and it usually pulls ahead.
+              </p>
+            ) : null;
+          })()}
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {m.jobs.map((j) => (
           <Card key={j.id}>

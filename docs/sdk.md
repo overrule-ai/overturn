@@ -148,6 +148,7 @@ overturn init                                  # writes .env + overturn.config.t
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
 overturn cases list [--agent --kind --tag --set --status --since]    | cases get <id> | cases archive <id>
 overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--fail-on-regression 0] [--allow-new-paths] [--format table|json|md] [--output file]
+overturn export --format sft|dpo [--agent --tag --set --since --no-approved] [--output file.jsonl] [--stats]
 overturn report <jobId> [--format md]
 overturn replays list
 overturn prompts register name@version <file> | prompts list

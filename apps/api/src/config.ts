@@ -12,6 +12,9 @@ const configSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
+  /** Together AI: open-weight models for challenger replays, fine-tuning and hosting. */
+  TOGETHER_API_KEY: z.string().optional(),
+  TOGETHER_BASE_URL: z.string().default("https://api.together.xyz/v1"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   JOBS_DISABLED: z
     .string()

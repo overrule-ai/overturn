@@ -20,6 +20,7 @@ import {
   type ReplayResultsPost,
   type ReplaySummary,
   type ReportRow,
+  type ScorecardRow,
   type ScorerContext,
   score,
   toolCallsOf,
@@ -287,7 +288,24 @@ export class ReplayService {
         ),
       }))
       .sort((a, b) => a.title.localeCompare(b.title));
-    return { groupId, jobs, cases: rows };
+    return {
+      groupId,
+      jobs,
+      cases: rows,
+      scorecard: scorecardFor(jobs, caseRows.length ? await this.recordedModelFor(projectId, ids) : null),
+    };
+  }
+
+  /** The model the (first of these) cases was recorded with: the incumbent in a scorecard. */
+  private async recordedModelFor(projectId: string, ids: string[]): Promise<string | null> {
+    const [row] = await this.db
+      .select({ m: cases.recordedModel, p: cases.frozenInput })
+      .from(cases)
+      .where(and(eq(cases.projectId, projectId), inArray(cases.id, ids)))
+      .limit(1);
+    if (!row?.m) return null;
+    const provider = (row.p as { provider?: string } | null)?.provider;
+    return row.m.includes("/") ? row.m : `${provider ?? "openai"}/${row.m}`;
   }
 
   async get(projectId: string, id: string): Promise<ReplayJob> {
@@ -733,13 +751,19 @@ export class ReplayService {
     const verdicts: Partial<Record<Verdict, number>> = {};
     let passed = 0;
     let failed = 0;
+    const latencies: number[] = [];
     for (const r of rows) {
       verdicts[r.verdict] = (verdicts[r.verdict] ?? 0) + 1;
       if (r.passed === true) passed++;
       else if (r.passed === false) failed++;
+      if (r.latencyMs != null && r.error === null) latencies.push(r.latencyMs);
     }
     const scored = passed + failed;
+    latencies.sort((a, b) => a - b);
+    const latencyP50Ms = latencies.length ? latencies[Math.floor(latencies.length / 2)]! : null;
     return {
+      latencyP50Ms,
+      costPerCallUsd: rows.length && costUsd > 0 ? costUsd / rows.length : null,
       cases: caseCount,
       completed: rows.length,
       passed,
@@ -983,6 +1007,54 @@ export class ReplayService {
       gate: gateFor(all, settings.newPathsBlock),
     };
   }
+}
+
+/**
+ * Challenger scorecard: every job in a group against the incumbent — the job whose model the
+ * cases were recorded with, else the first job. Pass-rate points and cost ratio are what a team
+ * needs to see that an open model matches the one they pay for.
+ */
+export function scorecardFor(jobs: ReplayJob[], recordedModel: string | null): ScorecardRow[] {
+  const same = (a: string, b: string) =>
+    a.toLowerCase() === b.toLowerCase() ||
+    a.toLowerCase().endsWith(`/${b.toLowerCase()}`) ||
+    b.toLowerCase().endsWith(`/${a.toLowerCase()}`);
+  const incumbentIdx = recordedModel ? jobs.findIndex((j) => same(j.targetModel, recordedModel)) : -1;
+  const inc = jobs[incumbentIdx >= 0 ? incumbentIdx : 0];
+  const rowOf = (j: ReplayJob): ScorecardRow => ({
+    jobId: j.id,
+    model: j.targetModel,
+    incumbent: j === inc,
+    status: j.status,
+    passRate: j.summary?.passRate ?? null,
+    regressions: j.summary?.verdicts.regression ?? 0,
+    costPerCallUsd: j.summary?.costPerCallUsd ?? null,
+    latencyP50Ms: j.summary?.latencyP50Ms ?? null,
+    pricePerMTokens: priceFor(j.targetModel),
+    vsIncumbent: null,
+  });
+  const rows = jobs.map(rowOf);
+  const base = rows.find((r) => r.incumbent)!;
+  for (const r of rows) {
+    if (r.incumbent) continue;
+    r.vsIncumbent = {
+      passRatePoints:
+        r.passRate != null && base.passRate != null
+          ? Math.round((r.passRate - base.passRate) * 1000) / 10
+          : null,
+      costRatio:
+        r.costPerCallUsd != null && base.costPerCallUsd
+          ? Math.round((r.costPerCallUsd / base.costPerCallUsd) * 100) / 100
+          : r.pricePerMTokens && base.pricePerMTokens
+            ? Math.round(
+                ((r.pricePerMTokens[0] + r.pricePerMTokens[1]) /
+                  (base.pricePerMTokens[0] + base.pricePerMTokens[1])) *
+                  100,
+              ) / 100
+            : null,
+    };
+  }
+  return rows;
 }
 
 /** The CI verdict: regressions always block; new paths block until accepted unless the project says otherwise. */

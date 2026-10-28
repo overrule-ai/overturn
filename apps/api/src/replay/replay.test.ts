@@ -688,6 +688,16 @@ describe("replay jobs (step mode)", () => {
     const md = renderMatrixMarkdown(m.body);
     expect(md).toContain("3 cases × 2 models");
     expect(md).toContain("🔴 regression");
+    // the scorecard: first job is the incumbent (cases were recorded with fake-triage-v1, not in the group)
+    expect(m.body.scorecard).toHaveLength(2);
+    const [inc, ch] = m.body.scorecard!;
+    expect(inc!.incumbent).toBe(true);
+    expect(ch!.incumbent).toBe(false);
+    expect(inc!.passRate).toBeGreaterThan(ch!.passRate!);
+    expect(ch!.regressions).toBe(1);
+    expect(ch!.vsIncumbent!.passRatePoints).toBeLessThan(0);
+    expect(typeof m.body.jobs[0]!.summary!.latencyP50Ms).toBe("number");
+    expect(md).toContain("vs incumbent");
     // a single-model replay has no group
     const single = await api<{ job: ReplayJob; jobs: ReplayJob[] }>(ctx, "POST", "/v1/replays", {
       model: good,
