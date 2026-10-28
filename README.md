@@ -10,9 +10,11 @@
 
 [Site](https://overturn.run) · [Docs](https://docs.overturn.run) · [Wiki](https://github.com/overrule-ai/overturn/wiki) · [Discussions](https://github.com/overrule-ai/overturn/discussions) · [Hosted app](https://app.overturn.run) · [Contributing](CONTRIBUTING.md)
 
-**Overturn captures every time a human fixes your agent and makes sure it never makes that mistake again, on any model.**
+**Your experts fix the AI every day. Overturn keeps every fix.**
 
-Overturn records your agent's runs, turns every human correction into a replayable case, and replays those cases against any supported model or prompt with tools answered from the recording, so nothing fires twice. Open source, Apache-2.0, self-hosted on one Postgres.
+Overturn is the system of record for how your company corrects AI. When an expert rewrites an AI draft, rejects a decision or corrects a diagnosis, Overturn captures what the AI produced, what the expert changed it to, and why, where the work already happens (a Zendesk app, two SDKs, OpenTelemetry). Every fix becomes a regression test that runs before any model or prompt change, and training data for a model you own and run yourself. Juniors and agents handle more cases on their own; your experts only see the new ones. Open source, Apache-2.0, self-hosted on one Postgres.
+
+Claims teams first: a claims adjuster's corrections (coverage, reserve, denial reason, the reply itself) are structured enough to score exactly, frequent enough to compound, and worth keeping for compliance on their own. The same loop works for underwriting, field service and compliance review.
 
 ![Record a run, correct a step, get a case, replay it against another model, read the report](docs/assets/loop.gif)
 
