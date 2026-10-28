@@ -102,7 +102,8 @@ A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. 
 - [ ] auto-suggest case title and tags from the run
 - [x] suite hygiene: duplicate corrections merge into one case (×N), `cases dedupe` for older ones
 - [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
-- [ ] replay audit log, latency column, "what changed" narrative for the PR
+- [x] "what changed" narrative (report, PR comment, CLI, web) and per-row latency
+- [ ] replay audit log
 
 
 ## Owned models (Oct 27 →)

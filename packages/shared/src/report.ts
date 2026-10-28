@@ -1,3 +1,4 @@
+import { decisionFields } from "./cases.js";
 import type { ReplayMatrix, ReplayReport, ReportRow } from "./schemas.js";
 
 function fmt(v: unknown, max = 400): string {
@@ -45,6 +46,97 @@ export function replayReceipt(report: ReplayReport): string[] {
   return ["### Replay receipt", "", ...items.map((i) => `- ${i}`), ""];
 }
 
+function get(v: unknown, path: string): unknown {
+  return path
+    .split(".")
+    .reduce<unknown>(
+      (o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined),
+      v,
+    );
+}
+
+/** The decision fields of a row's expected answer that the target got wrong. */
+function wrongFields(r: ReportRow): string[] {
+  const { fields } = decisionFields(r.expected);
+  return fields.filter(
+    (f) => JSON.stringify(get(r.targetOutput, f) ?? null) !== JSON.stringify(get(r.expected, f) ?? null),
+  );
+}
+
+function count<T>(items: T[], key: (t: T) => string | null): Array<[string, number]> {
+  const m = new Map<string, number>();
+  for (const it of items) {
+    const k = key(it);
+    if (k) m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/**
+ * What changed, in sentences: the paragraph a reviewer reads before the tables. Derived from the
+ * rows only, so the CLI, the PR comment and the web all say the same thing.
+ */
+export function narrative(report: ReplayReport): string[] {
+  const { summary, job } = report;
+  const out: string[] = [];
+  const baseline =
+    summary.baseline?.kind === "job"
+      ? `the previous replay on ${summary.baseline.model}`
+      : `the recorded runs${summary.baseline?.model ? ` (${summary.baseline.model})` : ""}`;
+  const reg = report.regressions;
+  if (reg.length === 0 && summary.completed > 0)
+    out.push(
+      `No regressions against ${baseline}: every case a human approved still passes on \`${job.targetModel}\`.`,
+    );
+  if (reg.length > 0) {
+    const fields = count(reg, (r) => wrongFields(r).join(", ") || null);
+    const agents = count(reg, (r) => r.agent);
+    const where =
+      fields.length > 0
+        ? ` on ${fields.map(([f, n]) => `\`${f}\`${fields.length > 1 ? ` (${n})` : ""}`).join(", ")}`
+        : "";
+    const who = agents.length > 1 ? ` across ${agents.map(([a, n]) => `${a} (${n})`).join(", ")}` : "";
+    out.push(
+      `**${plural(reg.length, "regression")}** against ${baseline}: ${reg.length === 1 ? "a case" : "cases"} a human approved now ${reg.length === 1 ? "fails" : "fail"}${where}${who}.`,
+    );
+    const contracts = reg.filter((r) => r.contractViolations?.length);
+    if (contracts.length > 0)
+      out.push(
+        `${plural(contracts.length, "of them breaks a contract rule", "of them break contract rules")}: ${[...new Set(contracts.flatMap((r) => r.contractViolations ?? []))].slice(0, 3).join("; ")}.`,
+      );
+  }
+  const np = report.newPaths ?? [];
+  if (np.length > 0) {
+    const tools = count(np, (r) => r.newPath?.toolName ?? null);
+    out.push(
+      `**${plural(np.length, "new path")}**: the agent called ${tools.map(([t, n]) => `\`${t}\`${n > 1 ? ` (${n}×)` : ""}`).join(", ")} with arguments no recording answers. Accept or correct them; the gate stays red until then.`,
+    );
+  }
+  if (report.fixed.length > 0)
+    out.push(
+      `**${plural(report.fixed.length, "case")} fixed**: ${report.fixed.length === 1 ? "an answer" : "answers"} a human had to correct now ${report.fixed.length === 1 ? "comes" : "come"} out right unprompted.`,
+    );
+  if (report.stillWrong.length > 0)
+    out.push(
+      `${plural(report.stillWrong.length, "case")} still wrong, as before — not a regression, but not fixed either.`,
+    );
+  const unrep = report.unreplayable.length + report.errors.length;
+  if (unrep > 0)
+    out.push(
+      `${plural(unrep, "case")} could not be judged (${report.unreplayable.length} unreplayable, ${report.errors.length} errored) and ${unrep === 1 ? "is" : "are"} not counted as passing.`,
+    );
+  const perf: string[] = [];
+  if (summary.costPerCallUsd != null) perf.push(`${money(summary.costPerCallUsd)} per call`);
+  if (summary.latencyP50Ms != null) perf.push(`p50 ${Math.round(summary.latencyP50Ms)} ms`);
+  if (perf.length > 0)
+    out.push(`Cost and speed: ${perf.join(", ")} (${money(summary.costUsd)} for the run).`);
+  return out;
+}
+
 function pct(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
@@ -69,8 +161,9 @@ function section(title: string, rows: ReportRow[], emptyText: string): string[] 
       : "";
     const steps = r.stepCount !== undefined ? ` · ${r.stepCount} steps` : "";
     const contract = r.contractViolations?.length ? ` · contract: ${r.contractViolations.join("; ")}` : "";
+    const latency = r.latencyMs != null ? ` · ${Math.round(r.latencyMs)} ms` : "";
     out.push(
-      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)}${contract}${steps}${refused} |`,
+      `| ${cell(r.title, 60)} | ${r.kind} | ${cell(r.baselineOutput)} | ${cell(r.error ?? r.targetOutput)} | ${cell(human)} | ${cell(r.reason, 120)}${contract}${steps}${refused}${latency} |`,
     );
   }
   out.push("");
@@ -101,11 +194,8 @@ export function renderMarkdownReport(
     `**${summary.completed}/${summary.cases} cases** · pass rate **${pct(summary.passRate)}** · ${verdictBits || "no verdicts"} · cost ${money(summary.costUsd)} · ${summary.durationMs != null ? `${(summary.durationMs / 1000).toFixed(1)}s` : "—"} · baseline: ${baseline}${summary.stoppedByCostCap ? " · **stopped by --max-cost**" : ""}`,
     "",
   );
-  if (report.regressions.length > 0)
-    lines.push(
-      `> **${report.regressions.length} regression${report.regressions.length === 1 ? "" : "s"}**: cases a human approved that now fail.`,
-      "",
-    );
+  const story = narrative(report);
+  if (story.length > 0) lines.push("**What changed**", "", ...story.map((l) => `- ${l}`), "");
   lines.push(...section("Regressions", report.regressions, "No regressions."));
   const newPaths = report.newPaths ?? [];
   if (newPaths.length > 0) {

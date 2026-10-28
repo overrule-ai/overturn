@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReportRow } from "@overturn-ai/shared";
+import { narrative, type ReportRow } from "@overturn-ai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -341,6 +341,21 @@ export default function ReplayPage() {
             ? "Gate: green. No regressions and no unaccepted new paths."
             : `Gate: red — ${report.data.gate.reasons.join(", ")}.`}
         </p>
+      )}
+
+      {report.data && narrative(report.data).length > 0 && (
+        <Card data-testid="narrative">
+          <CardHeader>
+            <CardTitle>What changed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {narrative(report.data).map((l) => (
+                <li key={l}>{l.replace(/\*\*/g, "").replace(/`/g, "")}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
       {report.data && (

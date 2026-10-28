@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import {
+  narrative,
   type ReplayJob,
   type ReplayReport,
   renderMarkdownReport,
@@ -112,10 +113,16 @@ export function emitReport(report: ReplayReport, format: "table" | "json" | "md"
         ? `contract: ${r.contractViolations.join("; ")}`
         : (r.reason ?? "")
       ).slice(0, 60),
+      ms: r.latencyMs != null ? String(Math.round(r.latencyMs)) : "",
     }));
-    text = rows.length
-      ? table(rows, ["verdict", "kind", "case", "baseline", "target", "expected", "why"])
-      : pc.dim("no regressions, nothing still wrong, nothing fixed");
+    const story = narrative(report)
+      .map((l) => `  ${l.replace(/\*\*/g, "").replace(/`/g, "")}`)
+      .join("\n");
+    text = `${story}\n\n${
+      rows.length
+        ? table(rows, ["verdict", "kind", "case", "baseline", "target", "expected", "why", "ms"])
+        : pc.dim("no regressions, nothing still wrong, nothing fixed")
+    }`;
   }
   if (output) {
     writeFileSync(output, text);
