@@ -1,6 +1,6 @@
 <p><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg"><img src="docs/assets/logo.svg" alt="Overturn" width="320"></picture></p>
 
-**Every time a human corrects your agent, it becomes a test.**
+**Overturn captures every time a human fixes your agent and makes sure it never makes that mistake again, on any model.**
 
 Overturn records your agent's runs, turns every human correction into a replayable case, and replays those cases against any supported model or prompt with tools answered from the recording, so nothing fires twice. Open source, Apache-2.0, self-hosted on one Postgres.
 
