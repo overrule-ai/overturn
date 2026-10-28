@@ -24,6 +24,8 @@ import { ReplayController } from "./replay/replay.controller";
 import { ReplayService } from "./replay/replay.service";
 import { RunsController } from "./runs/runs.controller";
 import { RunsService } from "./runs/runs.service";
+import { TrainingController } from "./training/training.controller";
+import { TrainingService } from "./training/training.service";
 
 @Module({})
 export class AppModule {
@@ -44,6 +46,7 @@ export class AppModule {
         ReplayController,
         ExportController,
         ExamplesController,
+        TrainingController,
       ],
       providers: [
         { provide: APP_CONFIG, useValue: config },
@@ -56,6 +59,7 @@ export class AppModule {
         ReplayService,
         ExportService,
         ExamplesService,
+        TrainingService,
         JobsService,
       ],
       exports: [APP_CONFIG],

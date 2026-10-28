@@ -29,6 +29,9 @@ import type {
   Run,
   RunListQuery,
   RunWithSteps,
+  TrainCreate,
+  TrainedModel,
+  TrainedModelPatch,
 } from "@overturn-ai/shared";
 import { VERSION } from "./version.js";
 
@@ -135,6 +138,18 @@ export class OverturnApi {
     postResults: (id: string, body: ReplayResultsPost): Promise<ReplayJob> =>
       this.request("POST", `/v1/replays/${id}/results`, body),
     report: (id: string): Promise<ReplayReport> => this.request("GET", `/v1/replays/${id}/report`),
+  };
+
+  /** Owned models: train on corrections, gate with the suite, shadow on live traffic, promote by hand. */
+  readonly models = {
+    create: (body: Partial<TrainCreate> & { baseModel: string }): Promise<TrainedModel> =>
+      this.request("POST", "/v1/models", body),
+    list: (): Promise<TrainedModel[]> => this.request("GET", "/v1/models"),
+    get: (id: string): Promise<TrainedModel> => this.request("GET", `/v1/models/${id}`),
+    patch: (id: string, body: TrainedModelPatch): Promise<TrainedModel> =>
+      this.request("PATCH", `/v1/models/${id}`, body),
+    promote: (id: string): Promise<TrainedModel> => this.request("POST", `/v1/models/${id}/promote`),
+    retire: (id: string): Promise<TrainedModel> => this.request("POST", `/v1/models/${id}/retire`),
   };
 
   /** Corrections in the prompt: the nearest human-approved cases for an input, as a prompt block. */

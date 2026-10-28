@@ -217,6 +217,8 @@ export const projectSettingsSchema = z.object({
   reviewWebhookUrl: z.string().url().max(2000).nullable().default(null),
   /** A replay with new paths (tool calls with no recording) fails the CI gate until a human accepts them. */
   newPathsBlock: z.boolean().default(true),
+  /** The owned model a human promoted (provider/model); what `ov.promotedModel()` returns. Null = none. */
+  promotedModel: z.string().nullable().default(null),
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -792,3 +794,93 @@ export const replayModelCallResponseSchema = z.object({
   costUsd: z.number().nullable(),
 });
 export type ReplayModelCallResponse = z.infer<typeof replayModelCallResponseSchema>;
+
+// ---------- owned models (train and gate) ----------
+
+export const trainedModelStatusSchema = z.enum([
+  "exporting",
+  "uploading",
+  "training",
+  "trained",
+  "gating",
+  "passed",
+  "failed",
+  "promoted",
+  "retired",
+]);
+export type TrainedModelStatus = z.infer<typeof trainedModelStatusSchema>;
+
+export const trainCreateSchema = z.object({
+  /** Together base model id, e.g. meta-llama/Meta-Llama-3.1-8B-Instruct-Reference */
+  baseModel: z.string().min(1).max(200),
+  method: z.enum(["sft", "dpo"]).default("sft"),
+  epochs: z.number().int().min(1).max(10).default(3),
+  /** Which cases to train on; the gate replays the same filter. */
+  filter: caseFilterSchema.partial().default({}),
+  name: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,40}$/)
+    .optional(),
+  /** Fewer rows than this refuses to train and points at corrections-in-the-prompt instead. */
+  minRows: z.number().int().min(1).default(50),
+});
+export type TrainCreate = z.infer<typeof trainCreateSchema>;
+
+export const modelGateSchema = z.object({
+  pass: z.boolean(),
+  replayJobId: uuidSchema.nullable(),
+  passRate: z.number().nullable(),
+  regressions: z.number().int(),
+  newPaths: z.number().int(),
+  /** The pass rate of the model the cases were recorded with, on the same cases, when a replay of it exists. */
+  incumbentModel: z.string().nullable(),
+  incumbentPassRate: z.number().nullable(),
+  reasons: z.array(z.string()),
+});
+export type ModelGate = z.infer<typeof modelGateSchema>;
+
+export const shadowStatsSchema = z.object({
+  runs: z.number().int(),
+  agreesWithProduction: z.number().int(),
+  scored: z.number().int(),
+  passed: z.number().int(),
+  /** Of the runs a human corrected, how often the shadow model's answer was the corrected one. */
+  passRate: z.number().nullable(),
+  errors: z.number().int(),
+  costUsd: z.number(),
+});
+export type ShadowStats = z.infer<typeof shadowStatsSchema>;
+
+export const trainedModelSchema = z.object({
+  id: uuidSchema,
+  projectId: uuidSchema,
+  name: z.string(),
+  provider: z.string(),
+  baseModel: z.string(),
+  method: z.enum(["sft", "dpo"]),
+  epochs: z.number().int(),
+  caseFilter: jsonValueSchema,
+  datasetStats: exportStatsSchema.nullable(),
+  status: trainedModelStatusSchema,
+  error: z.string().nullable(),
+  providerJobId: z.string().nullable(),
+  outputName: z.string().nullable(),
+  servedAs: z.string().nullable(),
+  trainingCostUsd: z.number().nullable(),
+  gateJobId: uuidSchema.nullable(),
+  gate: modelGateSchema.nullable(),
+  shadow: z.boolean(),
+  shadowSince: isoDateSchema.nullable(),
+  shadowStats: shadowStatsSchema.nullable(),
+  promotedAt: isoDateSchema.nullable(),
+  finishedAt: isoDateSchema.nullable(),
+  createdAt: isoDateSchema,
+});
+export type TrainedModel = z.infer<typeof trainedModelSchema>;
+
+export const trainedModelPatchSchema = z.object({
+  /** Where the trained weights answer from (provider/model). Set this when the provider needs a dedicated endpoint. */
+  servedAs: z.string().min(3).max(300).optional(),
+  shadow: z.boolean().optional(),
+});
+export type TrainedModelPatch = z.infer<typeof trainedModelPatchSchema>;

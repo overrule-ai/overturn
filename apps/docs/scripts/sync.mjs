@@ -13,6 +13,11 @@ const pages = [
   ["sdk.md", "sdk.md", "TypeScript and Python SDKs, the CLI and the REST API."],
   ["self-hosting.md", "self-hosting.md", "docker compose, Railway, environment variables, operations."],
   ["fingerprint.md", "fingerprint.md", "How tool calls are matched to recordings during replay."],
+  [
+    "owned-models.md",
+    "owned-models.md",
+    "Export, corrections in the prompt, challengers, train and gate, shadow, promote.",
+  ],
 ];
 for (const [file, target, description] of pages) {
   let md = readFileSync(path.join(src, file), "utf8");

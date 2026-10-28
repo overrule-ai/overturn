@@ -372,8 +372,15 @@ describe("project settings + implicit approval", () => {
     const jobs = ctx.app.get(JobsService);
     await jobs.start();
     const schedules = await jobs.boss.getSchedules();
-    expect(schedules.map((s) => s.name).sort()).toEqual(["cache-purge", "implicit-approve", "retention"]);
+    expect(schedules.map((s) => s.name).sort()).toEqual([
+      "cache-purge",
+      "implicit-approve",
+      "retention",
+      "shadow",
+      "train-poll",
+    ]);
     expect(await jobs.boss.getQueue("replay")).not.toBeNull();
+    expect(await jobs.boss.getQueue("train")).not.toBeNull();
     await jobs.boss.stop({ graceful: false, timeout: 1000 });
   }, 30_000);
 });

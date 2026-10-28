@@ -374,6 +374,78 @@ export const promptVersions = pgTable(
   (t) => [uniqueIndex("prompt_versions_name_version").on(t.projectId, t.name, t.version)],
 );
 
+/**
+ * Owned models: a fine-tune of an open-weight base on the project's corrections, gated by the
+ * suite before anyone can promote it. Status is text: the set grows as providers do.
+ *   exporting → uploading → training → trained → gating → passed | failed → promoted → retired
+ */
+export const trainedModels = pgTable(
+  "trained_models",
+  {
+    id: uuid("id").primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    provider: text("provider").notNull().default("together"),
+    baseModel: text("base_model").notNull(),
+    method: text("method").notNull().default("sft"),
+    epochs: integer("epochs").notNull().default(1),
+    caseFilter: jsonb("case_filter").notNull().default(sql`'{}'::jsonb`),
+    datasetStats: jsonb("dataset_stats"),
+    status: text("status").notNull().default("exporting"),
+    error: text("error"),
+    providerFileId: text("provider_file_id"),
+    providerJobId: text("provider_job_id"),
+    /** The provider's name for the trained weights. */
+    outputName: text("output_name"),
+    /** The model id Overturn calls it by for inference (provider/name); editable when it needs an endpoint. */
+    servedAs: text("served_as"),
+    trainingCostUsd: doublePrecision("training_cost_usd"),
+    gateJobId: uuid("gate_job_id"),
+    gate: jsonb("gate"),
+    shadow: boolean("shadow").notNull().default(false),
+    shadowSince: timestamp("shadow_since", { withTimezone: true, mode: "date" }),
+    promotedAt: timestamp("promoted_at", { withTimezone: true, mode: "date" }),
+    finishedAt: timestamp("finished_at", { withTimezone: true, mode: "date" }),
+    ...timestamps,
+  },
+  (t) => [index("trained_models_project").on(t.projectId, t.createdAt)],
+);
+export type TrainedModelRow = typeof trainedModels.$inferSelect;
+
+/** Shadow mode: a candidate model answers live runs beside the production model; nothing is served. */
+export const shadowResults = pgTable(
+  "shadow_results",
+  {
+    id: uuid("id").primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    modelId: uuid("model_id")
+      .notNull()
+      .references(() => trainedModels.id, { onDelete: "cascade" }),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => runs.id, { onDelete: "cascade" }),
+    output: jsonb("output"),
+    error: text("error"),
+    latencyMs: doublePrecision("latency_ms"),
+    costUsd: doublePrecision("cost_usd"),
+    /** Same answer as production (decision fields), known before any human looks. */
+    agreesWithProduction: boolean("agrees_with_production"),
+    /** Scored against the human's correction once one exists. */
+    passed: boolean("passed"),
+    reason: text("reason"),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("shadow_results_model_run").on(t.modelId, t.runId),
+    index("shadow_results_run").on(t.runId),
+  ],
+);
+export type ShadowResultRow = typeof shadowResults.$inferSelect;
+
 /** Cached model responses for replay: (model, input hash) -> output, 24h TTL. */
 export const responseCache = pgTable(
   "response_cache",

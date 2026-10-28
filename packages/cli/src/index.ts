@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { registerCases } from "./commands/cases.js";
 import { registerExport } from "./commands/export.js";
 import { registerInit } from "./commands/init.js";
+import { registerModels } from "./commands/models.js";
 import { registerReplay } from "./commands/replay.js";
 import { registerRuns } from "./commands/runs.js";
 import { VERSION } from "./version.js";
@@ -24,6 +25,7 @@ export function buildProgram(): Command {
   registerCases(program);
   registerReplay(program);
   registerExport(program);
+  registerModels(program);
   return program;
 }
 

@@ -8,6 +8,7 @@ import type {
   Correction,
   CorrectionCreate,
   CorrectionResult,
+  ExportStats,
   Page,
   Project,
   ProjectPatch,
@@ -20,6 +21,7 @@ import type {
   ReplayResult,
   Run,
   RunWithSteps,
+  TrainedModel,
 } from "@overturn-ai/shared";
 
 const PROJECT_KEY = "overturn.project";
@@ -130,6 +132,16 @@ export const client = {
       api<Case>("POST", `/v1/cases/${id}/equivalents`, body),
     sets: () => api<Array<{ id: string; name: string; filter: unknown }>>("GET", "/v1/case-sets"),
   },
+  models: {
+    list: () => api<TrainedModel[]>("GET", "/v1/models"),
+    get: (id: string) => api<TrainedModel>("GET", `/v1/models/${id}`),
+    create: (body: Record<string, unknown>) => api<TrainedModel>("POST", "/v1/models", body),
+    patch: (id: string, body: Record<string, unknown>) =>
+      api<TrainedModel>("PATCH", `/v1/models/${id}`, body),
+    promote: (id: string) => api<TrainedModel>("POST", `/v1/models/${id}/promote`),
+    retire: (id: string) => api<TrainedModel>("POST", `/v1/models/${id}/retire`),
+  },
+  exportStats: (q: Query) => api<ExportStats>("GET", "/v1/export/stats", undefined, q),
   replays: {
     list: (q: Query = {}) => api<ReplayJob[]>("GET", "/v1/replays", undefined, q),
     get: (id: string) => api<ReplayJob>("GET", `/v1/replays/${id}`),

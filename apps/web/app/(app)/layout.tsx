@@ -1,7 +1,16 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, FlaskConical, ListTree, LogOut, RotateCcw, Settings, SunMoon } from "lucide-react";
+import {
+  Boxes,
+  ChevronDown,
+  FlaskConical,
+  ListTree,
+  LogOut,
+  RotateCcw,
+  Settings,
+  SunMoon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -22,6 +31,7 @@ const NAV = [
   { href: "/runs", label: "Runs", icon: ListTree },
   { href: "/cases", label: "Cases", icon: FlaskConical },
   { href: "/replays", label: "Replays", icon: RotateCcw },
+  { href: "/models", label: "Models", icon: Boxes },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

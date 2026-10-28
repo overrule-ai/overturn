@@ -125,6 +125,10 @@ system = SYSTEM_PROMPT + ex["promptBlock"]
 
 `GET /v1/examples?input=&k=&agent=&tag=` embeds the input (the project's embedding model, or the first configured provider that embeds: OpenAI, Together, Google) and returns the k nearest human-approved cases — approve and edit cases, never rejects — each with the input, the answer the human stood behind, the reviewer's note and a similarity score. Measure what it is worth before wiring it in: `overturn replay --model <yours> --examples 5` replays the suite with each case's nearest *other* corrections in its prompt (leave-one-out, so a case never sees itself), and the scorecard shows the lift next to the plain run.
 
+## Owned models
+
+`ov.promotedModel()` (Python: `ov.promoted_model()`) returns the id of the model a human promoted after it passed the gate, or null — route production traffic on it. Training, gating, shadow and promotion are in [Owned models](owned-models.md).
+
 ## Replay mode
 
 ```ts
@@ -164,6 +168,8 @@ overturn init                                  # writes .env + overturn.config.t
 overturn runs list [--agent --tag --status --corrected --since 7d]   | runs get <id>
 overturn cases list [--agent --kind --tag --set --status --since]    | cases get <id> | cases archive <id>
 overturn replay --model provider/model[,provider/model…] [--mode step|trajectory] [--since 30d] [--agent] [--set] [--prompt name@version] [--max-cost 5] [--examples 5] [--fail-on-regression 0] [--allow-new-paths] [--format table|json|md] [--output file]
+overturn train --base <together model> [--method sft|dpo] [--epochs 3] [--agent --tag --set --since] [--wait]
+overturn models list | get <id> | shadow <id> [--off] | promote <id> | retire <id> | serve <id> <provider/model>
 overturn export --format sft|dpo [--agent --tag --set --since --no-approved] [--output file.jsonl] [--stats]
 overturn report <jobId> [--format md]
 overturn replays list

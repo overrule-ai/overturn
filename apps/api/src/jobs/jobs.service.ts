@@ -8,11 +8,15 @@ import { DB } from "../db/db.module";
 import { projects } from "../db/schema";
 import { ReplayService } from "../replay/replay.service";
 import { RunsService } from "../runs/runs.service";
+import { TrainingService } from "../training/training.service";
 
 export const IMPLICIT_APPROVE_JOB = "implicit-approve";
 export const REPLAY_JOB = "replay";
 export const CACHE_PURGE_JOB = "cache-purge";
 export const RETENTION_JOB = "retention";
+export const TRAIN_JOB = "train";
+export const TRAIN_POLL_JOB = "train-poll";
+export const SHADOW_JOB = "shadow";
 
 /**
  * Background jobs on pg-boss (same Postgres, schema "pgboss"). Started unless
@@ -30,6 +34,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly corrections: CorrectionsService,
     private readonly replay: ReplayService,
     private readonly runs: RunsService,
+    private readonly training: TrainingService,
   ) {
     this.boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: "pgboss", max: 4 });
     this.boss.on("error", (err) => this.logger.error(err.message));
@@ -45,7 +50,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     await this.boss.start();
     this.started = true;
     // pg-boss 10 requires queues to exist before work()/schedule(); createQueue is idempotent
-    for (const name of [IMPLICIT_APPROVE_JOB, CACHE_PURGE_JOB, RETENTION_JOB, REPLAY_JOB]) {
+    for (const name of [
+      IMPLICIT_APPROVE_JOB,
+      CACHE_PURGE_JOB,
+      RETENTION_JOB,
+      REPLAY_JOB,
+      TRAIN_JOB,
+      TRAIN_POLL_JOB,
+      SHADOW_JOB,
+    ]) {
       await this.boss.createQueue(name);
     }
     await this.boss.work(IMPLICIT_APPROVE_JOB, async () => {
@@ -68,6 +81,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         `replay ${job.data.jobId} ${result.status}: ${JSON.stringify(result.summary?.verdicts ?? {})}`,
       );
     });
+    await this.boss.work<{ modelId: string }>(TRAIN_JOB, { batchSize: 1 }, async ([job]) => {
+      if (!job) return;
+      const m = await this.training.start(job.data.modelId);
+      this.logger.log(`training ${m.id}: ${m.status}`);
+    });
+    // every minute: poll running fine-tunes (gate on completion), answer live runs in shadow, score shadows
+    await this.boss.work(TRAIN_POLL_JOB, async () => {
+      for (const id of await this.training.training()) {
+        const m = await this.training.poll(id);
+        if (m.status !== "training") this.logger.log(`training ${id}: ${m.status}`);
+      }
+    });
+    await this.boss.schedule(TRAIN_POLL_JOB, "* * * * *", undefined, { tz: "UTC" });
+    await this.boss.work(SHADOW_JOB, async () => {
+      const n = await this.training.shadowSweep();
+      const scored = await this.training.shadowScoreSweep();
+      if (n || scored) this.logger.log(`shadow: ${n} runs answered, ${scored} scored`);
+    });
+    await this.boss.schedule(SHADOW_JOB, "* * * * *", undefined, { tz: "UTC" });
     this.logger.log("pg-boss started");
   }
 
@@ -88,6 +120,21 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       REPLAY_JOB,
       { jobId },
       { retryLimit: 1, expireInSeconds: 6 * 3600, singletonKey: jobId },
+    );
+  }
+
+  /** Queues a training run (export → upload → fine-tune); the poll job gates it when it finishes. */
+  async enqueueTraining(modelId: string): Promise<void> {
+    if (!this.started) {
+      void this.training
+        .runToCompletion(modelId)
+        .catch((err: unknown) => this.logger.error(`training ${modelId} failed: ${String(err)}`));
+      return;
+    }
+    await this.boss.send(
+      TRAIN_JOB,
+      { modelId },
+      { retryLimit: 0, expireInSeconds: 3600, singletonKey: modelId },
     );
   }
 

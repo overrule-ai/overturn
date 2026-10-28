@@ -153,6 +153,15 @@ export class Overturn implements RunSink {
   }
 
   /**
+   * The owned model a human promoted for this project (provider/model), or null. Use it to
+   * route production traffic: `const model = (await ov.promotedModel()) ?? "openai/gpt-4.1-mini"`.
+   */
+  async promotedModel(): Promise<string | null> {
+    const p = await this.api.project.get();
+    return p.settings.promotedModel ?? null;
+  }
+
+  /**
    * A `(Request) => Response` handler for corrections posted by `<CorrectButton>`
    * (from `@overturn-ai/sdk/react`). Mount it on a route of your app; the project
    * API key stays on the server.

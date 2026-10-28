@@ -14,6 +14,7 @@ export function startFakeOpenAI(): Promise<{
   close: () => Promise<void>;
 }> {
   const calls: Array<Record<string, unknown>> = [];
+  const fineTunes = new Map<string, { polls: number; model: string; suffix: string }>();
   let failed = false;
   const server = createServer((req, res) => {
     let data = "";
@@ -21,13 +22,45 @@ export function startFakeOpenAI(): Promise<{
       data += c.toString();
     });
     req.on("end", () => {
-      const body = JSON.parse(data || "{}") as Record<string, unknown>;
-      calls.push(body);
-      const model = String(body.model ?? "");
       const json = (o: unknown, status = 200) => {
         res.writeHead(status, { "content-type": "application/json" });
         res.end(JSON.stringify(o));
       };
+      const url = req.url ?? "";
+      // ---- a fake Together fine-tuning API: upload, create, poll (completes on the second poll) ----
+      if (url.startsWith("/v1/files/upload")) {
+        calls.push({ upload: data.length });
+        return json({ id: "file-fake-1", object: "file", purpose: "fine-tune", bytes: data.length });
+      }
+      if (url.startsWith("/v1/fine-tunes") && req.method === "POST") {
+        const body = JSON.parse(data || "{}") as Record<string, unknown>;
+        calls.push({ fineTune: body });
+        fineTunes.set("ft-fake-1", {
+          polls: 0,
+          model: String(body.model),
+          suffix: String(body.suffix ?? ""),
+        });
+        return json({ id: "ft-fake-1", status: "pending", model: body.model });
+      }
+      if (url.startsWith("/v1/fine-tunes/") && req.method === "GET") {
+        const id = url.slice("/v1/fine-tunes/".length).split(/[/?]/)[0]!;
+        const ft = fineTunes.get(id);
+        if (!ft) return json({ error: { message: "not found" } }, 404);
+        ft.polls++;
+        const done = ft.polls >= 2;
+        // the "trained" model answers like echo-<suffix-encoded>: tests encode the wanted answer in the suffix
+        return json({
+          id,
+          status: done ? "completed" : "running",
+          model: ft.model,
+          model_output_name: done ? `fake-org/${ft.model.split("/").pop()}-${ft.suffix}` : undefined,
+          token_count: 1234,
+          total_price: 50,
+        });
+      }
+      const body = JSON.parse(data || "{}") as Record<string, unknown>;
+      calls.push(body);
+      const model = String(body.model ?? "");
       if (model === "fail-429" && !failed) {
         failed = true;
         return json({ error: { message: "rate limited", type: "rate_limit" } }, 429);

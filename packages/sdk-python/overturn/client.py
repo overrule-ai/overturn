@@ -194,6 +194,13 @@ class Overturn:
             params["tag"] = tag
         return self.api.get_examples(params)
 
+    def promoted_model(self) -> str | None:
+        """The owned model a human promoted for this project (provider/model), or None."""
+        project = self.api.request("GET", "/v1/project")
+        settings = cast("dict[str, Any]", project.get("settings") or {})
+        model: Any = settings.get("promotedModel")
+        return model if isinstance(model, str) else None
+
     def handle_correction(self, payload: Any, *, actor: str | None = None) -> dict[str, Any]:
         """Turn what <CorrectButton> (from @overturn-ai/sdk/react) posts into a correction, from
         your own route: validates the body, uses the actor from YOUR session, calls correct().

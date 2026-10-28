@@ -23,6 +23,7 @@ export default defineConfig({
         { label: "Frameworks", link: "/frameworks/" },
         { label: "Self-hosting", link: "/self-hosting/" },
         { label: "Fingerprint contract", link: "/fingerprint/" },
+        { label: "Owned models", link: "/owned-models/" },
         { label: "Data & security", link: "/security/" },
         { label: "Terms", link: "/terms/" },
         { label: "Privacy", link: "/privacy/" },
