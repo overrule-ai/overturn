@@ -99,7 +99,7 @@ A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. 
 - [x] outcome contract on cases (tool never / once / at least once, answer contains, tool order), set in the dialog, SDKs and CorrectButton, edited on the case page; violations are regressions
 - [x] suppress from any report row; counts on the cases list; one-click restore
 - [x] `gate` on every report; CLI, Action and web read it
-- [ ] auto-suggest case title and tags from the run
+- [x] auto title: the note if there is one, else the subject/title field or first sentence of the input (tags come from the run)
 - [x] suite hygiene: duplicate corrections merge into one case (×N), `cases dedupe` for older ones
 - [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
 - [x] "what changed" narrative (report, PR comment, CLI, web) and per-row latency

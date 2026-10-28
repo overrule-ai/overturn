@@ -8,6 +8,7 @@ import {
   expectedFor,
   extractAnswer,
   type FrozenInput,
+  suggestSubject,
   type ToolRecordingEntry,
 } from "@overturn-ai/shared";
 import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
@@ -16,6 +17,7 @@ import { CasesService } from "../cases/cases.service";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { type CorrectionRow, cases, corrections, runs, type StepRow, steps } from "../db/schema";
+import { inputTextOf } from "../examples/examples.service";
 
 /** Size caps for what a case freezes (decision: docs/decisions.md). */
 export const FROZEN_INPUT_MAX_BYTES = 1_000_000;
@@ -184,7 +186,10 @@ export class CorrectionsService {
         const auto = defaultScorer(input.kind, expected, input.note ?? null);
         const scorer = input.scorer ?? auto.scorer;
         const config = input.scorerConfig ?? (input.scorer ? {} : auto.config);
-        const title = `${input.kind}: ${run.agent} ${run.externalId ?? run.id.slice(-8)}${input.note ? ` — ${input.note.slice(0, 80)}` : ""}`;
+        // Title: what the human said if they said anything, else what the input was about.
+        const subject =
+          input.note?.slice(0, 80) || suggestSubject(inputTextOf({ frozenInput: frozen.input }));
+        const title = `${input.kind}: ${run.agent} ${run.externalId ?? run.id.slice(-8)}${subject ? ` — ${subject}` : ""}`;
 
         // The same input corrected to the same answer again is the same test: merge, don't add.
         const existing = await this.casesService.findDuplicate(

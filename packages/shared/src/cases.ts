@@ -208,3 +208,60 @@ export function caseInputHash(agent: string, frozenInput: Record<string, unknown
   const { model: _m, provider: _p, name: _n, params: _q, ...rest } = frozenInput;
   return hashJSON({ agent, input: rest });
 }
+
+const SUBJECT_KEYS = [
+  "subject",
+  "title",
+  "question",
+  "query",
+  "summary",
+  "task",
+  "name",
+  "text",
+  "message",
+  "content",
+];
+const SUBJECT_MAX = 60;
+
+function clip(s: string): string {
+  const one = s.replace(/\s+/g, " ").trim();
+  if (!one) return "";
+  const sentence = one.split(/(?<=[.!?])\s/)[0] ?? one;
+  const pick = sentence.length >= 12 ? sentence : one;
+  return pick.length > SUBJECT_MAX ? `${pick.slice(0, SUBJECT_MAX - 1).trimEnd()}…` : pick;
+}
+
+/**
+ * A short human subject for a case, from the text of its last user turn: the `subject`/`title`/
+ * `question` field of a JSON input, else its first sentence. Used in auto titles so a case reads
+ * "edit: ticket-triage T-1004 — Duplicate charge on subscription" without anyone typing it.
+ */
+export function suggestSubject(inputText: string): string | null {
+  const t = inputText.trim();
+  if (!t) return null;
+  if (t.startsWith("{")) {
+    try {
+      const obj = JSON.parse(t) as unknown;
+      const found = findSubject(obj, 0);
+      if (found) return clip(found);
+    } catch {
+      // not JSON; fall through to prose
+    }
+  }
+  const out = clip(t);
+  return out || null;
+}
+
+function findSubject(v: unknown, depth: number): string | null {
+  if (!v || typeof v !== "object" || Array.isArray(v) || depth > 2) return null;
+  const o = v as Record<string, unknown>;
+  for (const k of SUBJECT_KEYS) {
+    const x = o[k];
+    if (typeof x === "string" && x.trim()) return x;
+  }
+  for (const x of Object.values(o)) {
+    const r = findSubject(x, depth + 1);
+    if (r) return r;
+  }
+  return null;
+}

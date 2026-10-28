@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { decisionFields, defaultScorer, expectedFor, extractAnswer, replayReadiness } from "./cases.js";
+import {
+  decisionFields,
+  defaultScorer,
+  expectedFor,
+  extractAnswer,
+  replayReadiness,
+  suggestSubject,
+} from "./cases.js";
 
 describe("extractAnswer", () => {
   it("parses JSON text from an OpenAI message", () => {
@@ -132,5 +139,22 @@ describe("replayReadiness", () => {
 
   it("is none without a model step prompt", () => {
     expect(replayReadiness([tool("lookup"), { ...llm, input: null }]).level).toBe("none");
+  });
+});
+
+describe("suggestSubject", () => {
+  it("takes the subject field of a JSON input", () => {
+    expect(
+      suggestSubject(
+        JSON.stringify({ ticket: { id: "T-1", subject: "Duplicate charge on subscription", body: "…" } }),
+      ),
+    ).toBe("Duplicate charge on subscription");
+  });
+  it("takes the first sentence of prose and clips long ones", () => {
+    expect(suggestSubject("I was charged twice this month. Please refund one of them, thanks!")).toBe(
+      "I was charged twice this month.",
+    );
+    expect(suggestSubject("a".repeat(100))?.length).toBe(60);
+    expect(suggestSubject("   ")).toBeNull();
   });
 });
