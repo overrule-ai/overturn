@@ -284,13 +284,11 @@ export class TrainingService {
     await this.set(id, { status: "gating" });
     try {
       const filter = m.caseFilter as CaseFilter;
-      const created = await this.replay.create(m.projectId, {
-        model: m.servedAs,
-        mode: "step",
-        filter,
-        start: true,
-        examples: 0,
-      });
+      const created = await this.replay.create(
+        m.projectId,
+        { model: m.servedAs, mode: "step", filter, start: true, examples: 0 },
+        `gate:${m.name}`,
+      );
       await this.set(id, { gateJobId: created.job.id });
       const job = await this.replay.runJob(created.job.id);
       const report = await this.replay.report(m.projectId, job.id);

@@ -27,6 +27,7 @@ export interface AuthContext {
   projectSlug: string;
   keyId: string;
   keyPrefix: string;
+  keyName?: string;
   settings: Record<string, unknown>;
   /** Present when authenticated with a web session instead of an API key. */
   user?: { id: string; email: string; name: string | null };
@@ -74,6 +75,7 @@ export class ApiKeysService {
       .select({
         keyId: apiKeys.id,
         keyPrefix: apiKeys.prefix,
+        keyName: apiKeys.name,
         revokedAt: apiKeys.revokedAt,
         projectId: projects.id,
         projectName: projects.name,
@@ -101,7 +103,14 @@ export class ApiKeysService {
       projectSlug: row.projectSlug,
       keyId: row.keyId,
       keyPrefix: row.keyPrefix,
+      keyName: row.keyName,
       settings: (row.settings ?? {}) as Record<string, unknown>,
     };
   }
+}
+
+/** Who did it, for audit lines: the signed-in user's email, else the API key's name and prefix. */
+export function actorOf(auth: AuthContext): string {
+  if (auth.user) return auth.user.email;
+  return `key:${auth.keyName ?? "api"} (${auth.keyPrefix}…)`;
 }

@@ -101,9 +101,10 @@ A gate that fails on a valid new path, or that nobody can quiet, gets bypassed. 
 - [x] `gate` on every report; CLI, Action and web read it
 - [x] auto title: the note if there is one, else the subject/title field or first sentence of the input (tags come from the run)
 - [x] suite hygiene: duplicate corrections merge into one case (×N), `cases dedupe` for older ones
+- [x] suite hygiene: conflicting corrections (same input, different answers) surfaced on the cases page, `cases conflicts`
 - [ ] suite hygiene: cluster similar cases, "hasn't failed in 90 days" nudge, priority weighting
 - [x] "what changed" narrative (report, PR comment, CLI, web) and per-row latency
-- [ ] replay audit log
+- [x] replay audit: every job records who started it (user, API key, or the gate)
 
 
 ## Owned models (Oct 27 →)

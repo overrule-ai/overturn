@@ -37,6 +37,7 @@ function report(over: Partial<ReplayReport>): ReplayReport {
       targetPromptVersion: null,
       options: { examples: 0 },
       groupId: null,
+      startedBy: null,
       mode: "step",
       caseFilter: {},
       status: "completed",

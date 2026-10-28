@@ -1,5 +1,6 @@
 import type {
   Case,
+  CaseConflict,
   CaseCounts,
   CaseDedupeResult,
   CaseSet,
@@ -218,6 +219,41 @@ describe("POST /v1/corrections", () => {
     // both corrections are kept on the runs
     const list = await api<Correction[]>(ctx, "GET", `/v1/corrections?runId=${b.runId}`);
     expect(list.body).toHaveLength(2);
+  });
+
+  it("GET /v1/cases/conflicts lists inputs whose active cases disagree", async () => {
+    const a = await recordRun({ externalId: "T-conf" });
+    const b = await recordRun({ externalId: "T-conf" });
+    const one = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+      runId: a.runId,
+      stepId: a.llmId,
+      kind: "edit",
+      correctedOutput: { priority: "P1" },
+      actor: "ana",
+    });
+    const two = await api<CorrectionResult>(ctx, "POST", "/v1/corrections", {
+      runId: b.runId,
+      stepId: b.llmId,
+      kind: "edit",
+      correctedOutput: { priority: "P3" },
+      actor: "ben",
+      note: "not urgent",
+    });
+    const res = await api<CaseConflict[]>(ctx, "GET", "/v1/cases/conflicts");
+    expect(res.status).toBe(200);
+    const conflict = res.body.find((c) => c.cases.some((k) => k.id === one.body.case?.id));
+    expect(conflict).toBeTruthy();
+    expect(conflict!.cases.map((k) => k.id).sort()).toEqual([one.body.case!.id, two.body.case!.id].sort());
+    expect(conflict!.cases.find((k) => k.id === two.body.case!.id)).toMatchObject({
+      actor: "ben",
+      note: "not urgent",
+    });
+    const counts = await api<CaseCounts>(ctx, "GET", "/v1/cases/counts");
+    expect(counts.body.conflicts).toBeGreaterThanOrEqual(1);
+    // suppressing one side resolves it
+    await api(ctx, "PATCH", `/v1/cases/${two.body.case!.id}`, { status: "suppressed" });
+    const after = await api<CaseConflict[]>(ctx, "GET", "/v1/cases/conflicts");
+    expect(after.body.find((c) => c.cases.some((k) => k.id === one.body.case?.id))).toBeUndefined();
   });
 
   it("POST /v1/cases/dedupe merges pre-existing duplicates into the oldest case", async () => {

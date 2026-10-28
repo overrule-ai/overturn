@@ -414,6 +414,7 @@ describe("replay jobs (step mode)", () => {
       filter: { agent: "local-agent" },
     });
     expect(created.status).toBe(201);
+    expect(created.body.job.startedBy).toMatch(/^key:/); // audit: who started it
     const job = await replay.runJob(created.body.job.id);
     expect(job.status).toBe("completed");
     expect(job.summary?.verdicts.fixed).toBe(1);

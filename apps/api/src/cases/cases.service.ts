@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   type Case,
+  type CaseConflict,
   type CaseCounts,
   type CaseDedupeResult,
   type CaseEquivalent,
@@ -282,8 +283,68 @@ export class CasesService {
       .from(cases)
       .where(eq(cases.projectId, projectId))
       .groupBy(cases.status);
-    const out: CaseCounts = { active: 0, suppressed: 0, archived: 0 };
+    const out: CaseCounts = { active: 0, suppressed: 0, archived: 0, conflicts: 0 };
     for (const r of rows) out[r.status] = r.n;
+    out.conflicts = (await this.conflicts(projectId)).length;
+    return out;
+  }
+
+  /**
+   * Suite hygiene: inputs that have more than one active case with different answers. Two humans
+   * (or one human twice) disagreed; until someone suppresses or re-corrects, every replay fails at
+   * least one of them and the suite is arguing with itself.
+   */
+  async conflicts(projectId: string): Promise<CaseConflict[]> {
+    await this.ensureHashed(projectId);
+    const rows = await this.db
+      .select({
+        id: cases.id,
+        inputHash: cases.inputHash,
+        agent: cases.agent,
+        title: cases.title,
+        kind: cases.kind,
+        expected: cases.expected,
+        createdAt: cases.createdAt,
+        duplicates: cases.duplicates,
+        note: sql<string | null>`(select note from corrections where corrections.id = ${cases.correctionId})`,
+        actor: sql<
+          string | null
+        >`(select actor from corrections where corrections.id = ${cases.correctionId})`,
+      })
+      .from(cases)
+      .where(
+        and(
+          eq(cases.projectId, projectId),
+          eq(cases.status, "active"),
+          sql`${cases.inputHash} in (select input_hash from cases c2 where c2.project_id = ${projectId} and c2.status = 'active' and c2.input_hash is not null group by input_hash having count(*) > 1)`,
+        ),
+      )
+      .orderBy(cases.inputHash, cases.createdAt);
+    const groups = new Map<string, typeof rows>();
+    for (const r of rows) {
+      const g = groups.get(r.inputHash!);
+      if (g) g.push(r);
+      else groups.set(r.inputHash!, [r]);
+    }
+    const out: CaseConflict[] = [];
+    for (const [inputHash, g] of groups) {
+      const answers = new Set(g.map((r) => `${r.kind}|${JSON.stringify(r.expected ?? null)}`));
+      if (answers.size < 2) continue;
+      out.push({
+        inputHash,
+        agent: g[0]!.agent,
+        cases: g.map((r) => ({
+          id: r.id,
+          title: r.title,
+          kind: r.kind,
+          expected: r.expected,
+          actor: r.actor,
+          note: r.note,
+          createdAt: r.createdAt.toISOString(),
+          duplicates: r.duplicates,
+        })),
+      });
+    }
     return out;
   }
 

@@ -20,7 +20,7 @@ import {
 } from "@overturn-ai/shared";
 import { z } from "zod";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
-import type { AuthContext } from "../auth/api-keys.service";
+import { type AuthContext, actorOf } from "../auth/api-keys.service";
 import { zod } from "../common/zod.pipe";
 import { JobsService } from "../jobs/jobs.service";
 import { PromptsService } from "./prompts.service";
@@ -51,7 +51,7 @@ export class ReplayController {
     @Auth() auth: AuthContext,
     @Body(zod(replayCreateSchema)) body: ReplayCreate,
   ): Promise<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate; caseIds: string[] }> {
-    const created = await this.replay.create(auth.projectId, body);
+    const created = await this.replay.create(auth.projectId, body, actorOf(auth));
     if (body.start && body.mode === "step") for (const j of created.jobs) await this.jobs.enqueueReplay(j.id);
     return created;
   }

@@ -67,6 +67,7 @@ export function serializeJob(j: ReplayJobRow): ReplayJob {
     targetPromptVersion: j.targetPromptVersion,
     options: { examples: Number((j.options as { examples?: number } | null)?.examples ?? 0) },
     groupId: j.groupId ?? null,
+    startedBy: j.startedBy ?? null,
     mode: j.mode,
     caseFilter: j.caseFilter,
     status: j.status,
@@ -221,6 +222,7 @@ export class ReplayService {
   async create(
     projectId: string,
     input: ReplayCreate,
+    startedBy: string | null = null,
   ): Promise<{ job: ReplayJob; jobs: ReplayJob[]; estimate: ReplayEstimate; caseIds: string[] }> {
     const models = [input.model, ...(input.models ?? []).filter((m) => m !== input.model)];
     for (const model of models) {
@@ -249,6 +251,7 @@ export class ReplayService {
           targetModel: model,
           targetPromptVersion: input.promptVersion ?? null,
           groupId,
+          startedBy,
           mode: input.mode,
           caseFilter: { ...filter, ids: list.map((c) => c.id) },
           status: "pending",

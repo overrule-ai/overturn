@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import {
   type Case,
+  type CaseConflict,
   type CaseCounts,
   type CaseDedupeResult,
   type CaseEquivalent,
@@ -49,6 +50,11 @@ export class CasesController {
   @HttpCode(200)
   dedupe(@Auth() auth: AuthContext): Promise<CaseDedupeResult> {
     return this.cases.dedupe(auth.projectId);
+  }
+
+  @Get("cases/conflicts")
+  conflicts(@Auth() auth: AuthContext): Promise<CaseConflict[]> {
+    return this.cases.conflicts(auth.projectId);
   }
 
   @Get("cases/counts")

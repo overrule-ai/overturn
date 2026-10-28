@@ -29,13 +29,20 @@ function CasesList() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cases"] });
       qc.invalidateQueries({ queryKey: ["case-counts"] });
+      qc.invalidateQueries({ queryKey: ["case-conflicts"] });
     },
+  });
+  const conflicts = useQuery({
+    queryKey: ["case-conflicts"],
+    queryFn: client.cases.conflicts,
+    enabled: (counts.data?.conflicts ?? 0) > 0,
   });
   const dedupe = useMutation({
     mutationFn: () => client.cases.dedupe(),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cases"] });
       qc.invalidateQueries({ queryKey: ["case-counts"] });
+      qc.invalidateQueries({ queryKey: ["case-conflicts"] });
     },
   });
   const cases = useQuery({
@@ -117,6 +124,34 @@ function CasesList() {
             Review them
           </button>
         </p>
+      )}
+      {counts.data && counts.data.conflicts > 0 && (
+        <div
+          className="rounded-md border border-warning/25 bg-warning/10 p-3 text-sm"
+          data-testid="conflicts-note"
+        >
+          <p className="font-medium">
+            {counts.data.conflicts} input{counts.data.conflicts === 1 ? " has" : "s have"} conflicting
+            corrections.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            The same input was corrected to different answers, so every replay fails at least one side.
+            Suppress the one that is wrong, or re-correct the run.
+          </p>
+          <ul className="mt-2 space-y-1 text-xs">
+            {(conflicts.data ?? []).slice(0, 10).map((c) => (
+              <li key={c.inputHash} className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-muted-foreground">{c.agent}</span>
+                {c.cases.map((k) => (
+                  <Link key={k.id} className="underline" href={`/cases/${k.id}`}>
+                    {k.kind}
+                    {k.actor ? ` by ${k.actor}` : ""}: {JSON.stringify(k.expected).slice(0, 60)}
+                  </Link>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       <p className="text-xs text-muted-foreground">
         The same input corrected to the same answer again merges into one case (shown as “×N”).{" "}

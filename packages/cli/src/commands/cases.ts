@@ -29,13 +29,31 @@ export function registerCases(program: Command): void {
     });
 
   cases
+    .command("conflicts")
+    .description("Inputs whose active cases disagree on the answer (the suite argues with itself)")
+    .action(async (_opts: Record<string, never>, cmd: Command) => {
+      const global = cmd.optsWithGlobals<CliOptions>();
+      const r = await apiFor(global).cases.conflicts();
+      if (global.json) return printJson(r);
+      if (r.length === 0) return console.log(pc.dim("no conflicting cases"));
+      for (const c of r) {
+        console.log(`${pc.bold(c.agent)}  ${c.cases.length} cases on the same input`);
+        for (const k of c.cases)
+          console.log(
+            `  ${shortId(k.id)}  ${k.kind}${k.actor ? ` by ${k.actor}` : ""}  ${JSON.stringify(k.expected).slice(0, 80)}${k.note ? pc.dim(`  — ${k.note}`) : ""}`,
+          );
+      }
+      console.log(pc.dim("suppress the wrong side: overturn cases suppress <id>"));
+    });
+
+  cases
     .command("list")
     .description("List cases")
     .option("--agent <name>", "Filter by agent")
     .option("--tag <tag>", "Filter by tag")
     .option("--kind <kind>", "approve | edit | reject | escalate")
     .option("--set <name>", "Saved case set")
-    .option("--status <status>", "active | archived", "active")
+    .option("--status <status>", "active | suppressed | archived", "active")
     .option("--since <when>", "30d, 12h, 90m or an ISO date")
     .option("--limit <n>", "Max rows", "100")
     .action(
@@ -57,7 +75,7 @@ export function registerCases(program: Command): void {
           tag: opts.tag,
           kind: opts.kind as "approve" | "edit" | "reject" | "escalate" | undefined,
           set: opts.set,
-          status: opts.status as "active" | "archived",
+          status: opts.status as "active" | "suppressed" | "archived",
           since: parseSince(opts.since),
           limit: Number(opts.limit),
         });
@@ -98,18 +116,35 @@ export function registerCases(program: Command): void {
       console.log(`\n${pc.bold("original")}\n${JSON.stringify(c.originalOutput, null, 2)}`);
     });
 
-  cases
-    .command("archive <id>")
-    .description("Archive a case")
-    .action(async (id: string, _opts: unknown, cmd: Command) => {
-      const global = cmd.optsWithGlobals<CliOptions>();
-      const api = apiFor(global);
-      await api.cases.patch(
-        await resolveId(id, async () => (await api.cases.list({ limit: 200 })).items, "case"),
-        {
-          status: "archived",
-        },
-      );
-      console.log(`${pc.green("✓")} archived ${id}`);
-    });
+  for (const [verb, status, help] of [
+    ["suppress", "suppressed", "Take a case out of the suite without losing it (counted, restorable)"],
+    ["restore", "active", "Put a suppressed or archived case back in the suite"],
+    ["archive", "archived", "Archive a case"],
+  ] as const) {
+    cases
+      .command(`${verb} <id>`)
+      .description(help)
+      .action(async (id: string, _opts: unknown, cmd: Command) => {
+        const global = cmd.optsWithGlobals<CliOptions>();
+        const api = apiFor(global);
+        await api.cases.patch(
+          await resolveId(
+            id,
+            async () => (await api.cases.list({ limit: 200, status: "active" })).items,
+            "case",
+          ).catch(async () =>
+            resolveId(id, async () => (await api.cases.list({ limit: 200, status })).items, "case").catch(
+              async () =>
+                resolveId(
+                  id,
+                  async () => (await api.cases.list({ limit: 200, status: "suppressed" })).items,
+                  "case",
+                ),
+            ),
+          ),
+          { status },
+        );
+        console.log(`${pc.green("✓")} ${status === "active" ? "restored" : status} ${id}`);
+      });
+  }
 }

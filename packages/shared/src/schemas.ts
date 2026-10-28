@@ -484,8 +484,29 @@ export const caseCountsSchema = z.object({
   active: z.number().int(),
   suppressed: z.number().int(),
   archived: z.number().int(),
+  /** Inputs with more than one active case that disagree on the answer (see GET /v1/cases/conflicts). */
+  conflicts: z.number().int().default(0),
 });
 export type CaseCounts = z.infer<typeof caseCountsSchema>;
+
+/** Same input, different human answers: the suite contradicts itself until someone picks one. */
+export const caseConflictSchema = z.object({
+  inputHash: z.string(),
+  agent: z.string(),
+  cases: z.array(
+    z.object({
+      id: uuidSchema,
+      title: z.string(),
+      kind: correctionKindSchema,
+      expected: jsonValueSchema.nullable(),
+      actor: z.string().nullable(),
+      note: z.string().nullable(),
+      createdAt: isoDateSchema,
+      duplicates: z.number().int(),
+    }),
+  ),
+});
+export type CaseConflict = z.infer<typeof caseConflictSchema>;
 
 export const caseSetCreateSchema = z.object({
   name: z.string().min(1).max(200),
@@ -609,6 +630,8 @@ export const replayJobSchema = z.object({
   options: replayOptionsSchema.default({ examples: 0 }),
   /** Set when several models were replayed together; GET /v1/replays/groups/{groupId} is the matrix. */
   groupId: uuidSchema.nullable(),
+  /** Audit: who started it (user email, or `key:<name>`); null for older jobs and system-started ones say so. */
+  startedBy: z.string().nullable(),
   mode: replayModeSchema,
   caseFilter: jsonValueSchema,
   status: replayStatusSchema,

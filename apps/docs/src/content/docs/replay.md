@@ -39,6 +39,10 @@ A case that keeps failing for a reason nobody is going to fix is noise, and nois
 
 The same input corrected to the same answer again is the same test. Overturn merges it into the existing case (the correction is still recorded; the case shows **×N** for how often it was seen) instead of adding a copy that would double-count in every report. Identity is the agent plus the frozen prompt, not the model it ran on. A *different* answer for the same input is kept as a separate case: that is a real disagreement to resolve, not noise. `overturn cases dedupe` (or the link on the cases page) merges duplicates created before this existed.
 
+## Conflicts
+
+When the same input has two active cases with different answers, the suite is arguing with itself: every replay fails at least one side. The cases page lists these with who corrected what (`overturn cases conflicts`); suppress the wrong one or re-correct the run. Overturn never picks a winner.
+
 ## The gate
 
 Every report carries a verdict for CI: `gate.pass` is false on any regression, and on unaccepted new paths unless the project allows them. The CLI and the GitHub Action read that verdict; the PR comment says which.

@@ -311,6 +311,8 @@ export const replayJobs = pgTable(
     targetPromptVersion: text("target_prompt_version"),
     /** Jobs created together (one replay, several models) share a group. */
     groupId: uuid("group_id"),
+    /** Audit: the user email or API key that started the replay; null for jobs from before this existed. */
+    startedBy: text("started_by"),
     mode: replayMode("mode").notNull().default("step"),
     caseFilter: jsonb("case_filter").notNull().default(sql`'{}'::jsonb`),
     /** Replay options beyond model/prompt: { examples: k } puts k nearest corrections in the prompt. */

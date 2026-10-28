@@ -34,6 +34,7 @@ export default function ReplaysPage() {
             <TH>Regressions</TH>
             <TH>Fixed</TH>
             <TH>Cost</TH>
+            <TH>Started by</TH>
             <TH>Created</TH>
           </TR>
         </THead>
@@ -69,6 +70,9 @@ export default function ReplaysPage() {
                 {j.summary?.verdicts.fixed ?? "—"}
               </TD>
               <TD>{money(j.costUsd)}</TD>
+              <TD className="max-w-[160px] truncate text-xs text-muted-foreground" title={j.startedBy ?? ""}>
+                {j.startedBy?.replace(/ \(.*\)$/, "") ?? "—"}
+              </TD>
               <TD className="text-muted-foreground">{ago(j.createdAt)}</TD>
             </TR>
           ))}
