@@ -1,5 +1,13 @@
 <p><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg"><img src="docs/assets/logo.svg" alt="Overturn" width="320"></picture></p>
 
+<p>
+<a href="https://github.com/overrule-ai/overturn/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/overrule-ai/overturn/actions/workflows/ci.yml/badge.svg"></a>
+<a href="https://www.npmjs.com/package/@overturn-ai/sdk"><img alt="npm" src="https://img.shields.io/npm/v/%40overturn-ai%2Fsdk?label=%40overturn-ai%2Fsdk"></a>
+<a href="https://pypi.org/project/overturn/"><img alt="PyPI" src="https://img.shields.io/pypi/v/overturn?label=overturn%20(PyPI)"></a>
+<a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-black"></a>
+<a href="https://overturn.run"><img alt="overturn.run" src="https://img.shields.io/badge/site-overturn.run-black"></a>
+</p>
+
 **Overturn captures every time a human fixes your agent and makes sure it never makes that mistake again, on any model.**
 
 Overturn records your agent's runs, turns every human correction into a replayable case, and replays those cases against any supported model or prompt with tools answered from the recording, so nothing fires twice. Open source, Apache-2.0, self-hosted on one Postgres.

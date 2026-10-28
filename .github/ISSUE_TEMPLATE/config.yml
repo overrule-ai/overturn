@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://docs.overturn.run/docs/
+    about: Quickstart, replay, self-hosting, owned models
+  - name: Security
+    url: https://github.com/overrule-ai/overturn/blob/main/SECURITY.md
+    about: Report a vulnerability privately

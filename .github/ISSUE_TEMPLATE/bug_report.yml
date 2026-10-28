@@ -1,0 +1,30 @@
+name: Bug report
+description: Something is wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got. A replay job id or case id helps.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: SDK / CLI / API version, or "hosted"
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [Hosted (app.overturn.run), Self-hosted, SDK (TypeScript), SDK (Python), CLI, GitHub Action, Trainer]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      render: shell
