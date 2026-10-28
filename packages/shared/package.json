@@ -1,6 +1,6 @@
 {
   "name": "@overturn-ai/shared",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Shared schemas, types, fingerprinting and scorers for Overturn",
   "license": "Apache-2.0",
   "repository": {

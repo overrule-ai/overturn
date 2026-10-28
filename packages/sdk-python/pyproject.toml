@@ -1,6 +1,6 @@
 [project]
 name = "overturn"
-version = "0.1.4"
+version = "0.1.5"
 description = "Overturn SDK: record agent runs, turn human corrections into regression cases, replay safely"
 readme = "README.md"
 license = "Apache-2.0"
