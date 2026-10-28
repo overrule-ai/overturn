@@ -2,6 +2,8 @@ import type {
   ApiError,
   CaptureCreate,
   CaptureResult,
+  CaptureStats,
+  CaptureStatsQuery,
   Case,
   CaseConflict,
   CaseDedupeResult,
@@ -119,6 +121,8 @@ export class OverturnApi {
       this.request("POST", "/v1/corrections", body),
     /** Draft vs sent from the tool the expert works in: records the run and freezes the case. */
     capture: (body: CaptureCreate): Promise<CaptureResult> => this.request("POST", "/v1/capture", body),
+    captureStats: (q: Partial<CaptureStatsQuery> = {}): Promise<CaptureStats> =>
+      this.request("GET", "/v1/capture/stats", undefined, q),
     list: (q: { runId?: string; limit?: number } = {}): Promise<Correction[]> =>
       this.request("GET", "/v1/corrections", undefined, q),
   };

@@ -5,6 +5,8 @@
 import {
   captureCreateSchema,
   captureResultSchema,
+  captureStatsQuerySchema,
+  captureStatsSchema,
   caseListQuerySchema,
   casePatchSchema,
   caseSchema,
@@ -137,6 +139,14 @@ const ROUTES: Route[] = [
     body: captureCreateSchema,
     response: captureResultSchema,
     status: 201,
+  },
+  {
+    method: "get",
+    path: "/v1/capture/stats",
+    summary: "Capture scorecard: drafts sent untouched, fixes by expert, top reasons, by week",
+    tag: "correct",
+    query: captureStatsQuerySchema,
+    response: captureStatsSchema,
   },
   {
     method: "get",

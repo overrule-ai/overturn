@@ -599,6 +599,38 @@ export const captureResultSchema = z.object({
 });
 export type CaptureResult = z.infer<typeof captureResultSchema>;
 
+export const captureStatsQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(30),
+  agent: z.string().optional(),
+});
+export type CaptureStatsQuery = z.infer<typeof captureStatsQuerySchema>;
+
+/** The number that pays for the product: how much of the AI's work went out untouched, and who fixed the rest. */
+export const captureStatsSchema = z.object({
+  days: z.number().int(),
+  captures: z.number().int(),
+  /** Sent as drafted. */
+  untouched: z.number().int(),
+  edited: z.number().int(),
+  untouchedRate: z.number(),
+  experts: z.number().int(),
+  byActor: z.array(
+    z.object({
+      actor: z.string().nullable(),
+      captures: z.number().int(),
+      edited: z.number().int(),
+      untouchedRate: z.number(),
+    }),
+  ),
+  byReason: z.array(z.object({ reason: z.string(), count: z.number().int() })),
+  bySource: z.array(z.object({ source: z.string(), count: z.number().int() })),
+  byAgent: z.array(z.object({ agent: z.string(), captures: z.number().int(), edited: z.number().int() })),
+  weekly: z.array(
+    z.object({ weekStart: isoDateSchema, captures: z.number().int(), edited: z.number().int() }),
+  ),
+});
+export type CaptureStats = z.infer<typeof captureStatsSchema>;
+
 export const caseDedupeResultSchema = z.object({
   /** Cases removed because an older active case had the same input, kind and answer. */
   merged: z.number().int(),

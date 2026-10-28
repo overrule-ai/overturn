@@ -7,6 +7,7 @@ import {
   FlaskConical,
   ListTree,
   LogOut,
+  PenLine,
   RotateCcw,
   Settings,
   SunMoon,
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/runs", label: "Runs", icon: ListTree },
+  { href: "/capture", label: "Capture", icon: PenLine },
   { href: "/cases", label: "Cases", icon: FlaskConical },
   { href: "/replays", label: "Replays", icon: RotateCcw },
   { href: "/models", label: "Models", icon: Boxes },

@@ -1,5 +1,12 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
-import { type CaptureCreate, type CaptureResult, captureCreateSchema } from "@overturn-ai/shared";
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  type CaptureCreate,
+  type CaptureResult,
+  type CaptureStats,
+  type CaptureStatsQuery,
+  captureCreateSchema,
+  captureStatsQuerySchema,
+} from "@overturn-ai/shared";
 import { ApiKeyGuard, Auth } from "../auth/api-key.guard";
 import type { AuthContext } from "../auth/api-keys.service";
 import { zod } from "../common/zod.pipe";
@@ -18,5 +25,14 @@ export class CaptureController {
     @Body(zod(captureCreateSchema)) body: CaptureCreate,
   ): Promise<CaptureResult> {
     return this.capture.create(auth.projectId, { ...body, actor: body.actor ?? auth.user?.email ?? null });
+  }
+
+  /** The scorecard: drafts sent untouched, fixes by expert, top reasons, by week. */
+  @Get("stats")
+  stats(
+    @Auth() auth: AuthContext,
+    @Query(zod(captureStatsQuerySchema)) q: CaptureStatsQuery,
+  ): Promise<CaptureStats> {
+    return this.capture.stats(auth.projectId, q);
   }
 }

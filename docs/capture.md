@@ -66,6 +66,10 @@ overturn capture --source zendesk --external-id zd:48213 --agent claims-reply \
   --draft @draft.txt --sent @sent.txt --reason "2-day SLA for storm claims" --context thread.json
 ```
 
+## The scorecard
+
+`GET /v1/capture/stats?days=30&agent=` (web: **Capture**) is the number a claims leader reads: how many drafts went out untouched, how many an expert fixed, who fixed what, the top reasons, by source and by week. "Sent untouched" rising while the suite stays green is the labor-leverage number; the edited count is the training set growing.
+
 ## Then
 
 ```bash

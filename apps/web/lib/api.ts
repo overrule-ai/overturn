@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  CaptureStats,
   Case,
   CaseConflict,
   CaseCounts,
@@ -124,6 +125,8 @@ export const client = {
     create: (body: Omit<CorrectionCreate, "source">) =>
       api<CorrectionResult>("POST", "/v1/corrections", { ...body, source: "ui" }),
     list: (runId: string) => api<Correction[]>("GET", "/v1/corrections", undefined, { runId }),
+    captureStats: (q: { days?: number; agent?: string }) =>
+      api<CaptureStats>("GET", "/v1/capture/stats", undefined, q),
   },
   cases: {
     list: (q: Query) => api<Page<CaseSummary>>("GET", "/v1/cases", undefined, q),

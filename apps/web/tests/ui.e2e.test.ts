@@ -185,6 +185,28 @@ describe("web UI", () => {
     await page.goto("/cases");
     expect(await page.getByTestId("suppressed-note").count()).toBe(0);
 
+    // --- capture scorecard: a draft-vs-sent capture shows up as an untouched/edited split ---
+    const cap = await fetch(`${ctx.baseUrl}/v1/capture`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${ctx.apiKey}` },
+      body: JSON.stringify({
+        source: "zendesk",
+        externalId: "zd:e2e-1",
+        agent: "claims-reply",
+        actor: "ray@carrier.com",
+        context: [{ role: "customer", content: "Roof leak after the storm." }],
+        draft: { text: "Covered. An adjuster will call within 5 business days." },
+        sent: { text: "Covered. An adjuster will call within 2 business days." },
+        reason: "Storm SLA is 2 days",
+      }),
+    });
+    expect(cap.status).toBe(201);
+    await page.goto("/capture");
+    await page.getByText("ray@carrier.com").waitFor({ timeout: 15_000 });
+    const capText = await page.textContent("main");
+    expect(capText).toContain("storm sla is 2 days");
+    expect(await page.getByTestId("capture-untouched").textContent()).toMatch(/\d+%/);
+
     // --- settings: mint an API key ---
     await page.goto("/settings");
     await page.getByTestId("create-key").click();

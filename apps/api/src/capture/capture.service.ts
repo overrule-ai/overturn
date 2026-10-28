@@ -2,18 +2,20 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   type CaptureCreate,
   type CaptureResult,
+  type CaptureStats,
+  type CaptureStatsQuery,
   captureAnswerValue,
   captureSystemPrompt,
   diffCaptureAnswers,
   extractAnswer,
   renderCaptureContext,
 } from "@overturn-ai/shared";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { CorrectionsService } from "../corrections/corrections.service";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { runs, steps } from "../db/schema";
+import { corrections, runs, steps } from "../db/schema";
 import { IngestService } from "../ingest/ingest.service";
 
 /**
@@ -57,6 +59,87 @@ export class CaptureService {
       correction: result.correction,
       case: result.case,
       deduplicated: result.deduplicated,
+    };
+  }
+
+  /**
+   * The scorecard a claims leader reads: how many drafts went out untouched, who is fixing
+   * the rest, and why. Only captures count (source = capture), so SDK/UI corrections on
+   * instrumented agents do not dilute it.
+   */
+  async stats(projectId: string, q: CaptureStatsQuery): Promise<CaptureStats> {
+    const since = new Date(Date.now() - q.days * 86_400_000);
+    const where = [
+      eq(corrections.projectId, projectId),
+      eq(corrections.source, "capture"),
+      gte(corrections.createdAt, since),
+      ...(q.agent ? [eq(runs.agent, q.agent)] : []),
+    ];
+    const edited = sql<number>`count(*) filter (where ${corrections.kind} = 'edit')::int`;
+    const count = sql<number>`count(*)::int`;
+
+    const [totals] = await this.db
+      .select({ captures: count, edited, experts: sql<number>`count(distinct ${corrections.actor})::int` })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where));
+    const byActor = await this.db
+      .select({ actor: corrections.actor, captures: count, edited })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where))
+      .groupBy(corrections.actor)
+      .orderBy(desc(count))
+      .limit(50);
+    const reason = sql<string>`lower(trim(${corrections.note}))`;
+    const byReason = await this.db
+      .select({ reason, count })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where, sql`${corrections.note} is not null and trim(${corrections.note}) <> ''`))
+      .groupBy(reason)
+      .orderBy(desc(count))
+      .limit(15);
+    const source = sql<string>`coalesce(${runs.metadata} ->> 'capture', 'custom')`;
+    const bySource = await this.db
+      .select({ source, count })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where))
+      .groupBy(source)
+      .orderBy(desc(count));
+    const byAgent = await this.db
+      .select({ agent: runs.agent, captures: count, edited })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where))
+      .groupBy(runs.agent)
+      .orderBy(desc(count))
+      .limit(20);
+    const week = sql<Date>`date_trunc('week', ${corrections.createdAt})`;
+    const weekly = await this.db
+      .select({ weekStart: week, captures: count, edited })
+      .from(corrections)
+      .innerJoin(runs, eq(runs.id, corrections.runId))
+      .where(and(...where))
+      .groupBy(week)
+      .orderBy(asc(week));
+
+    const captures = totals?.captures ?? 0;
+    const editedN = totals?.edited ?? 0;
+    const rate = (c: number, e: number) => (c === 0 ? 0 : (c - e) / c);
+    return {
+      days: q.days,
+      captures,
+      untouched: captures - editedN,
+      edited: editedN,
+      untouchedRate: rate(captures, editedN),
+      experts: totals?.experts ?? 0,
+      byActor: byActor.map((r) => ({ ...r, untouchedRate: rate(r.captures, r.edited) })),
+      byReason,
+      bySource,
+      byAgent,
+      weekly: weekly.map((w) => ({ ...w, weekStart: new Date(w.weekStart).toISOString() })),
     };
   }
 

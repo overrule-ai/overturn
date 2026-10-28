@@ -205,3 +205,35 @@ describe("POST /v1/capture", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("GET /v1/capture/stats", () => {
+  it("counts untouched vs edited, by expert, reason, source and week", async () => {
+    const stats = await api<import("@overturn-ai/shared").CaptureStats>(
+      ctx,
+      "GET",
+      "/v1/capture/stats?days=30",
+    );
+    expect(stats.status).toBe(200);
+    const s = stats.body;
+    expect(s.captures).toBeGreaterThanOrEqual(6);
+    expect(s.untouched + s.edited).toBe(s.captures);
+    expect(s.untouchedRate).toBeCloseTo(s.untouched / s.captures, 5);
+    expect(s.experts).toBeGreaterThanOrEqual(1);
+    const ray = s.byActor.find((a) => a.actor === "ray@carrier.com");
+    expect(ray).toMatchObject({ captures: 1, edited: 1, untouchedRate: 0 });
+    expect(s.byReason.map((r) => r.reason)).toContain("storm claims get 2-day contact; ask to keep evidence");
+    expect(s.bySource.find((x) => x.source === "zendesk")?.count).toBeGreaterThanOrEqual(3);
+    expect(s.bySource.find((x) => x.source === "front")?.count).toBe(1);
+    expect(s.byAgent.find((a) => a.agent === "claims-reply")?.captures).toBeGreaterThanOrEqual(4);
+    expect(s.weekly.length).toBeGreaterThanOrEqual(1);
+    expect(s.weekly.reduce((n, w) => n + w.captures, 0)).toBe(s.captures);
+
+    const filtered = await api<import("@overturn-ai/shared").CaptureStats>(
+      ctx,
+      "GET",
+      "/v1/capture/stats?days=30&agent=coverage-decision",
+    );
+    expect(filtered.body.captures).toBe(1);
+    expect(filtered.body.edited).toBe(1);
+  });
+});
