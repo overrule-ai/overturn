@@ -1,5 +1,7 @@
 import type {
   ApiError,
+  CaptureCreate,
+  CaptureResult,
   Case,
   CaseConflict,
   CaseDedupeResult,
@@ -115,6 +117,8 @@ export class OverturnApi {
   readonly corrections = {
     create: (body: CorrectionCreate): Promise<CorrectionResult> =>
       this.request("POST", "/v1/corrections", body),
+    /** Draft vs sent from the tool the expert works in: records the run and freezes the case. */
+    capture: (body: CaptureCreate): Promise<CaptureResult> => this.request("POST", "/v1/capture", body),
     list: (q: { runId?: string; limit?: number } = {}): Promise<Correction[]> =>
       this.request("GET", "/v1/corrections", undefined, q),
   };

@@ -56,6 +56,10 @@ class OverturnApi:
     def create_correction(self, body: dict[str, Any]) -> dict[str, Any]:
         return self.request("POST", "/v1/corrections", body=body)
 
+    def capture(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Draft vs sent from the tool the expert works in; records the run and freezes the case."""
+        return self.request("POST", "/v1/capture", body=body)
+
     def list_cases(self, **params: Any) -> dict[str, Any]:
         return self.request("GET", "/v1/cases", params=params)
 
@@ -179,6 +183,9 @@ class _Corrections:
 
     def create(self, body: dict[str, Any]) -> dict[str, Any]:
         return self._api.create_correction(body)
+
+    def capture(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._api.capture(body)
 
     def list(self, **params: Any) -> list[dict[str, Any]]:
         return self._api.list_corrections(**params)

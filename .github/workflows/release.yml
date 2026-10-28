@@ -83,9 +83,17 @@ jobs:
     needs: [version, npm, pypi]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # the Zendesk app is uploaded by admins, not installed from a registry: it ships as a release asset
+      - run: pnpm --filter @overturn-ai/shared build && pnpm --filter @overturn-ai/zendesk-app build
       - run: |
           git tag "v$V" && git push origin "v$V"
-          gh release create "v$V" --generate-notes --title "v$V"
+          gh release create "v$V" --generate-notes --title "v$V" packages/zendesk-app/dist/overturn-zendesk-app.zip
         env:
           V: ${{ needs.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}

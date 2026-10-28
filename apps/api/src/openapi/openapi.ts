@@ -3,6 +3,8 @@
  * source of truth for payload shapes. Served at GET /openapi.json.
  */
 import {
+  captureCreateSchema,
+  captureResultSchema,
   caseListQuerySchema,
   casePatchSchema,
   caseSchema,
@@ -125,6 +127,15 @@ const ROUTES: Route[] = [
     tag: "correct",
     body: correctionCreateSchema,
     response: correctionResultSchema,
+    status: 201,
+  },
+  {
+    method: "post",
+    path: "/v1/capture",
+    summary: "Draft vs sent from the tool the expert works in; records the run and freezes the case",
+    tag: "correct",
+    body: captureCreateSchema,
+    response: captureResultSchema,
     status: 201,
   },
   {

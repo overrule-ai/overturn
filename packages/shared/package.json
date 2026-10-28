@@ -30,6 +30,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./capture": {
+      "types": "./dist/capture.d.ts",
+      "import": "./dist/capture.js",
+      "require": "./dist/capture.cjs"
     }
   },
   "files": [

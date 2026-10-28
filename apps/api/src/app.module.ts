@@ -1,6 +1,8 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 import { AuthController } from "./auth/auth.controller";
 import { AuthModule } from "./auth/auth.module";
+import { CaptureController } from "./capture/capture.controller";
+import { CaptureService } from "./capture/capture.service";
 import { CasesController } from "./cases/cases.controller";
 import { CasesService } from "./cases/cases.service";
 import { APP_CONFIG, type AppConfig, loadConfig } from "./config";
@@ -42,6 +44,7 @@ export class AppModule {
         OtlpController,
         RunsController,
         CorrectionsController,
+        CaptureController,
         CasesController,
         ReplayController,
         ExportController,
@@ -55,6 +58,7 @@ export class AppModule {
         RunsService,
         CasesService,
         CorrectionsService,
+        CaptureService,
         PromptsService,
         ReplayService,
         ExportService,

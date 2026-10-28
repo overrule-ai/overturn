@@ -294,3 +294,44 @@ def test_handle_correction_validates_and_uses_the_sessions_actor() -> None:
         with pytest.raises(CorrectionRequestError):
             ov.handle_correction(bad)
     assert len(seen) == 1
+
+
+def test_capture_posts_draft_and_sent() -> None:
+    import httpx
+
+    seen: list[tuple[str, dict[str, Any]]] = []
+
+    def app(request: httpx.Request) -> httpx.Response:
+        import json as _json
+
+        seen.append((request.url.path, _json.loads(request.content)))
+        return httpx.Response(201, json={"kind": "edit", "changed": True, "case": {"id": "k2"}})
+
+    from overturn import Overturn
+
+    ov = Overturn(
+        api_key="k",
+        base_url="http://x",
+        http_client=httpx.Client(transport=httpx.MockTransport(app)),
+        background=False,
+    )
+    out = ov.capture(
+        external_id="zd:1",
+        agent="claims-reply",
+        source="zendesk",
+        context=[{"role": "customer", "content": "hi"}],
+        draft="Covered.",
+        sent={"text": "Covered, adjuster in 2 days.", "fields": {"status": "covered"}},
+        reason="2-day SLA",
+    )
+    assert out["case"]["id"] == "k2"
+    assert seen[0][0] == "/v1/capture"
+    assert seen[0][1] == {
+        "externalId": "zd:1",
+        "agent": "claims-reply",
+        "source": "zendesk",
+        "context": [{"role": "customer", "content": "hi"}],
+        "draft": {"text": "Covered."},
+        "sent": {"text": "Covered, adjuster in 2 days.", "fields": {"status": "covered"}},
+        "reason": "2-day SLA",
+    }

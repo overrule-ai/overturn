@@ -78,6 +78,7 @@ export class RunsService {
   async list(projectId: string, q: RunListQuery): Promise<Page<Run>> {
     const where: SQL[] = [eq(runs.projectId, projectId)];
     if (q.agent) where.push(eq(runs.agent, q.agent));
+    if (q.externalId) where.push(eq(runs.externalId, q.externalId));
     if (q.status) where.push(eq(runs.status, q.status));
     if (q.tag) where.push(sql`${q.tag} = any(${runs.tags})`);
     if (q.corrected === "true") where.push(gt(runs.correctionCount, 0));

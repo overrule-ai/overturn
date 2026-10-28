@@ -25,7 +25,7 @@ export type RunStatus = z.infer<typeof runStatusSchema>;
 export const correctionKindSchema = z.enum(["approve", "edit", "reject", "escalate"]);
 export type CorrectionKind = z.infer<typeof correctionKindSchema>;
 
-export const correctionSourceSchema = z.enum(["sdk", "ui", "api", "implicit"]);
+export const correctionSourceSchema = z.enum(["sdk", "ui", "api", "implicit", "capture"]);
 export type CorrectionSource = z.infer<typeof correctionSourceSchema>;
 
 export const scorerNameSchema = z.enum([
@@ -172,6 +172,7 @@ export type RunWithSteps = z.infer<typeof runWithStepsSchema>;
 
 export const runListQuerySchema = z.object({
   agent: z.string().optional(),
+  externalId: z.string().max(512).optional(),
   tag: z.string().optional(),
   status: runStatusSchema.optional(),
   corrected: z.enum(["true", "false"]).optional(),
@@ -529,6 +530,74 @@ export const correctionResultSchema = z.object({
   /** True when an identical case already existed: it was reused, and its duplicate count bumped. */
   deduplicated: z.boolean().default(false),
 });
+
+// ---------- capture: draft vs sent, where the expert already works ----------
+
+export const captureSourceSchema = z.enum(["zendesk", "front", "intercom", "gmail", "salesforce", "custom"]);
+export type CaptureSource = z.infer<typeof captureSourceSchema>;
+
+/** One message of the conversation the expert saw when they answered. */
+export const captureMessageSchema = z.object({
+  role: z.enum(["customer", "agent", "note", "system"]),
+  author: z.string().max(200).nullish(),
+  content: z.string().max(200_000),
+  at: isoDateSchema.nullish(),
+});
+export type CaptureMessage = z.infer<typeof captureMessageSchema>;
+
+/**
+ * An answer as the capture surface sees it: free text plus optional structured decision
+ * fields (claim status, denial reason, reserve). Fields are scored exactly; text is scored
+ * by the judge, so a rephrased reply is not a regression but a changed decision is.
+ */
+export const captureAnswerSchema = z.object({
+  text: z.string().max(200_000).default(""),
+  fields: z.record(z.string(), jsonValueSchema).optional(),
+});
+export type CaptureAnswer = z.infer<typeof captureAnswerSchema>;
+
+export const captureCreateSchema = z.object({
+  source: captureSourceSchema.default("custom"),
+  /** The record in the source system, e.g. "zd:48213". Several captures on one record are fine. */
+  externalId: z.string().min(1).max(512),
+  /** Which workflow this is (one suite per agent): "claims-reply", "coverage-decision". */
+  agent: z.string().min(1).max(200).default("reply"),
+  /** The expert, e.g. their email. Defaults to the signed-in user for UI keys. */
+  actor: z.string().max(200).nullish(),
+  subject: z.string().max(2000).nullish(),
+  /** The thread the expert saw, oldest first. */
+  context: z.array(captureMessageSchema).max(500).default([]),
+  /** What the AI (or the junior) produced. */
+  draft: captureAnswerSchema,
+  /** What the expert actually sent / decided. */
+  sent: captureAnswerSchema,
+  /** One line from the expert on why. Optional, but it becomes the case's title and the judge's rubric. */
+  reason: z.string().max(10_000).nullish(),
+  /** Which model wrote the draft, when known. */
+  draftModel: z.string().max(200).nullish(),
+  draftProvider: z.string().max(100).nullish(),
+  /** When the drafting agent recorded its run with the SDK, the correction attaches to it. */
+  draftRunId: uuidSchema.nullish(),
+  /** Link back to the record in the source system. */
+  url: z.string().max(2000).nullish(),
+  tags: z.array(z.string().max(100)).max(50).optional(),
+  metadata: z.record(z.string(), jsonValueSchema).optional(),
+});
+export type CaptureCreate = z.infer<typeof captureCreateSchema>;
+
+export const captureResultSchema = z.object({
+  runId: uuidSchema,
+  stepId: uuidSchema,
+  /** "edit" when the expert changed the answer, "approve" when they sent it as drafted. */
+  kind: correctionKindSchema,
+  changed: z.boolean(),
+  /** Which structured fields changed, when fields were given. */
+  changedFields: z.array(z.string()),
+  correction: correctionSchema,
+  case: caseSchema.nullable(),
+  deduplicated: z.boolean(),
+});
+export type CaptureResult = z.infer<typeof captureResultSchema>;
 
 export const caseDedupeResultSchema = z.object({
   /** Cases removed because an older active case had the same input, kind and answer. */

@@ -177,6 +177,56 @@ class Overturn:
             body["actor"] = actor
         return self.api.create_correction(body)
 
+    def capture(
+        self,
+        *,
+        external_id: str,
+        draft: str | dict[str, Any],
+        sent: str | dict[str, Any],
+        agent: str = "reply",
+        source: str = "custom",
+        context: list[dict[str, Any]] | None = None,
+        subject: str | None = None,
+        reason: str | None = None,
+        actor: str | None = None,
+        draft_model: str | None = None,
+        draft_provider: str | None = None,
+        draft_run_id: str | None = None,
+        url: str | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Capture a correction where the expert already works: the draft the AI produced,
+        what the expert actually sent, and one line on why. `draft` / `sent` are the reply
+        text, or {"text": ..., "fields": {...}} when there are structured decisions. No run
+        needs to be recorded first. Returns {"kind": "edit"|"approve", "changed": bool, "case": ...}."""
+
+        def answer(v: str | dict[str, Any]) -> dict[str, Any]:
+            return {"text": v} if isinstance(v, str) else v
+
+        body: dict[str, Any] = {
+            "externalId": external_id,
+            "agent": agent,
+            "source": source,
+            "context": context or [],
+            "draft": answer(draft),
+            "sent": answer(sent),
+        }
+        for key, value in (
+            ("subject", subject),
+            ("reason", reason),
+            ("actor", actor),
+            ("draftModel", draft_model),
+            ("draftProvider", draft_provider),
+            ("draftRunId", draft_run_id),
+            ("url", url),
+            ("tags", tags),
+            ("metadata", metadata),
+        ):
+            if value is not None:
+                body[key] = value
+        return self.api.capture(body)
+
     def examples(
         self, *, input: str, k: int = 5, agent: str | None = None, tag: str | None = None
     ) -> dict[str, Any]:

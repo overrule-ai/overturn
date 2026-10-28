@@ -38,7 +38,7 @@ Open http://localhost:3000 to see the runs, click **Correct** on any model step,
 ## How it works
 
 1. **Record.** `ov.wrapOpenAI(client)` turns every model call into a step; `ov.tool(name, fn, { sideEffect })` turns every tool call into a fingerprinted step. Batched, retried, never throws into your agent. OpenTelemetry GenAI traces work too.
-2. **Correct.** A human approves, edits, rejects or escalates: in the UI, in your own product with `<CorrectButton>` + `ov.correctionHandler()` ([Next.js example](examples/next-review)), from your code with `ov.correct()`, via `POST /v1/corrections`, or from the Slack message each completed run posts (Review / Approve buttons).
+2. **Correct, where the expert already works.** The [Zendesk app](packages/zendesk-app) diffs what the AI drafted against what the agent sent, asks for a one-line reason, and files it ([`POST /v1/capture`](docs/capture.md) does the same from any tool; no SDK needed). Or a human approves, edits, rejects or escalates in the UI, in your own product with `<CorrectButton>` + `ov.correctionHandler()` ([Next.js example](examples/next-review)), from your code with `ov.correct()`, via `POST /v1/corrections`, or from the Slack message each completed run posts (Review / Approve buttons).
 3. **Auto-case.** Each correction freezes the step's exact input, the run's tool recordings and the expected answer as a regression case, scored on the decision fields of the answer, not its prose.
 4. **Replay.** `overturn replay --model anthropic/claude-sonnet-4-5 --since 30d` re-runs the cases with every tool answered from the recording. Side-effect tools never execute. Comma-separate models for a case × model matrix.
 5. **Report.** Regressions first, then still-wrong, then fixed, each with baseline, target and the human's correction.
@@ -59,7 +59,7 @@ Sign in, create an API key in Settings, point the SDK at `http://localhost:4000`
 
 ## Docs
 
-**Site: [overturn.run](https://overturn.run)** · **Docs: [docs.overturn.run](https://docs.overturn.run/docs/)** · [SDK reference](docs/sdk.md) · [Quickstart](docs/quickstart.md) · [Fingerprint contract](docs/fingerprint.md) · [Self-hosting](docs/self-hosting.md) · [Decisions](docs/decisions.md)
+**Site: [overturn.run](https://overturn.run)** · **Docs: [docs.overturn.run](https://docs.overturn.run/docs/)** · [Capture (Zendesk & API)](docs/capture.md) · [SDK reference](docs/sdk.md) · [Quickstart](docs/quickstart.md) · [Fingerprint contract](docs/fingerprint.md) · [Self-hosting](docs/self-hosting.md) · [Decisions](docs/decisions.md)
 
 ## License
 

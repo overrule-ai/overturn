@@ -118,3 +118,16 @@ Capture and replay stay open source. Training, gating, hosting and retraining ar
 - [x] serving: Overturn creates the Together dedicated endpoint (base + LoRA adapter, cheapest certified config, auto-stop) and gates when ready; `models deploy --dry-run`; retire deletes it
 - [x] training in the customer's cloud: `overturn-trainer` (export → LoRA with TRL/PEFT → register), `POST /v1/models/register`, `local/` provider for any OpenAI-compatible server
 - [x] continuous retraining (opt-in): new rows past a threshold → retrain → gate → shadow → notify on the review webhook; never promotes
+
+## Capture where the expert works (Oct 28 →)
+
+The repositioning: Overturn is the system of record for how a company corrects AI. The buyer pays for expert time (claims adjusters first); the product is the correction log and the models built from it; the sale is "juniors and agents handle more cases because the model already reflects your experts' decisions, and the suite proves it." Everything after capture already exists. Capture volume is the constraint, so capture ships first, with no SDK in the way.
+
+- [x] `POST /v1/capture`: draft vs sent plus a reason, from any tool → recorded run (synthesized when the drafting agent did not record one) + correction + case; decision fields scored exactly, prose by the judge; attaches to the agent's own run when it recorded the draft (`draftRunId`, or externalId + same draft)
+- [x] SDKs: `ov.capture()` (TS, Python); CLI: `overturn capture`; `GET /v1/runs?externalId=`
+- [x] Zendesk app (`packages/zendesk-app`): ticket sidebar, draft detection (inserted / preloaded / recorded / marked), diff on submit, reason with quick picks, optional require-reason, custom fields as decision fields, secure API key
+- [x] Web: Zendesk as the first onboarding tab (no code); captured runs link back to the ticket
+- [ ] Front plugin, Salesforce Service Cloud (Lightning) component, Gmail add-on: same `/v1/capture`, same sidebar logic
+- [ ] Expert dashboard: corrections per expert per week, top reasons, what juniors/agents now handle unaided (the headcount number)
+- [ ] Claims pack: default agent names, decision fields (coverage, reserve, denial reason), quick-pick reasons, a demo tenant with 30 captured corrections
+- [ ] Three claims teams on the Zendesk app; the pitch is their numbers

@@ -14,6 +14,15 @@ import { Button } from "@/components/ui/button";
 import { client } from "@/lib/api";
 import { ago, cn, money } from "@/lib/utils";
 
+/** Runs captured from a tool (Zendesk, Front, …) carry a link back to the record. */
+function captureUrl(r: { input: unknown; metadata: unknown }): string | null {
+  const meta = r.metadata as Record<string, unknown> | null;
+  if (!meta || typeof meta.capture !== "string") return null;
+  const input = r.input as Record<string, unknown> | null;
+  const url = input?.url;
+  return typeof url === "string" && /^https?:\/\//.test(url) ? url : null;
+}
+
 function StepRow({ step, onCorrect }: { step: Step; onCorrect: () => void }) {
   const [open, setOpen] = useState(false);
   const kindVariant =
@@ -129,6 +138,14 @@ export default function RunPage() {
             {r.externalId ? `${r.externalId} · ` : ""}
             {r.id} · started {ago(r.startedAt)} · {r.stepCount} steps · {money(r.costUsd)}
             {r.tags.length > 0 && ` · ${r.tags.join(", ")}`}
+            {captureUrl(r) && (
+              <>
+                {" · "}
+                <a className="underline" href={captureUrl(r)!} target="_blank" rel="noreferrer">
+                  open in {String((r.metadata as Record<string, unknown> | null)?.capture ?? "source")}
+                </a>
+              </>
+            )}
           </p>
           <p
             className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"

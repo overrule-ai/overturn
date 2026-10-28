@@ -16,6 +16,7 @@ export default defineConfig({
       sidebar: [
         { label: "Overview", link: "/" },
         { label: "Quickstart", link: "/quickstart/" },
+        { label: "Capture: Zendesk & API", link: "/capture/" },
         { label: "Hosted app", link: "/hosted/" },
         { label: "SDK & CLI", link: "/sdk/" },
         { label: "Corrections from your UI", link: "/correct-button/" },

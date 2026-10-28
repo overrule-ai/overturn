@@ -1,0 +1,8 @@
+{
+  "app": {
+    "name": "Overturn",
+    "short_description": "Every time an agent fixes an AI draft, Overturn keeps it as a replayable case.",
+    "long_description": "Overturn watches the reply box for the AI draft, diffs it against what the agent actually sends, asks for a one-line reason, and records the correction as a case you can replay against any model before you change prompts or models.",
+    "installation_instructions": "Create a project API key in Overturn (Settings → API keys) and paste it into the app settings. Set the workflow name (one regression suite per workflow). Optionally list the custom fields that carry the decision as id:label pairs."
+  }
+}

@@ -1,4 +1,6 @@
 import type {
+  CaptureCreate,
+  CaptureResult,
   Contract,
   CorrectionKind,
   CorrectionResult,
@@ -136,6 +138,20 @@ export class Overturn implements RunSink {
     contract?: Contract;
   }): Promise<CorrectionResult> {
     return this.api.corrections.create({ ...input, source: "sdk" });
+  }
+
+  /**
+   * Capture a correction where the expert already works: the draft the AI produced, what
+   * the expert actually sent, and one line on why. No run needs to be recorded first; the
+   * draft becomes the recorded run and the difference becomes the case.
+   *
+   * ```ts
+   * await ov.capture({ source: "zendesk", externalId: "zd:48213", agent: "claims-reply",
+   *   context: thread, draft: { text: aiDraft }, sent: { text: finalReply }, reason: "2-day contact for storm claims" });
+   * ```
+   */
+  capture(input: CaptureCreate): Promise<CaptureResult> {
+    return this.api.corrections.capture(input);
   }
 
   /**

@@ -1,0 +1,71 @@
+{
+  "name": "Overturn",
+  "author": {
+    "name": "Overturn",
+    "email": "shireen@overturn.run",
+    "url": "https://overturn.run"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "version": "0.1.5",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  },
+  "domainWhitelist": ["api.overturn.run"],
+  "parameters": [
+    {
+      "name": "overturn_api_key",
+      "type": "password",
+      "secure": true,
+      "required": true,
+      "helpText": "A project API key from Overturn (Settings → API keys). Stored by Zendesk, never sent to the browser."
+    },
+    {
+      "name": "overturn_base_url",
+      "type": "text",
+      "required": false,
+      "default": "https://api.overturn.run",
+      "helpText": "Your Overturn API URL when self-hosting. Add its host to the app's domain allowlist."
+    },
+    {
+      "name": "agent",
+      "type": "text",
+      "required": false,
+      "default": "claims-reply",
+      "helpText": "The workflow name. One regression suite per workflow."
+    },
+    {
+      "name": "require_reason",
+      "type": "checkbox",
+      "required": false,
+      "default": false,
+      "helpText": "Block the send until the agent gives a one-line reason when they changed the draft."
+    },
+    {
+      "name": "capture_internal_notes",
+      "type": "checkbox",
+      "required": false,
+      "default": false,
+      "helpText": "Also capture internal notes, not only public replies."
+    },
+    {
+      "name": "decision_fields",
+      "type": "text",
+      "required": false,
+      "helpText": "Custom fields that are the decision, as id:label pairs, e.g. custom_field_123:status, custom_field_456:reserve. Changes to these are scored exactly."
+    },
+    {
+      "name": "min_draft_chars",
+      "type": "text",
+      "required": false,
+      "default": "80",
+      "helpText": "Text inserted into the reply box in one go, at least this long, counts as the draft."
+    }
+  ]
+}

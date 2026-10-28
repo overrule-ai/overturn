@@ -1,0 +1,22 @@
+{
+  "name": "@overturn-ai/zendesk-app",
+  "version": "0.1.5",
+  "private": true,
+  "description": "Overturn for Zendesk: captures what the AI drafted, what the agent sent, and why, as a replayable case",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsup && node scripts/package.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@overturn-ai/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

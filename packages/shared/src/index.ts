@@ -1,3 +1,4 @@
+export * from "./capture.js";
 export * from "./cases.js";
 export * from "./contract.js";
 export * from "./fingerprint.js";

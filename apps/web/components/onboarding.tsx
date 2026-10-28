@@ -7,10 +7,26 @@ import { Button } from "@/components/ui/button";
 import { client, getApiUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-type Lang = "ts" | "py" | "otel";
+type Lang = "zendesk" | "ts" | "py" | "otel";
 
 function snippet(lang: Lang, key: string, apiUrl: string): string {
   const k = key || "ov_live_…";
+  if (lang === "zendesk")
+    return `# No code. The Overturn app sits in the ticket sidebar: it watches the reply
+# box for the AI draft, diffs it against what the agent sends, asks for a
+# one-line reason, and files the correction as a case.
+#
+# 1. Admin Center → Apps and integrations → Zendesk Support apps → Upload private app
+#    https://github.com/overrule-ai/overturn/releases  (overturn-zendesk-app.zip)
+# 2. App settings:
+#      overturn_api_key   = ${k}
+#      overturn_base_url  = ${apiUrl}
+#      agent              = claims-reply          # one suite per workflow
+#      decision_fields    = custom_field_123:status, custom_field_456:reserve
+# 3. Send one reply. It shows up here as a run; a changed reply is already a case.
+#
+# Any other tool (Front, Salesforce, your own UI): POST ${apiUrl}/v1/capture
+#   { externalId, agent, context, draft: {text}, sent: {text}, reason }`;
   if (lang === "ts")
     return `npm i @overturn-ai/sdk
 
@@ -54,7 +70,7 @@ export OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ${k}"`;
 
 export function Onboarding() {
   const qc = useQueryClient();
-  const [lang, setLang] = useState<Lang>("ts");
+  const [lang, setLang] = useState<Lang>("zendesk");
   const [key, setKey] = useState("");
   const [copied, setCopied] = useState(false);
   const [apiUrl, setApiUrl] = useState("https://api.overturn.run");
@@ -126,14 +142,14 @@ export function Onboarding() {
             )}
           </li>
           <li>
-            <div className="font-medium">2. Wrap your model client</div>
+            <div className="font-medium">2. Capture where the work happens</div>
             <p className="mt-1 text-muted-foreground">
-              One line around the OpenAI, Anthropic or Vercel AI SDK client you already have. Tools are
-              recorded with <code className="text-xs">ov.tool()</code>.
+              Install the Zendesk app (no code), or wrap the OpenAI, Anthropic or Vercel AI SDK client you
+              already have. Tools are recorded with <code className="text-xs">ov.tool()</code>.
             </p>
           </li>
           <li>
-            <div className="font-medium">3. Run your agent once</div>
+            <div className="font-medium">3. Send one reply, or run your agent once</div>
             <p className="mt-1 flex items-center gap-2 text-muted-foreground">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-warning" />
               Waiting for the first run…
@@ -156,6 +172,7 @@ export function Onboarding() {
           <div className="mb-2 flex items-center gap-1">
             {(
               [
+                ["zendesk", "Zendesk"],
                 ["ts", "TypeScript"],
                 ["py", "Python"],
                 ["otel", "OpenTelemetry"],
