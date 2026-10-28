@@ -10,7 +10,7 @@
 <meta property="og:description" content="Human corrections of AI agents become replayable regression tests. Open source.">
 <meta property="og:image" content="https://overturn.run/media/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Inter:wght@600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#fff;--fg:#111;--muted:#5f5f66;--faint:#9a9aa2;--line:#e6e6ea;--panel:#f6f6f7;
@@ -49,7 +49,8 @@
   nav.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   nav.top .wrap{height:76px;display:flex;align-items:center;gap:30px}
   .brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:500;letter-spacing:-.01em}
-  .brand svg{width:24px;height:24px}
+  .brand .logo{height:24px;width:auto;display:block}
+  .brand-sm .logo{height:18px}
   nav.top .links{margin-left:auto;display:flex;align-items:center;gap:26px;font-size:16px}
   nav.top .links a:hover{color:var(--muted)}
   nav.top .sep{width:1px;height:20px;background:var(--line)}
@@ -124,6 +125,10 @@
 
   section{padding:110px 0 0;scroll-margin-top:130px}
   section.band{border-top:1px solid var(--line);margin-top:110px;padding-top:90px}
+  .next{max-width:720px}
+  .next .pill{margin-bottom:22px}
+  .next h2{margin-bottom:18px}
+  .next p{font-size:18px;line-height:1.55;color:#3a3a40;margin:0 0 28px}
   .sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:20px;margin-bottom:40px}
 
   /* quickstart */
@@ -310,7 +315,7 @@
 <div class="ann"><span class="new">New</span><span class="txt">v0.1.4 — Python SDK, OpenTelemetry ingest and the multi-model matrix.</span><a href="https://github.com/overrule-ai/overturn/releases">Read the release notes <span class="arrow">→</span></a></div>
 
 <nav class="top"><div class="wrap">
-  <a class="brand" href="/"><svg viewBox="14 7 74 76" aria-hidden="true"><path d="M18 31 47 10 57 17 57 31 71 31 84 43 84 57 55 80 44 73 44 59 30 59 17 47Z" fill="#111"/><path d="M31 34 47 22 47 42 68 42 72 46 72 53 54 67 54 48 33 48 29 44Z" fill="#fff"/></svg>Overturn</a>
+  <a class="brand" href="/"><svg class="logo" viewBox="78 80 740 128" aria-label="Overturn" role="img"><g fill="#0c0c0c"><path d="M83.8 119.6 130.2 86l16 11.2v22.4h22.4l20.8 19.2v22.4L143 198l-17.6-11.2v-22.4H103l-20.8-19.2Z"/><path fill="#fff" d="m104.6 124.4 25.6-19.2v32h33.6l6.4 6.4v11.2l-28.8 22.4v-30.4h-33.6l-6.4-6.4Z"/></g><text x="250" y="203" fill="#0c0c0c" font-family="Inter, Geist, Arial, sans-serif" font-size="132" font-weight="600" letter-spacing="-5">overturn</text></svg></a>
   <div class="links">
     <a class="hide" href="#quickstart">Quickstart</a>
     <a class="hide" href="/docs/">Docs</a>
@@ -327,13 +332,13 @@
   <div>
     <div class="pill">Open beta · Apache-2.0 · self-host on one Postgres</div>
     <h1>Every correction<br>becomes a test.</h1>
-    <p class="lede">Record your agent. When a human fixes its answer, <b>Overturn</b> freezes the case with the fix attached. Replay the whole suite against any model or prompt before you ship — tools answered from the recording, nothing fires twice.</p>
+    <p class="lede">Record your agent. When a human fixes its answer, <b>Overturn</b> freezes the case with the fix attached. Replay the whole suite against any model or prompt before you ship, including cheaper ones, and see exactly what breaks. Tools are answered from the recording, so nothing fires twice.</p>
     <div class="install"><div class="cmd"><span class="logos"><span style="background:#111">TS</span><span style="background:#3572a5">Py</span><span style="background:#f5a623">OT</span></span><code id="cmd">npm i @overturn-ai/sdk</code></div><button type="button" aria-label="Copy" data-copy="cmd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
     <div class="ctas"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="/docs/quickstart/">Read the docs</a></div>
     <div class="stats"><div class="cap">What a replay costs you.</div><div class="row">
-      <div><div class="n">0</div><div class="l">side effects re-executed</div></div>
-      <div><div class="n">1</div><div class="l">Postgres to self-host</div></div>
-      <div><div class="n">2</div><div class="l">SDKs, plus OpenTelemetry</div></div>
+      <div><div class="n">25</div><div class="l">cases replayed from real corrections</div></div>
+      <div><div class="n">2</div><div class="l">regressions caught before merge</div></div>
+      <div><div class="n">$0.03</div><div class="l">model spend for the whole replay</div></div>
     </div></div>
   </div>
 
@@ -364,7 +369,7 @@
 </div>
 </main>
 
-<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#product">Product</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
+<div class="onpage"><div class="wrap"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#product">Product</a><a href="#compare">With and without</a><a href="#results">Replay results</a><a href="#api">The API</a><a href="#capabilities">Capabilities</a><a href="#deployment">Deployment</a><a href="#frameworks">Frameworks</a><a href="#next">Coming next</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div></div>
 
 <main class="wrap">
 
@@ -476,7 +481,7 @@
       <div class="k">WHAT THIS MEANS</div>
       <div class="b"><h4>Regressions are cases a human already approved</h4><p>An approved answer that now comes back different is the only thing that should block a deploy, so the report lists those first, side by side with the baseline and the human's decision. Everything else — fixed, still wrong — comes after.</p></div>
       <div class="b"><h4>Nothing fired twice</h4><p>Every tool call in a replay is answered from the recording, matched by fingerprint rather than position. A model that takes a different path still gets the right answers; a tool with side effects is refused. The receipt at the bottom of each report says exactly what was and wasn't tested.</p></div>
-      <div><h4>Scored on the fields the human changed</h4><p>An edit that touched <code>priority</code> is scored on <code>priority</code>. Different phrasing of the same answer is never a regression.</p></div>
+      <div><h4>Scored on the fields the human changed</h4><p>An edit that touched <code>priority</code> is scored on <code>priority</code>, so rephrasing a structured answer isn't a regression. Free-text answers are scored by a judge model, and the report says which model judged.</p></div>
     </div>
   </div>
 </section>
@@ -499,7 +504,7 @@
   <div class="feat">
     <div><h4>Cases from real corrections</h4><p>Not hand-written datasets. Every approve, edit, reject or escalate on a real run becomes a case, with the human's answer attached.</p></div>
     <div><h4>Safe replay</h4><p>Tool calls are matched to recordings by fingerprint, so a model that takes a different path still gets the right answers. Nothing is emailed, refunded or written twice.</p></div>
-    <div><h4>Model matrix</h4><p>Replay the same suite against several models at once and read them side by side: pass rate, regressions, cost.</p></div>
+    <div><h4>Can a cheaper model do the job?</h4><p>Replay the same suite against several models at once and read them side by side: pass rate, regressions and cost per run, scored on your team's own corrections.</p></div>
     <div><h4>Prompt versions</h4><p>Prompts are versioned on first sight. Replay <code>v3</code> against the cases recorded under <code>v2</code> before you ship it.</p></div>
     <div><h4>Decision fields</h4><p>Scoring looks at the fields the human changed, not the phrasing. A judge model handles free text, and says which model it used.</p></div>
     <div><h4>Review in Slack</h4><p>New runs that need a decision post to a channel with Review and Approve buttons. One click, one case.</p></div>
@@ -522,6 +527,15 @@
   <div class="otel" id="frameworks">
     <div><h3>Already sending OpenTelemetry?</h3><p>Point any OTLP/HTTP exporter at the endpoint below with your key in the authorization header. Spans with <code>gen_ai.*</code> attributes become model steps; tool spans with results become recordings. OpenLLMetry, Traceloop, the OpenAI and Anthropic instrumentations and LangSmith's export are verified.</p></div>
     <div class="end"><code>https://api.overturn.run/v1/traces</code><a class="btn" href="/docs/frameworks/">Framework guides</a></div>
+  </div>
+</section>
+
+<section id="next" class="band">
+  <div class="next">
+    <div class="pill">Coming next</div>
+    <h2>Next: models trained on your corrections</h2>
+    <p>Every correction is also training data: the agent's answer is the wrong one, your team's fix is the right one. We're building the next step: fine-tune an open model on your corrections, prove it passes your suite, and run it wherever you want. Looking for design partners with high-volume agents.</p>
+    <a class="btn primary" href="mailto:shireen@overturn.run?subject=Design%20partner">Become a design partner</a>
   </div>
 </section>
 
@@ -557,7 +571,7 @@
 </main>
 
 <footer><div class="wrap">
-  <span class="brand" style="font-size:16px"><svg viewBox="14 7 74 76" style="width:16px;height:16px" aria-hidden="true"><path d="M18 31 47 10 57 17 57 31 71 31 84 43 84 57 55 80 44 73 44 59 30 59 17 47Z" fill="#111"/><path d="M31 34 47 22 47 42 68 42 72 46 72 53 54 67 54 48 33 48 29 44Z" fill="#fff"/></svg>Overturn</span>
+  <span class="brand brand-sm"><svg class="logo" viewBox="78 80 740 128" aria-label="Overturn" role="img"><g fill="#0c0c0c"><path d="M83.8 119.6 130.2 86l16 11.2v22.4h22.4l20.8 19.2v22.4L143 198l-17.6-11.2v-22.4H103l-20.8-19.2Z"/><path fill="#fff" d="m104.6 124.4 25.6-19.2v32h33.6l6.4 6.4v11.2l-28.8 22.4v-30.4h-33.6l-6.4-6.4Z"/></g><text x="250" y="203" fill="#0c0c0c" font-family="Inter, Geist, Arial, sans-serif" font-size="132" font-weight="600" letter-spacing="-5">overturn</text></svg></span>
   <span>© 2026 · Apache-2.0 · self-host on one Postgres</span>
   <div class="r"><a href="/docs/">Docs</a><a href="https://github.com/overrule-ai/overturn">GitHub</a><a href="/docs/terms/">Terms</a><a href="/docs/privacy/">Privacy</a><a href="https://app.overturn.run/login">Sign in</a></div>
 </div></footer>
