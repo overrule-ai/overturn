@@ -29,6 +29,7 @@
   @media (max-width:1000px){.wrap{padding:0 24px}}
   @media (max-width:640px){.wrap{padding:0 16px}}
   h1,h2,h3{font-weight:400;letter-spacing:-.02em;margin:0}
+  .sor{margin:-6px 0 24px;font-size:17px;font-weight:500;color:var(--fg)}
   h2{font-size:34px;line-height:1.15}
   p{margin:0}
   .muted{color:var(--muted)}
@@ -62,7 +63,7 @@
   .hero{padding:72px 0 40px;display:grid;grid-template-columns:minmax(0,600px) 1fr;gap:40px;align-items:start}
   @media (max-width:1000px){.hero{grid-template-columns:1fr}}
   .pill{display:inline-flex;align-items:center;border:1px solid #9bd3b5;color:#1d6f45;border-radius:999px;padding:4px 14px;font-size:14px;margin-bottom:34px}
-  h1{font-size:clamp(46px,5.2vw,74px);line-height:1.02;letter-spacing:-.03em}
+  h1{font-size:clamp(38px,3.9vw,56px);line-height:1.04;letter-spacing:-.03em;text-wrap:balance}
   .lede{font-size:20px;line-height:1.5;color:#3a3a40;margin:30px 0 32px;max-width:620px}
   .lede b{font-weight:500;color:var(--fg)}
   .install{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;height:54px;max-width:460px;margin-bottom:24px;overflow:hidden}
@@ -333,8 +334,9 @@
 <div class="hero">
   <div>
     <div class="pill">Open beta · Apache-2.0 · self-host on one Postgres</div>
-    <h1>Fix it once.<br>Never again.</h1>
-    <p class="lede"><b>Overturn</b> captures every time a human fixes your agent, where they already work: inside your product, in Slack, or from your code. Each fix is kept as a correction with the wrong answer, the right one, the reason and who made it. Every correction becomes a check that runs against any model or prompt before you ship, and the log is yours to export.</p>
+    <h1>Every time a human fixes your agent, Overturn keeps&nbsp;it.</h1>
+    <p class="lede">Capture the fix where it happens: in your own review screen, in Slack, or from your code. <b>Overturn</b> stores the wrong answer, the right answer and the reason as a correction. Replay the whole log against any model or prompt and see which old fixes broke. Nothing is locked in; export the log anywhere.</p>
+    <p class="sor">Overturn is the system of record for how your company corrects&nbsp;AI.</p>
     <div class="install"><div class="cmd"><span class="logos"><span style="background:#111">TS</span><span style="background:#3572a5">Py</span><span style="background:#f5a623">OT</span></span><code id="cmd">npm i @overturn-ai/sdk</code></div><button type="button" aria-label="Copy" data-copy="cmd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
     <div class="ctas"><a class="btn primary" href="https://app.overturn.run/login">Start free</a><a class="btn" href="/docs/quickstart/">Read the docs</a></div>
     <div class="stats"><div class="cap">What a replay costs you.</div><div class="row">
@@ -379,20 +381,16 @@
   <div class="qs">
     <div>
       <div class="steps" id="steps">
-        <div class="step on" data-i="0"><div class="n">1</div><div><h3>Get your API key</h3><p>Sign in with your email. The first screen creates a project key and shows the snippet with it filled in.</p></div><span class="bar"></span></div>
-        <div class="step" data-i="1"><div class="n">2</div><div><h3>Wrap your model client</h3><p>One line around the OpenAI, Anthropic or Vercel AI SDK client you already have. Every prompt, tool call and answer is recorded with a fingerprint.</p></div><span class="bar"></span></div>
-        <div class="step" data-i="2"><div class="n">3</div><div><h3>Correct, then replay</h3><p>Approve, edit, reject or escalate a run and it becomes a case. Replay the suite against any model or prompt from the CLI, the app, or CI.</p></div><span class="bar"></span></div>
+        <div class="step on" data-i="0"><div class="n">1</div><div><h3>Record</h3><p>Wrap the OpenAI, Anthropic or Vercel AI SDK client you already have, or point an OpenTelemetry exporter at <code>/v1/traces</code>. Plumbing: every prompt, tool call and answer is recorded with a fingerprint.</p></div><span class="bar"></span></div>
+        <div class="step" data-i="1"><div class="n">2</div><div><h3>Correct where the human already works</h3><p>Approve, edit or reject in Slack, with <code>&lt;CorrectButton&gt;</code> inside your own product, or from code with <code>ov.correct()</code>. The case freezes with the agent's original output, the human's fixed output, and a short reason.</p></div><span class="bar"></span></div>
+        <div class="step" data-i="2"><div class="n">3</div><div><h3>Replay, regressions first</h3><p>Replay the whole log against any model or prompt from the CLI, the app, or CI. Tools are answered from the recording, and the report leads with the old fixes that broke.</p></div><span class="bar"></span></div>
       </div>
       <div class="foot"><a class="btn primary" href="https://app.overturn.run/login">Get API key</a><a class="link" href="/docs/quickstart/">Full quickstart →</a><button class="pp" id="qs-pp" type="button" aria-label="Pause"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button></div>
     </div>
     <div class="panel">
-      <div class="ph" id="ph">app.overturn.run · first sign-in</div>
+      <div class="ph" id="ph">agent.ts</div>
       <div class="pb">
         <div class="view on" data-v="0">
-          <img class="shot" src="/media/onboarding.png" width="1440" height="900" alt="Overturn onboarding screen: create a key, copy the snippet, wait for the first run" loading="lazy">
-          <div class="hint">The first screen after sign-in. The key is created here and already filled into the snippet.</div>
-        </div>
-        <div class="view" data-v="1">
 <pre><span class="k">import</span> { Overturn } <span class="k">from</span> <span class="s">"@overturn-ai/sdk"</span>;
 <span class="k">import</span> OpenAI <span class="k">from</span> <span class="s">"openai"</span>;
 
@@ -407,6 +405,24 @@
 });
 <span class="k">await</span> ov.flush();</pre>
           <div class="hint">Python is the same shape: <code>ov.wrap_openai(OpenAI())</code>, <code>with ov.run(...)</code>. OpenTelemetry users point their exporter at <code>/v1/traces</code> and change nothing else.</div>
+        </div>
+        <div class="view" data-v="1">
+<pre><span class="c">// review.tsx — next to the answer your team already checks</span>
+<span class="k">import</span> { CorrectButton } <span class="k">from</span> <span class="s">"@overturn-ai/sdk/react"</span>;
+
+&lt;CorrectButton endpoint=<span class="s">"/api/overturn/correct"</span> runId={runId} original={output} /&gt;
+
+<span class="c">// app/api/overturn/correct/route.ts — key stays on the server</span>
+<span class="k">export const</span> POST = ov.correctionHandler();
+
+<span class="c">// or straight from your code</span>
+<span class="k">await</span> ov.correct({
+  runId, kind: <span class="s">"edit"</span>,
+  correctedOutput: { priority: <span class="s">"P0"</span> },
+  note: <span class="s">"outage keyword means P0"</span>,
+  actor: <span class="s">"maya@acme.com"</span>,
+});</pre>
+          <div class="hint">Slack works with no code: each completed run posts to a channel with Review and Approve buttons. One click, one correction.</div>
         </div>
         <div class="view" data-v="2">
 <div class="term"><span class="p">$</span> overturn replay --model claude-sonnet-4-5 --prompt ticket-triage@v3
@@ -433,7 +449,7 @@
       <h2>From a human fix<br>to a check that never forgets.</h2>
       <div class="fsteps" id="fsteps">
         <div class="fstep on" data-i="0"><h3>Record</h3><p>Wrap the model client you already have. Every prompt, tool call and answer is recorded with a fingerprint.</p></div>
-        <div class="fstep" data-i="1"><h3>Correct</h3><p>A human approves, edits, rejects or escalates where they already work: inside your own product, in Slack, or from code. Overturn keeps the wrong answer, the fix, the note and who made it.</p></div>
+        <div class="fstep" data-i="1"><h3>Correct</h3><p>A human approves, edits, rejects or escalates where they already work: inside your own product, in Slack, or from code. The case freezes with the agent's original output, the human's fixed output, and a short reason.</p></div>
         <div class="fstep" data-i="2"><h3>Replay</h3><p>Run every case against a new model or prompt from the CLI, the app, or CI. Tools are answered from the recording; nothing fires twice.</p></div>
         <div class="fstep" data-i="3"><h3>Report</h3><p>Regressions first — approved cases that now fail — then fixed and still-wrong, with the baseline beside the new answer.</p></div>
       </div>
@@ -504,12 +520,12 @@
 <section id="capabilities" class="band">
   <h2 style="margin-bottom:40px">What Overturn handles</h2>
   <div class="feat">
+    <div><h4>Capture at the point of fix</h4><p>No one opens another dashboard to mark a case. Approve, edit or reject in Slack or inside your own product. The correction is recorded with the reason attached.</p></div>
     <div><h4>The correction is the record</h4><p>Not a score on a trace. Every approve, edit, reject or escalate is stored as the agent's answer, the human's fix, the reason and who made it, and becomes a case automatically.</p></div>
     <div><h4>Safe replay</h4><p>Tool calls are matched to recordings by fingerprint, so a model that takes a different path still gets the right answers. Nothing is emailed, refunded or written twice.</p></div>
     <div><h4>Can a cheaper model do the job?</h4><p>Replay the same suite against several models at once and read them side by side: pass rate, regressions and cost per run, scored on your team's own corrections.</p></div>
     <div><h4>Your log, portable</h4><p>Export every correction as SFT or DPO JSONL that OpenAI, Together and Hugging Face accept as-is, or pull the closest ones into your prompt with <code>ov.examples()</code>. Open format, self-hostable.</p></div>
     <div><h4>Decision fields</h4><p>Scoring looks at the fields the human changed, not the phrasing. A judge model handles free text, and says which model it used.</p></div>
-    <div><h4>Review in Slack</h4><p>New runs that need a decision post to a channel with Review and Approve buttons. One click, one case.</p></div>
   </div>
   <div class="cards">
     <div><h4>CorrectButton for your own UI</h4><p>A React component and a one-line handler that turn the "fix this" button you already have into corrections, without changing your data model.</p><a class="link" href="/docs/correct-button/">How it works →</a></div>
@@ -556,7 +572,7 @@
     <div>
       <details><summary><span class="i">01</span>What do I send?<span class="ch">⌄</span></summary><div class="a">Runs. A run is the input, every prompt and model answer, every tool call with its result, and the final output. The SDK records all of it with one wrapper; OpenTelemetry users send the spans they already have.</div></details>
       <details><summary><span class="i">02</span>What comes back?<span class="ch">⌄</span></summary><div class="a">A report per replay: regressions first (approved cases that now fail), then fixed cases, then still-wrong ones, each with the baseline, the new answer and the human's decision side by side, plus a receipt listing exactly which tool calls were answered from the recording.</div></details>
-      <details><summary><span class="i">03</span>How is this different from Braintrust or LangSmith?<span class="ch">⌄</span></summary><div class="a">Those are eval and observability platforms: someone opens a trace in their dashboard later and adds it to a dataset. Overturn starts where the fix actually happens, in your own review screen, in Slack or in your code, and keeps the correction itself as the record. Tests, replays and training data are built on that log, and you can export it in an open format. Run it alongside your eval tool, not instead of it.</div></details>
+      <details><summary><span class="i">03</span>How is this different from Braintrust or LangSmith?<span class="ch">⌄</span></summary><div class="a">Eval tools start from traces and let you promote a reviewed failure into a dataset later. Overturn starts from the correction itself: the moment a human rewrites the answer in the tool they already use. The correction (wrong output, fixed output, reason, model and prompt version) is the stored object. Tests, exports and, later, training are built on that log. You can export the same cases as JSONL and keep using your eval tool; Overturn is the system of record for the fixes.</div></details>
       <details><summary><span class="i">04</span>What happens to tools with side effects?<span class="ch">⌄</span></summary><div class="a">They're answered from the recording when the call matches a recorded fingerprint, and refused when it doesn't. Nothing is emailed, refunded or written during a replay. The receipt says which calls were refused so you can tell what wasn't tested.</div></details>
       <details><summary><span class="i">05</span>Which models and frameworks?<span class="ch">⌄</span></summary><div class="a">Recording: OpenAI, Anthropic and the Vercel AI SDK in TypeScript; OpenAI and Anthropic in Python; anything that emits OpenTelemetry gen_ai spans. Replay: OpenAI, Anthropic, Google, OpenRouter, or any OpenAI-compatible endpoint, including local models.</div></details>
       <details><summary><span class="i">06</span>How much does it cost?<span class="ch">⌄</span></summary><div class="a">Nothing during the open beta. Self-hosting is free forever under Apache-2.0. Replays call the model providers with your own keys, so you pay them directly — a 25-case replay on a small model costs a few cents.</div></details>
@@ -604,7 +620,7 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // quickstart
 (()=>{const steps=[...document.querySelectorAll('#steps .step')];const views=[...document.querySelectorAll('.panel .view')];const ph=document.getElementById('ph');
-  const heads=['app.overturn.run · first sign-in','agent.ts','$ overturn replay'];let i=0,timer=null,paused=reduce;
+  const heads=['agent.ts','review.tsx','$ overturn replay'];let i=0,timer=null,paused=reduce;
   function go(n){i=n;steps.forEach((s,k)=>{s.classList.toggle('on',k===n);const b=s.querySelector('.bar');b.style.animation='none';void b.offsetWidth;b.style.animation='';});views.forEach((v,k)=>v.classList.toggle('on',k===n));ph.textContent=heads[n];}
   function tick(){if(!paused)go((i+1)%3);}
   steps.forEach(s=>s.addEventListener('click',()=>{go(+s.dataset.i);clearInterval(timer);timer=setInterval(tick,7000);}));
