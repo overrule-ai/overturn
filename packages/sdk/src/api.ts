@@ -17,6 +17,7 @@ import type {
   MeResponse,
   ModelDeployPlan,
   ModelDeployRequest,
+  ModelRegister,
   Page,
   Project,
   ProjectPatch,
@@ -149,6 +150,9 @@ export class OverturnApi {
   readonly models = {
     create: (body: Partial<TrainCreate> & { baseModel: string }): Promise<TrainedModel> =>
       this.request("POST", "/v1/models", body),
+    /** Register weights trained elsewhere (your cloud); the gate runs at once. */
+    register: (body: ModelRegister): Promise<TrainedModel> =>
+      this.request("POST", "/v1/models/register", body),
     list: (): Promise<TrainedModel[]> => this.request("GET", "/v1/models"),
     get: (id: string): Promise<TrainedModel> => this.request("GET", `/v1/models/${id}`),
     patch: (id: string, body: TrainedModelPatch): Promise<TrainedModel> =>

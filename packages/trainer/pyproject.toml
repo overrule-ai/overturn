@@ -1,0 +1,47 @@
+[project]
+name = "overturn-trainer"
+version = "0.1.0"
+description = "Train an open-weight model on your Overturn corrections in your own cloud, then register it for the gate"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [{ name = "Overturn contributors" }]
+dependencies = ["httpx>=0.27"]
+keywords = ["llm", "fine-tuning", "lora", "agents", "overturn"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: Apache Software License",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+# the actual training stack; the CLI runs without it in --backend dry (export + manifest + register)
+train = ["torch>=2.3", "transformers>=4.44", "peft>=0.12", "trl>=0.12", "datasets>=2.20", "accelerate>=0.33"]
+
+[project.scripts]
+overturn-trainer = "overturn_trainer.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/overrule-ai/overturn"
+Documentation = "https://github.com/overrule-ai/overturn/blob/main/docs/owned-models.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["overturn_trainer"]
+
+[dependency-groups]
+dev = ["pytest>=8", "pyright>=1.1.400", "ruff>=0.6"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["overturn_trainer", "tests"]
+typeCheckingMode = "strict"
+reportMissingImports = false
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"

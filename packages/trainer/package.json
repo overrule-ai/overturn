@@ -1,0 +1,12 @@
+{
+  "name": "@overturn-ai/trainer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turbo wrapper for the trainer (published to PyPI as `overturn-trainer`)",
+  "scripts": {
+    "setup": "uv sync --group dev",
+    "typecheck": "uv run --no-sync pyright",
+    "lint": "uv run --no-sync ruff check . && uv run --no-sync ruff format --check .",
+    "test": "uv run --no-sync pytest -q"
+  }
+}

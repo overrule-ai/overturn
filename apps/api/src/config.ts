@@ -15,6 +15,9 @@ const configSchema = z.object({
   /** Together AI: open-weight models for challenger replays, fine-tuning and hosting. */
   TOGETHER_API_KEY: z.string().optional(),
   TOGETHER_BASE_URL: z.string().default("https://api.together.xyz/v1"),
+  /** Any OpenAI-compatible server (vLLM, Ollama, TGI, LM Studio): models are `local/<name>`. Air-gapped replay. */
+  LOCAL_MODEL_BASE_URL: z.string().optional(),
+  LOCAL_MODEL_API_KEY: z.string().optional(),
   /** Together project (proj_…); with it set, trained models get a dedicated endpoint before the gate. */
   TOGETHER_PROJECT_ID: z.string().optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),

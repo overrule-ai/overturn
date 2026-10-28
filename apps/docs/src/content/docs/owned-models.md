@@ -25,7 +25,16 @@ Every replay — gate included — shows its estimate first and takes `--max-cos
 
 ## Data
 
-Training sends the exported rows (prompts, tool results, human answers) to Together under your key. Teams that cannot send traces to a third party: export and train in your own cloud, then `overturn models serve` the result anywhere Overturn can reach — the gate, shadow and promotion work the same. A managed in-your-cloud trainer is on the roadmap.
+Training sends the exported rows (prompts, tool results, human answers) to Together under your key. Teams that cannot send traces to a third party train in their own cloud with **`overturn-trainer`** (`pip install 'overturn-trainer[train]'`):
+
+```bash
+overturn-trainer run --base meta-llama/Llama-3.1-8B-Instruct --agent ticket-triage --out ./triage-lora
+# serve ./triage-lora/adapter on vLLM (--enable-lora --lora-modules triage-lora=…), point the API at it with
+# LOCAL_MODEL_BASE_URL, then register it (or pass --register local/triage-lora to the run):
+overturn models register --base meta-llama/Llama-3.1-8B-Instruct --served-as local/triage-lora --agent ticket-triage
+```
+
+It pulls the same export, trains a LoRA with TRL/PEFT, and `POST /v1/models/register` puts the result through the same gate, shadow and promotion as a Together fine-tune. Only the export leaves Overturn; only the registration comes back. `local/<model>` is any OpenAI-compatible server (`LOCAL_MODEL_BASE_URL`), which is also how an air-gapped deployment replays.
 
 ## Continuous retraining (opt-in)
 

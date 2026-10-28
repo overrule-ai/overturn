@@ -23,6 +23,8 @@ let replay: ReplayService;
 beforeAll(async () => {
   fake = await startFakeOpenAI();
   process.env.FAKE_OPENAI_URL = fake.url;
+  // local/: any OpenAI-compatible server; the fake stands in for vLLM here
+  process.env.LOCAL_MODEL_BASE_URL = fake.url;
   ctx = await startTestApp();
   replay = ctx.app.get(ReplayService);
 });
@@ -402,6 +404,19 @@ describe("replay jobs (step mode)", () => {
     });
     expect(bad.status).toBe(400);
     expect(bad.body.message).toMatch(/not configured/);
+  });
+
+  it("local/<model> replays against any OpenAI-compatible server (LOCAL_MODEL_BASE_URL)", async () => {
+    const a = await recordRun("L-1", { priority: "P2" }, { agent: "local-agent" });
+    await correct(a.runId, "edit", { correctedOutput: { priority: "P1" } });
+    const created = await api<{ job: ReplayJob }>(ctx, "POST", "/v1/replays", {
+      model: `local/${echoModel({ priority: "P1" }).slice("fake/".length)}`,
+      filter: { agent: "local-agent" },
+    });
+    expect(created.status).toBe(201);
+    const job = await replay.runJob(created.body.job.id);
+    expect(job.status).toBe("completed");
+    expect(job.summary?.verdicts.fixed).toBe(1);
   });
 
   it("accepts trajectory results posted by the runner", async () => {

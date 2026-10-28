@@ -434,6 +434,8 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)(tsx@4.23.15)
 
+  packages/trainer: {}
+
 packages:
 
   '@ai-sdk/anthropic@2.0.109':

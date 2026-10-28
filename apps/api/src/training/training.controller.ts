@@ -2,7 +2,9 @@ import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "
 import {
   type ModelDeployPlan,
   type ModelDeployRequest,
+  type ModelRegister,
   modelDeployRequestSchema,
+  modelRegisterSchema,
   type TrainCreate,
   type TrainedModel,
   type TrainedModelPatch,
@@ -34,6 +36,16 @@ export class TrainingController {
     const m = await this.training.create(auth.projectId, body);
     await this.jobs.enqueueTraining(m.id);
     return m;
+  }
+
+  /** Register weights trained elsewhere (your cloud, any trainer); the gate runs at once. */
+  @Post("models/register")
+  @HttpCode(201)
+  register(
+    @Auth() auth: AuthContext,
+    @Body(zod(modelRegisterSchema)) body: ModelRegister,
+  ): Promise<TrainedModel> {
+    return this.training.register(auth.projectId, body);
   }
 
   @Get("models")

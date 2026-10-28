@@ -860,6 +860,25 @@ export const trainCreateSchema = z.object({
 });
 export type TrainCreate = z.infer<typeof trainCreateSchema>;
 
+/** Weights trained outside Overturn (your own cloud, any trainer): register where they answer from and the gate runs. */
+export const modelRegisterSchema = z.object({
+  name: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,40}$/)
+    .optional(),
+  baseModel: z.string().min(1).max(200),
+  /** provider/model the weights answer as, e.g. local/triage-lora or together/<endpoint>. */
+  servedAs: z.string().min(3).max(300),
+  method: z.enum(["sft", "dpo"]).default("sft"),
+  epochs: z.number().int().min(1).max(100).default(3),
+  /** The cases the model was trained on; the gate replays the same filter. */
+  filter: caseFilterSchema.partial().default({}),
+  /** What the trainer saw, for the record. */
+  datasetStats: exportStatsSchema.optional(),
+  trainingCostUsd: z.number().nonnegative().optional(),
+});
+export type ModelRegister = z.infer<typeof modelRegisterSchema>;
+
 export const modelGateSchema = z.object({
   pass: z.boolean(),
   replayJobId: uuidSchema.nullable(),

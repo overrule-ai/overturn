@@ -16,6 +16,7 @@ beforeAll(async () => {
   process.env.TOGETHER_API_KEY = "fake-together-key";
   process.env.TOGETHER_BASE_URL = fake.url;
   process.env.TOGETHER_PROJECT_ID = "proj_fake";
+  process.env.LOCAL_MODEL_BASE_URL = fake.url;
   ctx = await startTestApp();
   training = ctx.app.get(TrainingService);
 });
@@ -261,5 +262,37 @@ describe("train and gate", () => {
         settings: { reviewWebhookUrl: null, retrain: { enabled: false } },
       });
     }
+  });
+
+  it("registers weights trained elsewhere and gates them like any other model", async () => {
+    for (let i = 0; i < 3; i++) {
+      const r = await recordRun(`EXT-${i}`, { priority: "P1" }, "ext-agent");
+      await api(ctx, "POST", "/v1/corrections", { runId: r, kind: "approve" });
+    }
+    const servedAs = `local/${echoModel({ priority: "P1" }).slice("fake/".length)}`;
+    const res = await api<TrainedModel>(ctx, "POST", "/v1/models/register", {
+      baseModel: "Qwen/Qwen2.5-7B-Instruct",
+      servedAs,
+      filter: { agent: "ext-agent" },
+      name: "mine",
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      name: "mine",
+      provider: "local",
+      status: "passed",
+      servedAs,
+      trigger: "manual",
+    });
+    expect(res.body.gate).toMatchObject({ pass: true, regressions: 0 });
+    expect(res.body.datasetStats?.rows).toBe(3);
+    const promoted = await api<TrainedModel>(ctx, "POST", `/v1/models/${res.body.id}/promote`);
+    expect(promoted.body.status).toBe("promoted");
+    await api(ctx, "POST", `/v1/models/${res.body.id}/retire`);
+    const bad = await api<{ message: string }>(ctx, "POST", "/v1/models/register", {
+      baseModel: "x",
+      servedAs: "nowhere/model",
+    });
+    expect(bad.status).toBe(400);
   });
 });

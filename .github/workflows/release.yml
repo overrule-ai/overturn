@@ -69,6 +69,13 @@ jobs:
         working-directory: packages/sdk-python
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      # overturn-trainer has its own version; --check-url skips a version already on PyPI
+      - run: uv build
+        working-directory: packages/trainer
+      - run: uv publish --token "$PYPI_TOKEN" --check-url https://pypi.org/simple/
+        working-directory: packages/trainer
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
   tag:
     name: Tag and GitHub release

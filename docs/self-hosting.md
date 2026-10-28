@@ -21,7 +21,9 @@ The API runs migrations at boot. Sign in with your email: without `RESEND_API_KE
 | `WEB_URL` | api | public URL of the web app, used in magic links and cookie settings |
 | `AUTH_SECRET` | api | any long random string |
 | `RESEND_API_KEY`, `EMAIL_FROM` | api | magic-link email; optional in dev |
-| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `OPENROUTER_API_KEY` | api | replay targets and the judge/embedding models |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `OPENROUTER_API_KEY`, `TOGETHER_API_KEY` | api | replay targets and the judge/embedding models |
+| `LOCAL_MODEL_BASE_URL`, `LOCAL_MODEL_API_KEY` | api | any OpenAI-compatible server (vLLM, Ollama, TGI, LM Studio); replay with `local/<model>`. Air-gapped replay needs only this: the lexical example retrieval and the structured scorers need no key |
+| `TOGETHER_PROJECT_ID` | api | with it, trained models get a dedicated Together endpoint before the gate |
 | `JOBS_DISABLED` | api | `1` to run without pg-boss (replays then run inline in the request process) |
 | `LOG_LEVEL` | api | fatal … trace |
 | `OVERTURN_API_URL` | web | the URL the **browser** uses to reach the API (read at runtime) |

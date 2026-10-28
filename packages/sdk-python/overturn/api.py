@@ -65,6 +65,10 @@ class OverturnApi:
     def patch_case(self, case_id: str, body: dict[str, Any]) -> dict[str, Any]:
         return self.request("PATCH", f"/v1/cases/{case_id}", body=body)
 
+    def register_model(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Register weights trained elsewhere; the suite gates them at once."""
+        return self.request("POST", "/v1/models/register", body=body)
+
     def dedupe_cases(self) -> dict[str, Any]:
         """Suite hygiene: merge cases with the same input, kind and answer into the oldest one."""
         return self.request("POST", "/v1/cases/dedupe")

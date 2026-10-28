@@ -5,6 +5,7 @@ import type {
   ModelDeployPlan,
   ModelDeployRequest,
   ModelGate,
+  ModelRegister,
   ModelServing,
   ShadowStats,
   TrainCreate,
@@ -145,6 +146,51 @@ export class TrainingService {
       })
       .returning();
     return serialize(row!, null);
+  }
+
+  /**
+   * Weights trained anywhere else — your own cloud with `overturn-trainer`, a notebook, another
+   * provider — enter the same lifecycle here: the row is "trained", the gate replays the suite
+   * against `servedAs`, then shadow and promotion work as for a Together fine-tune.
+   */
+  async register(projectId: string, input: ModelRegister): Promise<TrainedModel> {
+    const { provider } = parseModel(input.servedAs);
+    if (!this.registry.isConfigured(provider))
+      throw new BadRequestException(
+        `Provider ${provider} is not configured on the server (for local/ set LOCAL_MODEL_BASE_URL)`,
+      );
+    const filter: CaseFilter = { status: "active", ...input.filter };
+    const stats =
+      input.datasetStats ??
+      (await this.exporter.stats(projectId, {
+        format: input.method,
+        agent: filter.agent,
+        tag: filter.tag,
+        set: filter.set,
+        since: filter.since,
+        includeApproved: true,
+        limit: 50_000,
+      }));
+    const name = input.name ?? `ext-${new Date().toISOString().slice(0, 10)}-${uuidv7().slice(-6)}`;
+    const [row] = await this.db
+      .insert(trainedModels)
+      .values({
+        id: uuidv7(),
+        projectId,
+        name,
+        provider,
+        baseModel: input.baseModel,
+        method: input.method,
+        epochs: input.epochs,
+        caseFilter: filter,
+        datasetStats: stats,
+        status: "trained",
+        outputName: input.servedAs.slice(input.servedAs.indexOf("/") + 1),
+        servedAs: input.servedAs,
+        trainingCostUsd: input.trainingCostUsd ?? null,
+      })
+      .returning();
+    return this.gate(row!.id);
   }
 
   // ---------- run: export → upload → fine-tune → poll → gate ----------

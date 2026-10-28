@@ -185,6 +185,44 @@ export function registerModels(program: Command): void {
       },
     );
   models
+    .command("register")
+    .description(
+      "Register weights trained elsewhere (your own cloud, any trainer); the suite gates them at once",
+    )
+    .requiredOption("--base <model>", "Base model the weights were trained from")
+    .requiredOption("--served-as <provider/model>", "Where they answer from, e.g. local/triage-lora")
+    .option("--agent <name>", "Cases the model was trained on (the gate replays the same filter)")
+    .option("--tag <tag>", "Cases the model was trained on")
+    .option("--name <name>", "Model name")
+    .option("--method <sft|dpo>", "Training method", "sft")
+    .option("--epochs <n>", "Epochs", "3")
+    .action(
+      async (
+        opts: {
+          base: string;
+          servedAs: string;
+          agent?: string;
+          tag?: string;
+          name?: string;
+          method: string;
+          epochs: string;
+        },
+        cmd: Command,
+      ) => {
+        const global = cmd.optsWithGlobals<CliOptions>();
+        const m = await apiFor(global).models.register({
+          name: opts.name,
+          baseModel: opts.base,
+          servedAs: opts.servedAs,
+          method: opts.method as "sft" | "dpo",
+          epochs: Number(opts.epochs),
+          filter: { ...(opts.agent ? { agent: opts.agent } : {}), ...(opts.tag ? { tag: opts.tag } : {}) },
+        });
+        if (global.json) return printJson(m);
+        printModel(m);
+      },
+    );
+  models
     .command("auto")
     .description(
       "Continuous retraining: once --min-new-rows new corrections arrive, train on them, gate, shadow if it passes, notify. Never promotes.",

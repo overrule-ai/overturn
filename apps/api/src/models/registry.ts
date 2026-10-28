@@ -66,6 +66,8 @@ export class ModelRegistry {
         return Boolean(this.config.OPENROUTER_API_KEY);
       case "together":
         return Boolean(this.config.TOGETHER_API_KEY);
+      case "local":
+        return Boolean(this.config.LOCAL_MODEL_BASE_URL);
       case "fake":
         return true;
       default:
@@ -94,6 +96,16 @@ export class ModelRegistry {
           baseURL: this.config.TOGETHER_BASE_URL,
           apiKey: this.required("together", this.config.TOGETHER_API_KEY),
         }).chatModel(model);
+      case "local":
+        if (!this.config.LOCAL_MODEL_BASE_URL)
+          throw new Error(
+            "LOCAL_MODEL_BASE_URL is not set on the server; point it at your OpenAI-compatible server",
+          );
+        return createOpenAICompatible({
+          name: "local",
+          baseURL: this.config.LOCAL_MODEL_BASE_URL,
+          apiKey: this.config.LOCAL_MODEL_API_KEY ?? "local",
+        }).chatModel(model);
       case "fake":
         return createOpenAICompatible({
           name: "fake",
@@ -102,7 +114,7 @@ export class ModelRegistry {
         }).chatModel(model);
       default:
         throw new Error(
-          `Unknown provider "${provider}". Use openai/, anthropic/, google/, openrouter/, together/ or fake/.`,
+          `Unknown provider "${provider}". Use openai/, anthropic/, google/, openrouter/, together/, local/ (LOCAL_MODEL_BASE_URL) or fake/.`,
         );
     }
   }
